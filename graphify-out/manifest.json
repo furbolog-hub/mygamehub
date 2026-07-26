@@ -1,0 +1,137 @@
+{
+  ".codex/hooks.json": {
+    "mtime": 1785054811.4965053,
+    "ast_hash": "9d93bc6bb74c3158fa0e1524e299ed4d",
+    "semantic_hash": "9d93bc6bb74c3158fa0e1524e299ed4d"
+  },
+  "script.js": {
+    "mtime": 1784972812.844115,
+    "ast_hash": "460267fdfb01245620c65cd0cd75dfca",
+    "semantic_hash": "460267fdfb01245620c65cd0cd75dfca"
+  },
+  "ui-enhancements.js": {
+    "mtime": 1784916000.4255073,
+    "ast_hash": "8502c264dfab9b7279e2d4eb75074893",
+    "semantic_hash": "8502c264dfab9b7279e2d4eb75074893"
+  },
+  "viewport-fit.js": {
+    "mtime": 1783757374.0,
+    "ast_hash": "f1833987b192d214f55af9ce937d0852",
+    "semantic_hash": "f1833987b192d214f55af9ce937d0852"
+  },
+  "assets/audio/abyssal/events/abyssal-appear.ogg": {
+    "mtime": 1784280470.8510084,
+    "ast_hash": "d5cf2872146460c3da28dc333662ceda",
+    "semantic_hash": "d5cf2872146460c3da28dc333662ceda"
+  },
+  "assets/audio/abyssal/events/abyssal-impact.ogg": {
+    "mtime": 1784280275.2964094,
+    "ast_hash": "d889a7e1cacc07566115fa74d7292697",
+    "semantic_hash": "d889a7e1cacc07566115fa74d7292697"
+  },
+  "assets/audio/abyssal/events/unstable-presence.ogg": {
+    "mtime": 1784938008.404405,
+    "ast_hash": "7cd9ef1ee8ed104ac5d42a9de7a45cf5",
+    "semantic_hash": "7cd9ef1ee8ed104ac5d42a9de7a45cf5"
+  },
+  "assets/audio/artifacts/epic.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "ab757c5f4da2e530eb6f9803e8f013d5",
+    "semantic_hash": "ab757c5f4da2e530eb6f9803e8f013d5"
+  },
+  "assets/audio/artifacts/legendary.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "5c7db3c6b7a79960aacce936e28f7f25",
+    "semantic_hash": "5c7db3c6b7a79960aacce936e28f7f25"
+  },
+  "assets/audio/characters/angus.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "b5bd5f2b77076cdc912126f65ac39da2",
+    "semantic_hash": "b5bd5f2b77076cdc912126f65ac39da2"
+  },
+  "assets/audio/effects/bonus.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "023a7a3f7d6c33dca6cfc62e8fdbc1bc",
+    "semantic_hash": "023a7a3f7d6c33dca6cfc62e8fdbc1bc"
+  },
+  "assets/audio/effects/debuff.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "36a0da7c8030437bf744f58ae220bc16",
+    "semantic_hash": "36a0da7c8030437bf744f58ae220bc16"
+  },
+  "assets/audio/fishing/cast.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "1eb09f46e1a855612952e2978fa68c2f",
+    "semantic_hash": "1eb09f46e1a855612952e2978fa68c2f"
+  },
+  "assets/audio/islands/dangers/island-danger.ogg": {
+    "mtime": 1784935975.8510594,
+    "ast_hash": "c8de40f1a81a93d4c465dd1091f74b7a",
+    "semantic_hash": "c8de40f1a81a93d4c465dd1091f74b7a"
+  },
+  "assets/audio/islands/music/destructive-tides.ogg": {
+    "mtime": 1784936503.7060325,
+    "ast_hash": "ba1579af864b95bcf33b69fb53f67a2d",
+    "semantic_hash": "ba1579af864b95bcf33b69fb53f67a2d"
+  },
+  "assets/audio/islands/music/forgotten-currents.ogg": {
+    "mtime": 1784937399.565631,
+    "ast_hash": "0b2bdbac62439b47741c3b633cdb083c",
+    "semantic_hash": "0b2bdbac62439b47741c3b633cdb083c"
+  },
+  "assets/audio/islands/music/leaden-fog.ogg": {
+    "mtime": 1784936572.8469074,
+    "ast_hash": "719e87bde503b7480c5bf048cfec9a52",
+    "semantic_hash": "719e87bde503b7480c5bf048cfec9a52"
+  },
+  "assets/audio/islands/music/stone-guardians.ogg": {
+    "mtime": 1784936442.838494,
+    "ast_hash": "bd485c81c619172853a61b5b25e9d05f",
+    "semantic_hash": "bd485c81c619172853a61b5b25e9d05f"
+  },
+  "assets/audio/islands/opening/island-discovered.ogg": {
+    "mtime": 1784935740.7517507,
+    "ast_hash": "8617b16f775da264b32662ab461021b6",
+    "semantic_hash": "8617b16f775da264b32662ab461021b6"
+  },
+  "assets/audio/items/signal-flare-launch.ogg": {
+    "mtime": 1784936190.4538906,
+    "ast_hash": "66555ab73db97555d69666e1b2d864a0",
+    "semantic_hash": "66555ab73db97555d69666e1b2d864a0"
+  },
+  "assets/audio/rifts/ambient/rift-ambient.ogg": {
+    "mtime": 1784154783.392109,
+    "ast_hash": "2bde87aa891826bc74e1df55fdfbb22a",
+    "semantic_hash": "2bde87aa891826bc74e1df55fdfbb22a"
+  },
+  "assets/audio/rifts/opening/rift-open.ogg": {
+    "mtime": 1784154237.2339184,
+    "ast_hash": "261da4996980e0c5ddff8f057031f3eb",
+    "semantic_hash": "261da4996980e0c5ddff8f057031f3eb"
+  },
+  "assets/audio/ships/trade-ship-arrival.ogg": {
+    "mtime": 1784936121.3363712,
+    "ast_hash": "f73512b10f54b932d90d7a830ad06b3f",
+    "semantic_hash": "f73512b10f54b932d90d7a830ad06b3f"
+  },
+  "assets/audio/ui/achievement.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "d37fb184c334d902465086854ab77363",
+    "semantic_hash": "d37fb184c334d902465086854ab77363"
+  },
+  "assets/audio/ui/guide.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "68ba3d3dadeffc30beb0380ef80b1f5e",
+    "semantic_hash": "68ba3d3dadeffc30beb0380ef80b1f5e"
+  },
+  "assets/audio/ui/motion.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "26f7433fdcca13c712944677cb6e4efc",
+    "semantic_hash": "26f7433fdcca13c712944677cb6e4efc"
+  },
+  "assets/audio/weather/weather.ogg": {
+    "mtime": 1783477606.0,
+    "ast_hash": "3ef48979c85e65b625493d3d33cfc780",
+    "semantic_hash": "3ef48979c85e65b625493d3d33cfc780"
+  }
+}
