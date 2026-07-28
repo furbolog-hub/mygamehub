@@ -1329,7 +1329,27 @@ body.reduce-motion .history-item.type-rift .rift-relic-icon:not(.is-effect-icon)
   font-weight:900;
 }
 .rift-relic-shiny-name {
-  display:inline;
+  position:relative;
+  display:inline-grid;
+  color:#f0dcff;
+  -webkit-text-fill-color:currentColor;
+  text-shadow:0 1px 2px rgba(12,5,31,.95),0 0 7px rgba(213,166,255,.22);
+}
+.rift-relic-name-base,
+.rift-relic-name-shine {
+  grid-area:1 / 1;
+}
+.rift-relic-name-base {
+  position:relative;
+  z-index:0;
+  color:#f0dcff;
+  -webkit-text-fill-color:currentColor;
+}
+.rift-relic-name-shine {
+  position:relative;
+  z-index:1;
+  opacity:.82;
+  mix-blend-mode:screen;
   color:transparent;
   background-image:linear-gradient(120deg,#ca99f5 0%,#ca99f5 35%,#fff 50%,#ca99f5 65%,#ca99f5 100%);
   background-size:200% 100%;
@@ -1344,20 +1364,20 @@ body.reduce-motion .history-item.type-rift .rift-relic-icon:not(.is-effect-icon)
   from { background-position:150% center; }
   to { background-position:-50% center; }
 }
-body.reduce-motion .rift-relic-shiny-name {
+body.reduce-motion .rift-relic-name-shine {
   animation:none;
   background-position:50% center;
 }
 @media(prefers-reduced-motion:reduce) {
-  .rift-relic-shiny-name { animation:none; background-position:50% center; }
+  .rift-relic-name-shine { animation:none; background-position:50% center; }
 }
 @media(forced-colors:active) {
   .rift-relic-shiny-name {
     color:inherit;
-    background:none;
     -webkit-text-fill-color:currentColor;
-    animation:none;
   }
+  .rift-relic-name-base { color:inherit; -webkit-text-fill-color:currentColor; }
+  .rift-relic-name-shine { display:none; }
 }
 .rift-relic-copy small {
   display:block;

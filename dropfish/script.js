@@ -1593,7 +1593,7 @@ function renderRiftLootResults(row) {
   const items=results.map(item=>{
     const count=item.count>1?` ×${item.count}`:'';
     const relicHint=RIFT_RELIC_HINTS[item.name]||RIFT_RELIC_INFO[item.name]||'Одноразовая реликвия';
-    const content=item.kind==='relic'?`${riftRelicIcon(item.name)}<span class="rift-relic-copy"><strong><span class="rift-relic-shiny-name">${item.name}</span>${count}</strong><small>(${relicHint})</small></span>`:
+    const content=item.kind==='relic'?`${riftRelicIcon(item.name)}<span class="rift-relic-copy"><strong><span class="rift-relic-shiny-name"><span class="rift-relic-name-base">${item.name}</span><span class="rift-relic-name-shine" aria-hidden="true">${item.name}</span></span>${count}</strong><small>(${relicHint})</small></span>`:
       item.kind==='effect'?`${riftLootEffectIcon(item,'is-loot-icon')} ${item.name}${count}`:
       item.kind==='trade'?`${riftTradeLootIcon(item,'is-loot-icon')} ${item.name||'Предмет обмена'}${count}`:
       item.kind==='shard'?`${item.name==='Осколок сингулярности'?riftRelicIcon('Осколок сингулярности'):riftRelicIcon('Сердце бездны')} ${item.name}${count}`:
