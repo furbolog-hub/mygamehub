@@ -4,23 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#071b2d" />
-  <title>DropFish</title>
-  <script>
-    // Раннее определение обычного Safari на iPhone до построения интерфейса.
-    (() => {
-      const ua = navigator.userAgent || '';
-      const isIPhone = /iPhone|iPod/i.test(ua);
-      const isWebKit = /WebKit/i.test(ua);
-      const isOtherIOSBrowser = /CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo/i.test(ua);
-      const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
-      const launchText = `${location.search} ${location.hash}`;
-      const hasTelegramLaunchParams = /tgWebApp(?:Data|Version|Platform|ThemeParams)/i.test(launchText);
-      if (isIPhone && isWebKit && !isOtherIOSBrowser && !isStandalone && !hasTelegramLaunchParams) {
-        document.documentElement.classList.add('iphone-safari-browser');
-      }
-    })();
-  </script>
-  <link rel="stylesheet" href="style.css?v=2.67-unified-interface" />
+  <title>Игровой центр</title>
+  <link rel="stylesheet" href="menu.css?v=1.61-hub-cache" />
   <script>
   /* Telegram SDK грузим ТОЛЬКО внутри Telegram. В обычном браузере он не нужен,
      а его синхронная загрузка блокировала отрисовку страницы на минуты, если
@@ -37,189 +22,41 @@
     }
   })();
   </script>
-  <script src="viewport-fit.js?v=1.84-fit-v3"></script>
 </head>
 <body>
-  <main class="app-shell">
-    <header class="topbar glass ui-surface">
-      <div class="header-depth-presence" aria-hidden="true">
-        <span class="header-sonar-sweep"></span>
-        <span class="header-sonar-trace"></span>
-        <span class="header-sonar-contact contact-one"></span>
-        <span class="header-sonar-contact contact-two"></span>
-        <span class="header-depth-creature"><i></i><b></b><em></em></span>
-      </div>
-      <div class="header-brand">
-        <p class="eyebrow">Telegram Mini App • Browser</p>
-        <h1><span class="ui-icon is-brand-icon"><img src="./assets/icons/ui/fishing-rod.webp" alt="" aria-hidden="true"></span><span>DropFish</span></h1>
-      </div>
-      <div class="header-actions">
-        <a class="menu-exit-btn" href="../" aria-label="Выйти в игровое меню"><span class="ui-icon is-menu-icon"><img src="./assets/icons/ui/menu.webp" alt="" aria-hidden="true"></span><span>Меню</span></a>
-        <button id="dropfishDebugBtn" class="icon-btn debug-toggle-btn" aria-label="Открыть тестовую панель" title="Тестовая панель"><span class="ui-icon"><img src="./assets/icons/ui/debug-panel.webp" alt="" aria-hidden="true"></span></button>
-        <button id="soundToggleBtn" class="icon-btn sound-toggle-btn" aria-label="Отключить звуки" title="Отключить звуки" aria-pressed="false"><span class="ui-icon"><img src="./assets/icons/ui/sound-on.webp" alt="" aria-hidden="true"></span></button>
-        <button id="motionBtn" class="icon-btn motion-btn" aria-label="Уменьшить анимации" title="Уменьшить анимации"><span class="ui-icon"><img src="./assets/icons/ui/animation-on.webp" alt="" aria-hidden="true"></span></button>
-        <button id="guideBtn" class="icon-btn" aria-label="Открыть справочник" title="Открыть справочник"><span class="ui-icon"><img src="./assets/icons/ui/guide.webp" alt="" aria-hidden="true"></span></button>
-      </div>
+  <main class="portal-shell">
+    <header class="portal-header glass">
+      <h1>Игровой центр</h1>
+      <p>Выберите игру</p>
     </header>
 
-    <section id="lakeCard" class="lake-card glass merged-weather-card ui-surface">
-      <div class="ambient-layer" aria-hidden="true">
-        <span class="bubble bubble-1"></span><span class="bubble bubble-2"></span><span class="bubble bubble-3"></span>
-        <span class="fish-shadow fish-shadow-1">◆</span><span class="fish-shadow fish-shadow-2">◆</span>
-      </div>
-      <div id="castArc" class="cast-arc" aria-hidden="true"><span class="cast-lure"></span></div>
-      <div id="splash" class="splash" aria-hidden="true"><span class="splash-core"></span><span class="splash-ring splash-ring-a"></span><span class="splash-ring splash-ring-b"></span><span class="splash-drop splash-drop-a"></span><span class="splash-drop splash-drop-b"></span><span class="splash-drop splash-drop-c"></span></div>
-      <div class="lake-stat-strip" aria-label="Статистика игровой сессии">
-        <div class="lake-stat lake-stat-casts"><span>Забросы</span><strong id="castsLabel">10</strong></div>
-        <div class="lake-stat lake-stat-weight"><span>Вес сейчас</span><strong id="weightLabel">0,0 кг</strong></div>
-      </div>
-      <div class="weather-main">
-        <div id="weatherScene" class="weather-scene" aria-hidden="true"></div>
-        <div class="weather-copy">
-          <span class="weather-kicker">Погода</span>
-          <h2 id="weatherTitle">Солнечно</h2>
-          <p id="weatherDescription">Высока вероятность встретить чайку.</p>
-        </div>
-      </div>
-      <div id="arcadeLayer" class="arcade-track" aria-label="Дополнительная аркадная рыбалка">
-        <span id="arcadeStatus" class="arcade-catch-status" role="status" aria-live="polite"></span>
-        <span class="arcade-track-water" aria-hidden="true"></span>
-      </div>
-      <span id="weatherLabel" class="visually-hidden">—</span>
-    </section>
+    <section class="games-grid" aria-label="Список игр">
+      <a class="game-card game-card--active game-card--dropfish glass" href="./dropfish/">
+        <span class="game-card-art" aria-hidden="true"></span>
+        <span class="game-card-shade" aria-hidden="true"></span>
+        <span class="game-icon" aria-hidden="true">🎣</span>
+        <span class="game-copy">
+          <strong>DropFish</strong>
+          <small>Рыбалка, редкие уловы, погода,<br>бонусы и опасности.</small>
+        </span>
+        <span class="play-mark">Играть <b aria-hidden="true">›</b></span>
+      </a>
 
-    <section class="actions cast-panel ui-action-grid">
-      <button id="castBtn" class="primary-btn"><span class="ui-icon is-cast-icon"><img src="./assets/icons/ui/fishing-rod.webp" alt="" aria-hidden="true"></span><span>Забросить удочку</span></button>
-      <button id="restartBtn" class="secondary-btn">↻ Новая игра</button>
-    </section>
-
-    <section class="inventory glass ui-surface ui-panel">
-      <div class="section-heading ui-panel-heading">
-        <h2>Активные эффекты</h2>
-        <span id="effectCount">0</span>
-      </div>
-      <div id="effectsList" class="chips"><span class="muted">Пока нет</span></div>
-    </section>
-
-    <section class="history glass ui-surface ui-panel">
-      <div class="section-heading ui-panel-heading">
-        <h2>Хронология улова</h2>
-        <span id="historyCount">0</span>
-      </div>
-      <div id="historyScroll" class="history-scroll ui-scroll-region">
-        <ol id="historyList" class="history-list"></ol>
-        <div id="emptyHistory" class="empty-state">Первый заброс ждёт вас.</div>
-        <div id="resultCard" class="result-card hidden"></div>
-      </div>
+      <a class="game-card game-card--active game-card--agroclick glass" href="./agroclick/">
+        <span class="game-card-art" aria-hidden="true"></span>
+        <span class="game-card-shade" aria-hidden="true"></span>
+        <span class="game-icon" aria-hidden="true">🌾</span>
+        <span class="game-copy">
+          <strong>AgroClick</strong>
+          <small>Собирайте урожай, находите сундуки<br>и защищайте поле от вредителей.</small>
+        </span>
+        <span class="play-mark">Играть <b aria-hidden="true">›</b></span>
+      </a>
     </section>
   </main>
+  <script>const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand();}</script>
 
-
-  <dialog id="guideDialog" class="modal">
-    <div class="modal-card wide ui-dialog-panel">
-      <button class="close-btn" data-close="guideDialog" aria-label="Закрыть">×</button>
-      <h2 class="ui-dialog-title"><span class="ui-icon is-title-icon"><img src="./assets/icons/ui/guide.webp" alt="" aria-hidden="true"></span><span>Справочник</span></h2>
-      <nav id="guideTabs" class="tabs"></nav>
-      <div id="guideContent" class="guide-content"></div>
-    </div>
-  </dialog>
-
-  <dialog id="tradeDialog" class="modal trade-modal">
-    <div class="modal-card wide trade-card ui-dialog-panel">
-      <h2 id="tradeDialogTitle"><span class="ship-icon ship-trade is-dialog-icon"><img src="./assets/icons/ships/trade-ship.webp" alt="" aria-hidden="true" decoding="async"></span><span>Торговое судно</span></h2>
-      <p id="tradeDialogIntro" class="trade-intro">Команда судна готова обменять редкие находки на крупную рыбу.</p>
-      <div id="tradeOffers" class="trade-offers"></div>
-      <div id="tradeResults" class="trade-results"></div>
-      <div class="trade-actions ui-action-grid">
-        <button id="tradeAllBtn" type="button" class="primary-btn">Обменять всё</button>
-        <button id="tradeFinishBtn" type="button" class="secondary-btn">Завершить торговлю</button>
-      </div>
-    </div>
-  </dialog>
-
-
-  <dialog id="dropfishDebugDialog" class="modal debug-modal">
-    <div class="modal-card wide debug-card ui-dialog-panel">
-      <button class="modal-close" data-close="dropfishDebugDialog" type="button">×</button>
-      <h2 class="ui-dialog-title"><span class="ui-icon is-title-icon"><img src="./assets/icons/ui/debug-panel.webp" alt="" aria-hidden="true"></span><span>Тестовая панель DropFish</span></h2>
-      <p class="debug-note">Инструменты для принудительной проверки погоды, улова, Ангуса, эффектов и окончания сессии.</p>
-      <div id="dropfishDebugGrid" class="dropfish-debug-grid"></div>
-    </div>
-  </dialog>
-
-  <dialog id="choiceDialog" class="modal">
-    <div class="modal-card ui-dialog-panel">
-      <h2 id="choiceTitle">Выбор</h2>
-      <p id="choiceText"></p>
-      <div id="choiceButtons" class="choice-buttons ui-action-grid"></div>
-    </div>
-  </dialog>
-
-  <dialog id="riftDialog" class="modal rift-modal">
-    <div class="modal-card wide rift-card ui-dialog-panel">
-      <div id="riftScene" class="rift-monitor">
-        <div class="rift-monitor-copy">
-          <span>Монитор аномалии</span>
-          <strong id="riftMonitorTitle">Сигнатура определяется</strong>
-          <small id="riftMonitorDetail">Сканирование пространства…</small>
-        </div>
-        <div class="rift-monitor-visual" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-      </div>
-      <div class="rift-heading">
-        <div>
-          <span id="riftKicker" class="rift-kicker">Обнаружен Разлом</span>
-          <h2 id="riftTitle" class="visually-hidden">Разлом</h2>
-          <p id="riftDescription" class="rift-description"></p>
-        </div>
-        <div id="riftGauge" class="rift-gauge visually-hidden"></div>
-      </div>
-      <div id="riftDepth" class="rift-depth" aria-label="Глубина исследования"></div>
-      <div id="riftMessage" class="rift-message"></div>
-      <section class="rift-loot-panel ui-subpanel">
-        <h3>Накопленная добыча Разлома</h3>
-        <div id="riftLoot" class="rift-loot"></div>
-      </section>
-      <div id="riftChoices" class="rift-choices"></div>
-      <div id="riftActions" class="rift-actions ui-action-grid">
-        <button id="riftLeaveBtn" type="button" class="secondary-btn">Забрать добычу и выйти</button>
-        <button id="riftContinueBtn" type="button" class="primary-btn">Исследовать глубже</button>
-      </div>
-    </div>
-  </dialog>
-
-  <dialog id="islandDialog" class="modal island-modal">
-    <div id="islandCard" class="modal-card wide island-card ui-dialog-panel">
-      <header class="island-header">
-        <span class="island-kicker">Скрытая экспедиция</span>
-        <h2 id="islandTitle">🌊 Остров Разрушительных Приливов</h2>
-        <p id="islandDescription">Океан постоянно меняет береговую линию, а гигантские волны скрывают следы прошлых экспедиций.</p>
-      </header>
-      <div id="islandCompassNotice" class="island-compass hidden">🧭 Компас потерянных глубин указывает безопасный маршрут. Опасные события исключены.</div>
-      <div class="island-status"><strong id="islandActions">Исследования: 3</strong><span id="islandProgress">Выберите первую локацию</span></div>
-      <div id="islandMessage" class="island-message">Выберите, куда направится экспедиция.</div>
-      <section class="island-loot-panel ui-subpanel"><h3>Добыча экспедиции</h3><div id="islandLoot" class="island-loot"><span>Пока ничего не найдено</span></div></section>
-      <div id="islandLocations" class="island-locations"></div>
-      <div class="island-actions ui-action-grid">
-        <button id="islandLeaveBtn" type="button" class="secondary-btn">Покинуть остров досрочно</button>
-        <button id="islandContinueBtn" type="button" class="primary-btn hidden">Продолжить исследование</button>
-      </div>
-    </div>
-  </dialog>
-
-  <div id="effectOverlay" class="effect-overlay" aria-hidden="true">
-    <div id="effectBackdrop" class="effect-backdrop"></div>
-    <div id="effectParticles" class="effect-particles"></div>
-    <div id="effectIcon" class="effect-icon"></div>
-    <div id="effectTitle" class="effect-title"></div>
-    <div id="effectSubtitle" class="effect-subtitle"></div>
-  </div>
-  <div id="weatherFx" class="weather-fx" aria-hidden="true"></div>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <script src="ui-enhancements.js?v=1.90-rift-media"></script>
-  <script src="script.js?v=17.89-rift-sacrifice-alignment"></script>
-
-  <div id="buildStamp" aria-hidden="true">v1.94 · angus trail · dropfish</div>
+  <div id="buildStamp" aria-hidden="true">v1.88 · test · меню</div>
   <style>
   #buildStamp {
     position: fixed; right: 5px; z-index: 2147483000;
