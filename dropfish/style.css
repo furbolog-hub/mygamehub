@@ -2345,6 +2345,26 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
 @media (max-width: 560px) {
   .scuba-impact, .scuba-bonus-status { padding: .48rem .55rem; gap: .42rem; }
   .scuba-bonus-status.applied { padding:4px 8px; gap:1px; }
+  .scuba-bonus-status.applied::before,
+  .scuba-bonus-status.applied::after {
+    left:18%;
+    right:-3%;
+    animation-name:scubaBubbleTrailMobile;
+  }
+  .scuba-bonus-status.applied::before {
+    background-position:6% 84%,44% 60%,80% 80%;
+    background-size:11px 11px,8px 8px,13px 13px;
+  }
+  .scuba-bonus-status.applied::after {
+    background-position:28% 90%,70% 66%;
+    background-size:9px 9px,7px 7px;
+  }
+}
+@keyframes scubaBubbleTrailMobile {
+  0% { opacity:0; transform:translate(-10px,8px); }
+  18% { opacity:.84; }
+  68% { opacity:.58; }
+  100% { opacity:0; transform:translate(28px,-12px); }
 }
 
 
