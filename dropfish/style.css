@@ -2772,6 +2772,54 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
 .trade-item-spark { filter:none; }
 .trade-item-used { margin-left:auto; color:#b8a4b4; font-size:.75rem; }
 .trade-item-used.trade-item-destroyed{color:#ff7988;font-weight:850;text-shadow:0 0 8px rgba(255,73,98,.22)}
+
+/* Mobile trade finds keep the icon beside the copy without changing desktop rows. */
+@media(max-width:560px) {
+  .history-item > .trade-item-find:not(.is-abyss-transformed) {
+    display:grid;
+    grid-template-columns:30px minmax(0,1fr);
+    column-gap:6px;
+    row-gap:2px;
+    align-items:center;
+    font-size:.78rem;
+    line-height:1.2;
+  }
+  .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark {
+    grid-column:1;
+    grid-row:1 / span 4;
+    align-self:start;
+    display:grid;
+    place-items:center;
+    width:30px;
+    min-height:30px;
+  }
+  .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark .trade-item-icon {
+    width:30px;
+    height:30px;
+    flex-basis:30px;
+  }
+  .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark .trade-item-icon img {
+    width:54px;
+    height:54px;
+  }
+  .history-item > .trade-item-find:not(.is-abyss-transformed) > :not(.trade-item-spark) {
+    grid-column:2;
+    min-width:0;
+  }
+  .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-used {
+    justify-self:start;
+    margin-left:0;
+    font-size:.68rem;
+  }
+  .history-item.is-new:has(> .trade-item-find:not(.is-abyss-transformed)) {
+    animation:tradeFindMobileReveal .24s ease-out both;
+  }
+}
+@keyframes tradeFindMobileReveal {
+  from { opacity:0; transform:scale(.995); }
+  to { opacity:1; transform:none; }
+}
+
 .trade-item-find.is-abyss-transformed{flex-wrap:wrap;column-gap:6px;row-gap:3px;border-color:rgba(240,108,255,.38);background:linear-gradient(110deg,rgba(240,108,255,.1),rgba(5,19,29,.26))}
 .trade-item-find.is-abyss-transformed .abyss-object-source{text-decoration:line-through;color:rgba(190,175,194,.72)}
 .trade-item-find.is-abyss-transformed .abyss-object-source strong{color:inherit;text-shadow:none;animation:none}
