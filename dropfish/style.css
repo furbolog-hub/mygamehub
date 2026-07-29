@@ -4633,7 +4633,7 @@ html body[class] .merged-weather-card .lake-stat-strip{
     transform:translate(-50%,-50%);
   }
   .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark + span {
-    transform:translateY(10px);
+    transform:none;
   }
 }
 .history-item.type-rift > strong,
@@ -4644,7 +4644,6 @@ html body[class] .merged-weather-card .lake-stat-strip{
 .history-item.type-rift .embedded-fish-status,
 .history-item.type-rift .rift-loot-result-item,
 .history-item.type-rift .rift-effect-impact {
-  -webkit-text-stroke:.2px rgba(0,0,0,.9);
   text-shadow:
     -1px -1px 0 rgba(0,0,0,.78),
      1px -1px 0 rgba(0,0,0,.78),
@@ -4654,13 +4653,33 @@ html body[class] .merged-weather-card .lake-stat-strip{
 }
 .history-item.type-rift .rift-fish-gradient-name,
 .history-item.type-rift .rift-relic-name-base {
-  -webkit-text-stroke:.35px rgba(0,0,0,.96);
   text-shadow:
     -1px -1px 0 #000,
      1px -1px 0 #000,
     -1px  1px 0 #000,
      1px  1px 0 #000,
      0 2px 4px #000;
+}
+.history-item.type-rift .rift-fuzzy-title.is-ready .rift-fuzzy-source {
+  visibility:visible!important;
+  white-space:normal!important;
+}
+.history-item.type-rift .rift-fuzzy-title.is-ready .rift-fuzzy-canvas {
+  display:none!important;
+}
+.history-item.type-rift .rift-fish-gradient-name {
+  color:#f6eaff;
+  -webkit-text-fill-color:currentColor;
+  background:none;
+  -webkit-background-clip:border-box;
+  background-clip:border-box;
+  animation:riftFishHistoryColor 5.6s ease-in-out infinite alternate;
+}
+@keyframes riftFishHistoryColor {
+  0% { color:#f6eaff; }
+  35% { color:#ffb9ef; }
+  68% { color:#aeefff; }
+  100% { color:#ffffff; }
 }
 body.reduce-motion .history-item.type-rift > strong,
 body.reduce-motion .history-item.type-rift .rift-fuzzy-source,
