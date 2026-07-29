@@ -1619,7 +1619,12 @@ body.reduce-motion .catch-fish-shadow { display:none !important; }
 }
 @media (max-width:420px) { .arcade-track{height:58px;margin-top:11px;} .arcade-catch-status{font-size:.64rem;} }
 body.reduce-motion .arcade-track-water, body.reduce-motion .lake-stat::after { display:none !important; }
-body.reduce-motion .arcade-fish { animation-timing-function:linear !important; }
+body.reduce-motion .arcade-fish {
+  animation-duration:var(--arcade-duration) !important;
+  animation-iteration-count:1 !important;
+  animation-timing-function:linear !important;
+  transition-duration:.2s !important;
+}
 
 .merged-weather-card { min-height:250px; }
 @media (max-width:560px){ .merged-weather-card{min-height:235px;} }
@@ -2831,7 +2836,7 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
   }
   .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark {
     grid-column:1;
-    grid-row:1 / span 4;
+    grid-row:1;
     align-self:center;
     display:grid;
     place-items:center;
@@ -2850,6 +2855,11 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
   .history-item > .trade-item-find:not(.is-abyss-transformed) > :not(.trade-item-spark) {
     grid-column:2;
     min-width:0;
+  }
+  .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark + span {
+    display:flex;
+    align-items:center;
+    min-height:30px;
   }
   .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-used {
     justify-self:start;

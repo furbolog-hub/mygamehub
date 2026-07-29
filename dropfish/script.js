@@ -2918,7 +2918,7 @@ function maybeScheduleArcadeAfterCast() {
   if (state.castsLeft<=0) return; // последний заброс не запускает событие, которое не успеет показаться
   const castsSinceSpawn=state.castClicks-(state.arcadeLastSpawnCast ?? -1);
   if (castsSinceSpawn < 2) return;
-  const triggerChance=castsSinceSpawn>=6?ARCADE_PITY_CHANCE:ARCADE_TRIGGER_CHANCE;
+  const triggerChance=castsSinceSpawn>=6?(reduceMotion?1:ARCADE_PITY_CHANCE):ARCADE_TRIGGER_CHANCE;
   if (!chance(triggerChance)) return;
   const delay=400+Math.random()*1000;
   arcadeTimer=setTimeout(()=>{
