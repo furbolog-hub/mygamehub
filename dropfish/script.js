@@ -3294,7 +3294,7 @@ function renderTradeShipHistory(row) {
   const exchanges=(state.tradeExchanges||[]).filter(exchange=>exchange.tradeShipHistoryId===row.id).map(exchange=>`<li><span class="trade-history-source is-exchanged">${tradeExchangeSourceMarkup(exchange)}</span><span class="trade-history-result"><span class="trade-history-arrow">→</span>${tradeExchangeFishMarkup(exchange)}</span></li>`).join('');
   const isCurrent=row.id===state.tradeShipHistoryId&&state.tradeShipArrived&&!state.tradeShipCompleted;
   return `${exchanges?`<ul class="trade-history-results">${exchanges}</ul>`:''}
-    <span class="trade-closed-status">${isCurrent?'Автоматический обмен выполняется':'Торговля завершена'}</span>`;
+    ${isCurrent?'<button type="button" class="trade-open-btn" data-open-trade>Торговля</button>':'<span class="trade-closed-status">Торговля завершена</span>'}`;
 }
 function renderAbyssDecision(row){
   if(!row.abyssDecision)return '';
@@ -3393,21 +3393,17 @@ function exchangeIslandColossus(id){
 }
 function openTradeDialog() {
   if (!state.tradeShipArrived) return;
-  resolveTradeShipInline();
+  renderTradeDialog();
+  if (!$('tradeDialog').open) $('tradeDialog').showModal();
 }
-function resolveTradeShipInline() {
-  if (!state.tradeShipArrived||state.tradeShipCompleted) return;
-  if(state.tradeShipSource==='recyclon'){
-    recycleAllTrash();
-  }else{
-    const offerSet=new Set(state.tradeShipOffers||[]);
-    const items=(state.tradeItems||[]).filter(item=>!item.exchanged&&(offerSet.has(item.key)||item.islandTrade));
-    items.forEach(createTradeFish);
-    const finalCoin=eligibleFinalCastTradeCoin();
-    if(finalCoin)exchangeFinalCastCoin(finalCoin.id,false);
-    else commitState();
-  }
-  completeTradeShip();
+function hasTradeShipChoices() {
+  if(!state.tradeShipArrived||state.tradeShipCompleted)return false;
+  if(state.tradeShipSource==='recyclon')return state.trash.some(item=>item.recyclonEligible&&!item.converted&&!item.recycled);
+  const offerSet=new Set(state.tradeShipOffers||[]);
+  const hasItems=(state.tradeItems||[]).some(item=>!item.exchanged&&(offerSet.has(item.key)||item.islandTrade));
+  const hasThread=activeMythics('Нить Сифонофоры').length>0;
+  const hasColossus=state.tradeShipSource==='flare'&&state.fish.some(fish=>fish.islandColossus&&!fish.removed&&!fish.islandTraded);
+  return hasItems||Boolean(eligibleFinalCastTradeCoin())||hasThread||hasColossus;
 }
 function completeTradeShip() {
   if (state.tradeShipCompleted) return;
@@ -3431,7 +3427,8 @@ function beginTradeShip(source='natural') {
   state.tradeShipHistoryId=row.id;
   TelegramApp?.HapticFeedback?.notificationOccurred?.('success');
   render();
-  resolveTradeShipInline();
+  if(hasTradeShipChoices())toast(`${recyclon?'«Рециклон»':'Торговое судно'} прибыло — выберите обмен в хронологии`);
+  else completeTradeShip();
 }
 function maybeFinalizeSession() {
   if (state.finished || state.castsLeft>0 || $('choiceDialog')?.open || state.rifts?.active || state.islands?.active || hasPendingAbyssalDecision()) return;
@@ -3875,10 +3872,10 @@ const GUIDE = {
     ...Object.values(RIFT_TYPES).map(r=>[r.name,`${r.description} Уникальная реликвия: ${r.relic}.`])
   ],
   'Торговые суда': [
-    [`${shipIconMarkup('trade','is-guide-icon')} Прибытие`,'После последнего заброса в любую погоду, кроме Шторма, судно прибывает с вероятностью 50%. Обмен выполняется сразу и записывается в хронологию без отдельного полноэкранного окна.'],
+    [`${shipIconMarkup('trade','is-guide-icon')} Прибытие`,'После последнего заброса в любую погоду, кроме Шторма, судно прибывает с вероятностью 50%. Если подходящей добычи нет, торговля завершается автоматически. Если есть варианты обмена, в хронологии появляется кнопка «Торговля».'],
     [`${tradeItemIconMarkup('tidePearl','is-guide-icon')} Предметы обмена`,'При прямой поимке рыбы удочкой с вероятностью 40% дополнительно находится один специальный предмет. Предмет не расходует заброс и показывается в той же строке хронологии.'],
-    [`${shipIconMarkup('trade','is-guide-icon')} Обмен`,'Команда судна принимает три случайных вида предметов из шести. Все подходящие предметы автоматически обмениваются: за каждый выдаётся тяжеловес с вероятностью 90% или рыба-гигант с вероятностью 10%. Результаты сразу видны в хронологии.'],
-    [`${shipIconMarkup('recyclon','is-guide-icon')} Перерабатывающее судно «Рециклон»`,'Вызывается Рунической сигнальной ракетой вместо обычного судна, если накоплен подходящий хлам. «Рециклон» автоматически принимает весь хлам, полученный обычными забросами, без отдельного полноэкранного окна. Каждая единица такого хлама превращается в одну рыбу: 50% обычная, 35% тяжеловес, 15% гигант. Результаты записываются в хронологию, а полученные рыбы защищены от «Нестабильного присутствия». После ухода вызванного судна обычная независимая проверка прибытия в конце сессии сохраняется.']
+    [`${shipIconMarkup('trade','is-guide-icon')} Обмен`,'Команда судна принимает три случайных вида предметов из шести. Игрок сам выбирает, какие доступные предметы отдать, или может обменять всё подходящее сразу. За каждый предмет выдаётся тяжеловес с вероятностью 90% или рыба-гигант с вероятностью 10%. Результаты видны в хронологии.'],
+    [`${shipIconMarkup('recyclon','is-guide-icon')} Перерабатывающее судно «Рециклон»`,'Вызывается Рунической сигнальной ракетой вместо обычного судна, если накоплен подходящий хлам. «Рециклон» принимает только хлам, полученный обычными забросами, и игрок сам подтверждает его переработку. Каждая единица такого хлама превращается в одну рыбу: 50% обычная, 35% тяжеловес, 15% гигант. Результаты записываются в хронологию, а полученные рыбы защищены от «Нестабильного присутствия». После ухода вызванного судна обычная независимая проверка прибытия в конце сессии сохраняется.']
   ],
   'Абиссальная форма': [
     ['Неизвестная форма','Самостоятельно попадается с шансом 3% в Дождь, Туман, Затмение, Грозу и Шторм. При выходе с добычей из любого Разлома добавляется с шансом 1%. Форму можно удалить или оставить; после оставления избавиться от неё нельзя.'],
@@ -4193,7 +4190,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',
 $('guideDialog').addEventListener('click',e=>{if(e.target===$('guideDialog'))$('guideDialog').close();});
 applyMotionPreference();
 render();
-if(state.tradeShipArrived&&!state.tradeShipCompleted)resolveTradeShipInline();
+if(state.tradeShipArrived&&!state.tradeShipCompleted&&!hasTradeShipChoices())completeTradeShip();
 if(state.rifts?.active)renderRift();
 if(state.islands?.active){renderIsland();$('islandDialog').showModal();startIslandAmbient();}
 
