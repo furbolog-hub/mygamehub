@@ -4626,6 +4626,78 @@ html body[class] .merged-weather-card .lake-stat-strip{
   word-break:normal;
   hyphens:none;
 }
+
+/* Safari mobile: optical alignment and guaranteed contrast in rift history. */
+@media(max-width:560px) {
+  .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark .trade-item-icon img {
+    transform:translate(-50%,-50%);
+  }
+  .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark + span {
+    transform:translateY(10px);
+  }
+}
+.history-item.type-rift > strong,
+.history-item.type-rift .rift-fuzzy-source,
+.history-item.type-rift .history-detail,
+.history-item.type-rift .embedded-fish-name,
+.history-item.type-rift .embedded-fish-title,
+.history-item.type-rift .embedded-fish-status,
+.history-item.type-rift .rift-loot-result-item,
+.history-item.type-rift .rift-effect-impact {
+  -webkit-text-stroke:.2px rgba(0,0,0,.9);
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,.78),
+     1px -1px 0 rgba(0,0,0,.78),
+    -1px  1px 0 rgba(0,0,0,.78),
+     1px  1px 0 rgba(0,0,0,.78),
+     0 2px 3px rgba(0,0,0,.88);
+}
+.history-item.type-rift .rift-fish-gradient-name,
+.history-item.type-rift .rift-relic-name-base {
+  -webkit-text-stroke:.35px rgba(0,0,0,.96);
+  text-shadow:
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000,
+     0 2px 4px #000;
+}
+body.reduce-motion .history-item.type-rift > strong,
+body.reduce-motion .history-item.type-rift .rift-fuzzy-source,
+body.reduce-motion .history-item.type-rift .history-detail,
+body.reduce-motion .history-item.type-rift .embedded-fish-name,
+body.reduce-motion .history-item.type-rift .embedded-fish-title,
+body.reduce-motion .history-item.type-rift .rift-fish-gradient-name,
+body.reduce-motion .history-item.type-rift .embedded-fish-status,
+body.reduce-motion .history-item.type-rift .rift-loot-result-item,
+body.reduce-motion .history-item.type-rift .rift-loot-result-item strong,
+body.reduce-motion .history-item.type-rift .rift-loot-result-item small,
+body.reduce-motion .history-item.type-rift .rift-relic-name-base,
+body.reduce-motion .history-item.type-rift .rift-effect-impact,
+body.reduce-motion .history-item.type-rift .rift-effect-impact strong,
+body.reduce-motion .history-item.type-rift .rift-effect-impact small {
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  -webkit-text-stroke:.25px rgba(0,0,0,.92);
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,.95),
+     1px -1px 0 rgba(0,0,0,.95),
+    -1px  1px 0 rgba(0,0,0,.95),
+     1px  1px 0 rgba(0,0,0,.95),
+     0 2px 3px rgba(0,0,0,.92)!important;
+  filter:none!important;
+  opacity:1!important;
+}
+body.reduce-motion .history-item.type-rift .rift-fish-gradient-name,
+body.reduce-motion .history-item.type-rift .rift-relic-name-base {
+  background:none!important;
+  -webkit-background-clip:border-box;
+  background-clip:border-box;
+  animation:none!important;
+}
+body.reduce-motion .history-item.type-rift .rift-relic-name-shine {
+  display:none!important;
+}
 .inventory .chip.rift-relic-btn {
   max-width:146px;
 }
