@@ -2851,6 +2851,7 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
   .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark .trade-item-icon img {
     width:54px;
     height:54px;
+    transform:translate(-50%,calc(-50% - 8px));
   }
   .history-item > .trade-item-find:not(.is-abyss-transformed) > :not(.trade-item-spark) {
     grid-column:2;
@@ -4147,6 +4148,16 @@ body.reduce-motion .history-item.type-island .island-fish-icon {
   filter:drop-shadow(0 0 5px rgba(111,217,255,.5));
   animation:riftTextShimmer 2.2s linear infinite;
 }
+body.reduce-motion .history-item.type-rift .history-detail {
+  color:#d8d2ff!important;
+  -webkit-text-fill-color:#d8d2ff!important;
+  background:none!important;
+  -webkit-background-clip:border-box;
+  background-clip:border-box;
+  filter:none!important;
+  text-shadow:none!important;
+  animation:none!important;
+}
 @keyframes riftTextShimmer { to { background-position:-130% 0; } }
 @keyframes riftBoltDraw {
   0%,10% { stroke-dashoffset:1; }
@@ -4192,6 +4203,15 @@ body.reduce-motion .history-item.type-island .island-fish-icon {
 }
 @media(prefers-reduced-motion:reduce) {
   .history-item.type-rift::before,.history-item.type-rift .history-detail,.rift-bolt,.rift-lightning path { animation:none; }
+  .history-item.type-rift .history-detail {
+    color:#d8d2ff!important;
+    -webkit-text-fill-color:#d8d2ff!important;
+    background:none!important;
+    -webkit-background-clip:border-box;
+    background-clip:border-box;
+    filter:none!important;
+    text-shadow:none!important;
+  }
   .rift-lightning { display:none; }
   .rift-monitor-visual i { animation:none; height:55%; }
   .rift-depth span::before,.rift-depth span::after { animation:none; display:none; }
