@@ -736,7 +736,7 @@ body.reduce-motion .rift-fish-gradient-name { animation:none; background-positio
 .history-item.is-chaos-skeleton > strong { color:#9bdce3; text-decoration:none; opacity:1; }
 .history-item.is-chaos-skeleton .history-impact-note { color:#55cbd8; }
 .history-item.type-trash.is-thread-removed { border-left-color:#25c9bd; background:linear-gradient(90deg,rgba(10,91,99,.2),rgba(3,18,32,.26)); }
-.history-item.type-trash.is-thread-removed > strong { color:#6f9da1; text-decoration:line-through; text-decoration-thickness:1px; }
+.history-item.type-trash.is-thread-removed > strong { color:#6f9da1; }
 .history-item.type-trash.is-thread-removed > .history-detail { color:#6ce2d7 !important; font-weight:750; }
 @keyframes mythicPlateShine { 0%,35%{transform:translateX(-68%)} 72%,100%{transform:translateX(68%)} }
 @keyframes mythicChipShine { 0%,45%{transform:translateX(-75%)} 75%,100%{transform:translateX(75%)} }
@@ -788,6 +788,11 @@ body.reduce-motion .history-item.type-debuff.is-orca-debuff {
 .type-event { color:#ffe178; border-left-color:#ffe178; }
 .gold-add { display:inline-block; color:#aaff9a; font-weight:950; text-shadow:0 2px 5px #001; }
 .golden-hour-impact .gold-add.is-catch-animated { animation:goldGainInline .95s ease-out both; }
+body.reduce-motion .golden-hour-impact .gold-add {
+  opacity:1 !important;
+  transform:none !important;
+  animation:none !important;
+}
 .debuff-negative-hint { display:inline-block; color:#ff6b72 !important; font-weight:850; text-shadow:none; }
 .result-card { margin-top:16px; padding:18px; border-radius:18px; color:#15222b; background:rgba(255,255,255,.88); box-shadow:0 14px 32px rgba(0,0,0,.2); }
 .result-card h3 { margin:0 0 8px; font-size:1.3rem; }
@@ -2827,7 +2832,7 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
   .history-item > .trade-item-find:not(.is-abyss-transformed) > .trade-item-spark {
     grid-column:1;
     grid-row:1 / span 4;
-    align-self:start;
+    align-self:center;
     display:grid;
     place-items:center;
     width:30px;

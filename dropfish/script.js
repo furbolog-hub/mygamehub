@@ -197,7 +197,9 @@ function applyMotionPreference() {
   if (button) {
     button.classList.toggle('is-reduced', reduceMotion);
     button.innerHTML = uiIconMarkup(reduceMotion?'animationOff':'animationOn');
-    button.title = reduceMotion ? 'Включить полные анимации' : 'Уменьшить анимации';
+    button.title = reduceMotion
+      ? 'Включить полные анимации (аркадный режим доступен)'
+      : 'Уменьшить анимации (аркадный режим останется доступен)';
     button.setAttribute('aria-label', button.title);
   }
   scheduleHeaderPresence();
@@ -1324,7 +1326,7 @@ function renderRiftEffectImpact(fish) {
   return impacts.map(impact=>{
     const percent=Math.round(((impact.value||impact.after/impact.before)-1)*100);
     const name=String(impact.name||'Усиление Разлома').split(':')[0];
-    return `<div class="gear-impact rift-effect-impact">${riftTemporaryEffectIconMarkup(impact,'gear-icon')}<span><strong>${name}</strong><small>${kg(impact.before)} <b class="rift-percent">(+${percent}%)</b> = <b class="gear-result">${kg(impact.after)}</b></small></span></div>`;
+    return `<div class="gear-impact rift-effect-impact">${riftTemporaryEffectIconMarkup(impact,'gear-icon')}<span><strong>${name}</strong> <span class="gear-arrow">→</span> <span class="gear-target">${capitalize(fish.name)}</span><small>${kg(impact.before)} <b class="rift-percent">(+${percent}%)</b> = <b class="gear-result">${kg(impact.after)}</b></small></span></div>`;
   }).join('');
 }
 function renderIslandDangerImpact(fish){const impact=fish?.dangerImpact;if(!impact)return '';return `<div class="gear-impact island-danger-impact"><span class="gear-icon">${weatherWarningIconMarkup('is-compact-icon')}</span><span><strong>${impact.title}</strong><small>${kg(impact.before)} <span class="island-weight-arrow">→</span> <b class="island-weight-final">${kg(impact.after)}</b> (−${impact.percent}%)</small></span></div>`;}
@@ -4172,7 +4174,7 @@ $('tradeOffers').addEventListener('click',event=>{
 });
 $('tradeAllBtn').addEventListener('click',()=>state.tradeShipSource==='recyclon'?recycleAllTrash():exchangeAllTradeItems());
 $('tradeFinishBtn').addEventListener('click',completeTradeShip);
-$('motionBtn').addEventListener('click',()=>{playSound('motion');reduceMotion=!reduceMotion;localStorage.setItem(MOTION_KEY,reduceMotion?'1':'0');applyMotionPreference();toast(reduceMotion?'Интенсивные анимации уменьшены':'Полные анимации включены');});
+$('motionBtn').addEventListener('click',()=>{playSound('motion');reduceMotion=!reduceMotion;localStorage.setItem(MOTION_KEY,reduceMotion?'1':'0');applyMotionPreference();toast(reduceMotion?'Анимации уменьшены • аркадный режим доступен':'Полные анимации включены • аркадный режим доступен');});
 $('restartBtn').addEventListener('click',()=>{if(!BUILD_CONFIG.unlimitedSessions&&state.sessionDate){toast('Доступна только одна игровая сессия в сутки');return;}removeArcadeCreature(activeArcadeFish);state=initialState();state.weatherSeen=[state.weather];if(state.weather==='storm')state.stormSeen=true;if(BUILD_CONFIG.unlimitedSessions)localStorage.removeItem(TEST_SESSION_KEY);render();toast('Началась новая игровая сессия');});
 $('guideBtn').addEventListener('click',()=>{playSound('guide');openGuide();});
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).close()));
