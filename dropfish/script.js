@@ -3294,7 +3294,7 @@ function renderTradeShipHistory(row) {
   const exchanges=(state.tradeExchanges||[]).filter(exchange=>exchange.tradeShipHistoryId===row.id).map(exchange=>`<li><span class="trade-history-source is-exchanged">${tradeExchangeSourceMarkup(exchange)}</span><span class="trade-history-result"><span class="trade-history-arrow">→</span>${tradeExchangeFishMarkup(exchange)}</span></li>`).join('');
   const isCurrent=row.id===state.tradeShipHistoryId&&state.tradeShipArrived&&!state.tradeShipCompleted;
   return `${exchanges?`<ul class="trade-history-results">${exchanges}</ul>`:''}
-    ${isCurrent?'<button type="button" class="trade-open-btn" data-open-trade>Обмен</button>':'<span class="trade-closed-status">Торговля завершена</span>'}`;
+    <span class="trade-closed-status">${isCurrent?'Автоматический обмен выполняется':'Торговля завершена'}</span>`;
 }
 function renderAbyssDecision(row){
   if(!row.abyssDecision)return '';
@@ -3309,7 +3309,7 @@ function createTradeFish(item) {
   categories.forEach(category=>{const original=category==='giant'?rand1(20,40):category==='heavy'?rand1(10,19.9):rand1(.1,9.9),fish={id:uid(),name:pick(category==='giant'?DATA.giants:DATA.fish),category,originalWeight:original,weight:original,source:'Торговое судно',direct:false,tradeFish:true,removed:false,tags:['обмен с торговым судном','защищена от <span class="island-negative-hint">«Нестабильного присутствия»</span>'],debuffLimited:false,islandDistorted:false,islandOriginalWeight:null,islandDistortedWeight:null};state.fish.push(fish);const exchange={id:uid(),itemId:item.id,itemKey:item.key,itemName:item.name,itemIcon:item.icon,fishId:fish.id,fishName:fish.name,category,weight:fish.weight,tradeShipHistoryId:state.tradeShipHistoryId};state.tradeExchanges.push(exchange);if(!first)first=exchange;});
   item.exchanged=true;item.exchangeReason='trade';if(item.key==='moonTideShell'&&state.islands.moonShellActiveId===item.id)state.islands.moonShellActiveId=null;if(item.key==='fadedRelicFragment')state.islands.fadedRelicFragments=Math.max(0,(state.islands.fadedRelicFragments||0)-1);return first;
 }
-function exchangeFinalCastCoin(coinId){
+function exchangeFinalCastCoin(coinId,showEffect=true){
   const coin=eligibleFinalCastTradeCoin();
   if(!coin||coin.id!==coinId)return;
   const unstableActive=Boolean(state.islands?.unstablePresence),unstableApplied=unstableActive&&chance(.5);
@@ -3321,7 +3321,7 @@ function exchangeFinalCastCoin(coinId){
   const row=state.history.find(item=>item.id===coin.historyRowId);
   if(row)row.detail=unstableApplied?'(Монета обменяна на две обычные рыбы • <span class="island-negative-hint">Связь с последним забросом сохранилась — «Нестабильное присутствие» исказило обеих рыб • проверка 50%</span>)':unstableActive?'(Монета обменяна на две обычные рыбы • Торговый обмен разорвал связь с последним забросом — обе рыбы сохранили вес • проверка 50%)':'(Монета обменяна на две обычные рыбы)';
   TelegramApp?.HapticFeedback?.notificationOccurred?.('success');
-  showVisualEffect('bonus','🐟','ВЫГОДНЫЙ ОБМЕН','Монета обменяна на две обычные рыбы',1050,true);
+  if(showEffect)showVisualEffect('bonus','🐟','ВЫГОДНЫЙ ОБМЕН','Монета обменяна на две обычные рыбы',1050,true);
   renderTradeDialog();commitState();
 }
 function exchangeTradeItem(key) {
@@ -3393,8 +3393,21 @@ function exchangeIslandColossus(id){
 }
 function openTradeDialog() {
   if (!state.tradeShipArrived) return;
-  renderTradeDialog();
-  if (!$('tradeDialog').open) $('tradeDialog').showModal();
+  resolveTradeShipInline();
+}
+function resolveTradeShipInline() {
+  if (!state.tradeShipArrived||state.tradeShipCompleted) return;
+  if(state.tradeShipSource==='recyclon'){
+    recycleAllTrash();
+  }else{
+    const offerSet=new Set(state.tradeShipOffers||[]);
+    const items=(state.tradeItems||[]).filter(item=>!item.exchanged&&(offerSet.has(item.key)||item.islandTrade));
+    items.forEach(createTradeFish);
+    const finalCoin=eligibleFinalCastTradeCoin();
+    if(finalCoin)exchangeFinalCastCoin(finalCoin.id,false);
+    else commitState();
+  }
+  completeTradeShip();
 }
 function completeTradeShip() {
   if (state.tradeShipCompleted) return;
@@ -3416,10 +3429,9 @@ function beginTradeShip(source='natural') {
   if(finalCoin){const coinRow=state.history.find(item=>item.id===finalCoin.historyRowId);if(coinRow)coinRow.detail='(Капитан судна заинтересовался монетой и готов предложить выгодный обмен: две обычные рыбы)';}
   const recyclon=source==='recyclon',row=addHistory(recyclon?'Перерабатывающее судно «Рециклон» прибыло по сигналу ракеты':source==='flare'?'Торговое судно прибыло по сигналу ракеты':'Торговое судно прибыло','tradeShip','',{numbered:false,tradeShipSource:source});
   state.tradeShipHistoryId=row.id;
-  showVisualEffect('legendary',shipIconMarkup(recyclon?'recyclon':'trade','is-effect-icon'),recyclon?'«РЕЦИКЛОН»':'ТОРГОВОЕ СУДНО',recyclon?'Перерабатывающее судно готово принять добычу':'Команда судна готова к обмену',1300);
   TelegramApp?.HapticFeedback?.notificationOccurred?.('success');
-  toast(`${recyclon?'«Рециклон»':'Торговое судно'} прибыло — откройте судно в хронологии`);
   render();
+  resolveTradeShipInline();
 }
 function maybeFinalizeSession() {
   if (state.finished || state.castsLeft>0 || $('choiceDialog')?.open || state.rifts?.active || state.islands?.active || hasPendingAbyssalDecision()) return;
@@ -3447,7 +3459,7 @@ function finishGame() {
   const ended=new Date();
   state.finalResult={total,earned,finishedAt:ended.toISOString()};
   renderResultCard();
-  if (earned.length) { playSound('achievement'); showVisualEffect('achievement','🎉','Достижения открыты',`${earned.length} за эту сессию`,1500); }
+  if (earned.length) playSound('achievement');
   addHistory('Игровая сессия завершена','event');
   TelegramApp?.HapticFeedback?.notificationOccurred?.('success');
   const payload={game:'dropfish',totalWeight:total,achievements:earned,finishedAt:ended.toISOString(),casts:state.castClicks};
@@ -3863,10 +3875,10 @@ const GUIDE = {
     ...Object.values(RIFT_TYPES).map(r=>[r.name,`${r.description} Уникальная реликвия: ${r.relic}.`])
   ],
   'Торговые суда': [
-    [`${shipIconMarkup('trade','is-guide-icon')} Прибытие`,'После последнего заброса в любую погоду, кроме Шторма, судно прибывает с вероятностью 50%. Пока торговля не завершена, итог сессии и достижения не рассчитываются.'],
+    [`${shipIconMarkup('trade','is-guide-icon')} Прибытие`,'После последнего заброса в любую погоду, кроме Шторма, судно прибывает с вероятностью 50%. Обмен выполняется сразу и записывается в хронологию без отдельного полноэкранного окна.'],
     [`${tradeItemIconMarkup('tidePearl','is-guide-icon')} Предметы обмена`,'При прямой поимке рыбы удочкой с вероятностью 40% дополнительно находится один специальный предмет. Предмет не расходует заброс и показывается в той же строке хронологии.'],
-    [`${shipIconMarkup('trade','is-guide-icon')} Обмен`,'Команда судна принимает три случайных вида предметов из шести. За каждый предмет выдаётся тяжеловес с вероятностью 90% или рыба-гигант с вероятностью 10%. Можно обменивать по одному или всё сразу.'],
-    [`${shipIconMarkup('recyclon','is-guide-icon')} Перерабатывающее судно «Рециклон»`,'Вызывается Рунической сигнальной ракетой вместо обычного судна, если накоплен подходящий хлам. «Рециклон» принимает только хлам, полученный обычными забросами. Каждая единица такого хлама превращается в одну рыбу: 50% обычная, 35% тяжеловес, 15% гигант. Полученные рыбы защищены от «Нестабильного присутствия». После ухода вызванного судна обычная независимая проверка прибытия в конце сессии сохраняется.']
+    [`${shipIconMarkup('trade','is-guide-icon')} Обмен`,'Команда судна принимает три случайных вида предметов из шести. Все подходящие предметы автоматически обмениваются: за каждый выдаётся тяжеловес с вероятностью 90% или рыба-гигант с вероятностью 10%. Результаты сразу видны в хронологии.'],
+    [`${shipIconMarkup('recyclon','is-guide-icon')} Перерабатывающее судно «Рециклон»`,'Вызывается Рунической сигнальной ракетой вместо обычного судна, если накоплен подходящий хлам. «Рециклон» автоматически принимает весь хлам, полученный обычными забросами, без отдельного полноэкранного окна. Каждая единица такого хлама превращается в одну рыбу: 50% обычная, 35% тяжеловес, 15% гигант. Результаты записываются в хронологию, а полученные рыбы защищены от «Нестабильного присутствия». После ухода вызванного судна обычная независимая проверка прибытия в конце сессии сохраняется.']
   ],
   'Абиссальная форма': [
     ['Неизвестная форма','Самостоятельно попадается с шансом 3% в Дождь, Туман, Затмение, Грозу и Шторм. При выходе с добычей из любого Разлома добавляется с шансом 1%. Форму можно удалить или оставить; после оставления избавиться от неё нельзя.'],
@@ -4181,6 +4193,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',
 $('guideDialog').addEventListener('click',e=>{if(e.target===$('guideDialog'))$('guideDialog').close();});
 applyMotionPreference();
 render();
+if(state.tradeShipArrived&&!state.tradeShipCompleted)resolveTradeShipInline();
 if(state.rifts?.active)renderRift();
 if(state.islands?.active){renderIsland();$('islandDialog').showModal();startIslandAmbient();}
 
