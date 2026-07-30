@@ -3676,10 +3676,10 @@ function renderHistory() {
     const rowAmbient=historyAmbientMarkup(h);
     const riftLightning=h.type==='rift'?riftLightningMarkup(h):'';
     const abyssPulse=h.type==='abyssal'&&!h.abyssManifestation?abyssalPulseMarkup(h):'';
-    const embeddedFish=renderEmbeddedFishList(h);
     const angusGiftRow=h.mergedHistoryRowId?state.history.find(row=>row.id===h.mergedHistoryRowId):null;
     const angusGiftArtifact=angusGiftRow?.artifactId?state.artifacts.find(artifact=>artifact.id===angusGiftRow.artifactId):null;
     const angusGiftArtifactMarkup=angusGiftArtifact?`<div class="angus-gift-artifact"><span class="angus-gift-artifact-icon">${artifactIconMarkup(artifactVisualName(angusGiftArtifact),angusGiftArtifact.tier,'is-history-icon')}</span><span class="angus-gift-artifact-copy">${artifactCategoryBadge(angusGiftArtifact.tier)}<span><strong>${artifactVisualName(angusGiftArtifact)}</strong>${angusGiftRow.detail?`<small class="history-detail">${angusGiftRow.detail}</small>`:''}</span></span></div>`:'';
+    const embeddedFish=renderEmbeddedFishList(angusGiftRow||h);
     const riftLootResults=renderRiftLootResults(h);
     const islandLootResults=renderIslandLootResults(h);
     const transmutation=renderTransmutation(h);
