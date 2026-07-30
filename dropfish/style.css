@@ -281,6 +281,32 @@ body.reduce-motion .history-item:is(.type-epic,.type-legendary,.type-mythic) .ar
 .angus-gift-artifact-icon { display:grid; place-items:center; width:46px; height:46px; }
 .angus-gift-artifact-copy { display:flex; align-items:center; gap:6px; min-width:0; }
 .angus-gift-artifact-copy > strong { min-width:0; line-height:1.2; }
+.angus-gift-artifact .artifact-history-category {
+  position:relative;
+  display:block;
+  width:68px;
+  height:30px;
+  flex:0 0 68px;
+  overflow:hidden;
+  pointer-events:none;
+}
+.angus-gift-artifact .artifact-history-category img {
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:96px;
+  height:96px;
+  max-width:none;
+  object-fit:contain;
+  transform:translate(-50%,-50%);
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.42));
+}
+.angus-gift-artifact-copy > span:last-child {
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  justify-content:center;
+}
 .history-item.type-tradeShip .history-entity-layout {
   align-items:center;
 }
@@ -2436,6 +2462,18 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
 }
 .gear-bonus-status { grid-template-columns:1fr; }
 .gear-bonus-status.applied { border-color:rgba(95, 211, 255, .58); }
+.gear-bonus-status.applied {
+  gap:1px;
+  margin-top:4px;
+  padding:4px 9px;
+  line-height:1.08;
+}
+.gear-bonus-status.applied > strong { line-height:1.12; }
+.gear-bonus-status.applied > span {
+  margin-top:0;
+  font-size:.75rem;
+  line-height:1.08;
+}
 .gear-bonus-status.pending { opacity:.92; }
 .gear-bonus-status.is-disabled {
   border-color:rgba(255,78,92,.9);
@@ -2569,6 +2607,16 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
 }
 .coin-impact { border-color: rgba(91, 229, 142, .5); background: linear-gradient(100deg,rgba(40,130,78,.17),rgba(26,72,55,.09)); }
 .luminar-impact{border-color:rgba(255,207,84,.42);background:linear-gradient(100deg,rgba(137,94,20,.22),rgba(56,46,20,.1))}.luminar-impact .gear-icon,.luminar-impact strong{color:#ffe08a}.fish-debuff-impact{border-color:rgba(255,78,88,.38);background:rgba(119,17,29,.18)}.fish-debuff-impact .gear-icon,.fish-debuff-impact strong{color:#ff747c}
+.fish-debuff-impact {
+  grid-template-columns:minmax(0,1fr) auto;
+}
+.fish-debuff-impact-copy {
+  min-width:0;
+  text-align:left;
+}
+.fish-debuff-impact .fish-effect-badge-slot {
+  justify-self:end;
+}
 .message-impact{border-color:rgba(92,205,255,.38);background:linear-gradient(100deg,rgba(34,111,145,.19),rgba(22,58,76,.1))}.message-impact .gear-icon,.message-impact strong{color:#9de5ff}.message-impact.is-blocked{border-color:rgba(255,78,88,.38);background:rgba(119,17,29,.18)}.message-impact.is-blocked strong{color:#ff747c}
 .rift-effect-impact { border-color:rgba(121,226,255,.42); background:linear-gradient(100deg,rgba(85,73,190,.2),rgba(32,132,150,.12)); }
 .rift-effect-impact strong { color:#aeefff; }
