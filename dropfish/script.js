@@ -1606,7 +1606,7 @@ function renderRiftLootResults(row) {
 }
 function renderIslandLootResults(row){
   if(row.type!=='island'||!Array.isArray(row.islandLootResults)||!row.islandLootResults.length)return '';
-  const items=row.islandLootResults.map(item=>`<li class="island-history-loot-item type-${item.kind||'item'}"><span class="island-history-loot-copy">${islandLootLabel(item)}</span></li>`).join('');
+  const items=row.islandLootResults.map(item=>`<li class="island-history-loot-item type-${item.kind||'item'}"><span class="island-history-loot-copy">${item.kind==='idol'?`${islandLootIconMarkup(item)} Предмет обмена: Зачарованный идол`:islandLootLabel(item)}</span></li>`).join('');
   return `<ul class="island-history-loot-results">${items}</ul>`;
 }
 function setFishHistoryEaten(fish, eaten=true) {
@@ -2763,7 +2763,7 @@ function islandLootLabel(item){
   if(item.kind==='rod')return `${islandLootIconMarkup(item)} Удочка племени Острого Плавника`;
   if(item.kind==='routeMap')return `${islandLootIconMarkup(item)} Карта последнего маршрута`;
   if(item.kind==='navigator')return `${islandLootIconMarkup(item)} Астральный навигатор`;
-  if(item.kind==='idol')return `${islandLootIconMarkup(item)} Зачарованный идол`;
+  if(item.kind==='idol')return `${islandLootIconMarkup(item)} Зачарованный идол — полностью предотвращает следующую опасность этой экспедиции; при сохранении становится предметом обмена`;
   if(item.kind==='mask')return `${islandLootIconMarkup(item)} Церемониальная маска`;
   if(item.kind==='fadedFragment')return `${islandLootIconMarkup(item)} Фрагмент угасшей реликвии`;
   if(item.kind==='moonShell')return `${islandLootIconMarkup(item)} Раковина лунного прилива`;
@@ -3541,8 +3541,8 @@ function render() {
   state.artifacts.filter(a=>!a.traded).forEach(a=>{const exhausted=a.eyeStatus==='exhausted'||(a.name==='Искра Хаоса'&&a.used),usable=a.name==='Око Шторма'&&!a.used,visualName=artifactVisualName(a);pushGroupedEffect({label:`${artifactIconMarkup(visualName,a.tier,'is-effect-icon')}<span class="effect-chip-copy">${visualName}${exhausted?' (исчерпано)':''}</span>`,kind:a.tier,artifactId:a.id,usable,exhausted},`${visualName}:${usable?'usable':exhausted?'exhausted':'active'}`);});
   state.debuffs.forEach(d=>pushGroupedEffect({label:`${debuffIconMarkup(d.name,'is-effect-icon')}<span class="effect-chip-copy">${d.name}</span>`,kind:'debuff',exhausted:!d.active},`${d.name}:${d.active?'active':'exhausted'}`));
   const tradeCounts=tradeItemCounts();
-  const activeTradeEffectKeys=new Set(['moonTideShell','firstWaterFlask','fadedRelicFragment']);
-  ISLAND_TRADE_ITEMS.filter(item=>activeTradeEffectKeys.has(item.key)).forEach(item=>{const icon=tradeItemIconMarkup(item,'is-effect-icon');if(tradeCounts[item.key])effects.push({label:`${icon} ${item.name} ×${tradeCounts[item.key]}${item.key==='moonTideShell'&&state.islands.moonShellActiveId?' • активно':''}`,kind:'trade',usableTradeKey:['moonTideShell','firstWaterFlask'].includes(item.key)&&!(item.key==='moonTideShell'&&state.islands.moonShellActiveId)});});
+  const activeTradeEffectKeys=new Set(['moonTideShell','firstWaterFlask','fadedRelicFragment','enchantedIdol']);
+  ISLAND_TRADE_ITEMS.filter(item=>activeTradeEffectKeys.has(item.key)).forEach(item=>{const icon=tradeItemIconMarkup(item,'is-effect-icon');if(tradeCounts[item.key])effects.push({label:`${icon}<span class="effect-chip-copy">${item.name} ×${tradeCounts[item.key]}${item.key==='enchantedIdol'?' • предмет обмена':item.key==='moonTideShell'&&state.islands.moonShellActiveId?' • активно':''}</span>`,kind:'trade',usableTradeKey:['moonTideShell','firstWaterFlask'].includes(item.key)&&!(item.key==='moonTideShell'&&state.islands.moonShellActiveId)});});
   ensureRifts();
   state.rifts.temporaryEffects.filter(e=>e.casts>0).forEach(e=>{
     const effectName=String(e.name||'');
