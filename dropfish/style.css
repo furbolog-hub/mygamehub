@@ -4590,8 +4590,8 @@ html body[class] .merged-weather-card .lake-stat-strip{
   filter:saturate(.4) brightness(.8);
 }
 .embedded-fish-item.is-island-displaced :is(.embedded-fish-icon,.embedded-fish-title,.embedded-fish-tags) {
-  opacity:.78;
-  filter:grayscale(.78);
+  opacity:.72;
+  filter:saturate(.5) brightness(.76);
 }
 .embedded-fish-item.is-island-traded :is(.embedded-fish-icon,.embedded-fish-title,.embedded-fish-tags) {
   opacity:.72;
@@ -4600,6 +4600,50 @@ html body[class] .merged-weather-card .lake-stat-strip{
 .history-item:is(.is-island-displaced,.is-island-traded,.is-abyss-lost) {
   opacity:1;
   filter:none;
+}
+
+/* Дочерний улов Ангуса: категория рыбы, название и статус касатки составляют
+   одну компактную строку; перенос сохраняет минимальный межстрочный интервал. */
+.history-item.type-angus .embedded-fish-main {
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  align-items:center;
+  gap:5px;
+}
+.history-item.type-angus .embedded-fish-name {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:1px 5px;
+  min-width:0;
+  line-height:1.02;
+}
+.history-item.type-angus .embedded-fish-inline-status {
+  display:inline-flex;
+  align-items:center;
+  line-height:1;
+}
+.history-item.type-angus .embedded-fish-inline-status .fish-effect-badge { margin:0; }
+
+.island-route-warning {
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+}
+.island-route-warning .weather-warning-icon { flex:0 0 auto; }
+
+/* Вытесненный улов остаётся затемнённым, но визуально читается как негативный
+   эффект, а не как нейтральная серая отключённая строка. */
+.history-item.is-island-displaced,
+.embedded-fish-item.is-island-displaced {
+  background:linear-gradient(135deg,rgba(92,25,31,.52),rgba(48,19,24,.7)) !important;
+  border-color:rgba(255,116,124,.3) !important;
+  color:#e59aa0 !important;
+}
+.history-item.is-island-displaced > strong,
+.history-item.is-island-displaced .history-detail,
+.embedded-fish-item.is-island-displaced .embedded-fish-name {
+  color:#e59aa0 !important;
 }
 
 /* Основная иконка хлама равна по визуальному размеру обычной иконке рыбы. */
