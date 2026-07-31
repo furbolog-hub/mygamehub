@@ -1555,7 +1555,7 @@ function renderEmbeddedFishList(row) {
          ? `<span class="island-colossus-side-badges"><span class="island-row-origin">${fishCategoryIcon('island','Островная','is-island-row')}</span>${fishEffectBadge('unstable-presence','Нестабильное присутствие')}</span>`
          : sideStatus;
        const inlineTags=islandFishKind(fish)?tags:'',trailingTags=islandFishKind(fish)?'':tags;
-       return `<li class="embedded-fish-item${eaten?' is-eaten':''}${stolen?' is-stolen':''}${displaced?' is-island-displaced':''}${traded?' is-island-traded':''}${fish.abyssLost||fish.riftSacrificeLabel?' has-abyss-outcome':''}${colossusClass}${riftIcon?' has-rift-fish-icon':''}"><div class="embedded-fish-main"><span class="embedded-fish-icon">${riftIcon||icon}</span><span class="embedded-fish-name">${riftBadges}<span class="embedded-fish-title">${fishTitleText(fish)}</span>${fishSizeMarker(fish)}${fishInlineStatusIcon({eaten,stolen,riftSacrificeLabel:fish.riftSacrificeLabel,arcade:Boolean(fish.arcadeCatch),fishSource:fish.source},fish)}${abyssOutcome}${sacrificeOutcome}${displacedOutcome}${inlineTags}</span>${islandColossusStatus?`<span class="embedded-fish-status">${islandColossusStatus}</span>`:''}</div>${trailingTags}${renderIslandDangerImpact(fish)}${renderMegalodonImpact(fish)}${renderSingularityImpact(fish)}${renderRiftEffectImpact(fish)}${renderAbyssFishImpacts(fish)}${renderEssenceImpact(fish)}${renderCoinImpacts(fish)}${renderLuminarImpacts(fish)}${renderDebuffWeightImpact(fish)}${renderMessageImpact(fish)}${renderFlipperImpact(fish)}${renderSiphonophoreImpact(fish,'pending')}${renderSparkChaosImpact(fish)}${renderSiphonophoreImpact(fish,'trash')}${renderFirstWaterImpact(fish)}${renderMoonShellImpact(fish)}${renderMaskImpact(fish)}${renderScubaImpact(fish)}${renderDiceImpact(fish)}${renderFinalOrcaImpact(fish)}</li>`;
+       return `<li class="embedded-fish-item${eaten?' is-eaten':''}${stolen?' is-stolen':''}${displaced?' is-island-displaced':''}${traded?' is-island-traded':''}${fish.abyssLost||fish.riftSacrificeLabel?' has-abyss-outcome':''}${colossusClass}${riftIcon?' has-rift-fish-icon':''}"><div class="embedded-fish-main"><span class="embedded-fish-icon">${riftIcon||icon}</span><span class="embedded-fish-name">${riftBadges}<span class="embedded-fish-title">${fishTitleText(fish)}</span>${fishSizeMarker(fish)}${fishInlineStatusIcon({eaten,stolen,riftSacrificeLabel:fish.riftSacrificeLabel,arcade:Boolean(fish.arcadeCatch),fishSource:fish.source},fish)}${abyssOutcome}${sacrificeOutcome}${displacedOutcome}${inlineTags}</span>${islandColossusStatus?`<span class="embedded-fish-status">${islandColossusStatus}</span>`:''}</div>${trailingTags}${renderIslandDangerImpact(fish)}${renderMegalodonImpact(fish)}${renderSingularityImpact(fish)}${renderRiftEffectImpact(fish)}${renderAbyssFishImpacts(fish)}${renderEssenceImpact(fish)}${renderGoldenHourImpact(fish)}${renderLeviathanImpact(fish)}${renderCoinImpacts(fish)}${renderLuminarImpacts(fish)}${renderDebuffWeightImpact(fish)}${renderMessageImpact(fish)}${renderFlipperImpact(fish)}${renderSiphonophoreImpact(fish,'pending')}${renderSparkChaosImpact(fish)}${renderSiphonophoreImpact(fish,'trash')}${renderFirstWaterImpact(fish)}${renderMoonShellImpact(fish)}${renderMaskImpact(fish)}${renderScubaImpact(fish)}${renderDiceImpact(fish)}${renderFinalOrcaImpact(fish)}</li>`;
     })
     .join('');
   return `<ul class="embedded-fish-list">${items}</ul>`;
@@ -2367,8 +2367,11 @@ function addRiftLoot(...items){const r=state.rifts.active;if(!r)return;items.fla
 function riftLootText(item){
   if(item.kind==='ghost')return `${riftRelicIcon('Фантомный осколок','is-loot-icon')} Неопознанный призрачный улов${item.count>1?` ×${item.count}`:''}`;
   if(item.kind==='fish')return `${riftLootCategoryIcons(item)} рыба${item.count>1?` ×${item.count}`:''}`;
-  if(item.kind==='relic')return `${riftRelicIcon(item.name,'is-loot-icon')} ${item.name}${item.count>1?` ×${item.count}`:''}`;
-  if(item.kind==='effect')return `${riftLootEffectIcon(item,'is-loot-icon')} ${item.name}`;
+  if(item.kind==='relic')return `<span class="rift-loot-entity">${riftRelicIcon(item.name,'is-loot-icon')}<span class="rift-loot-entity-copy">${item.name}${item.count>1?` ×${item.count}`:''}</span></span>`;
+  if(item.kind==='effect'){
+    const [title,...detail]=String(item.name||'').split(':');
+    return `<span class="rift-loot-entity is-effect"><span class="rift-loot-entity-copy"><strong>${title}${detail.length?':':''}</strong>${detail.length?`<small>${detail.join(':').trim()}</small>`:''}</span></span>`;
+  }
   if(item.kind==='trade')return `${riftTradeLootIcon(item,'is-loot-icon')} ${item.name||'Предмет обмена'}${item.count>1?` ×${item.count}`:''}`;
   if(item.kind==='shard')return `${item.name==='Осколок сингулярности'?riftRelicIcon('Осколок сингулярности','is-loot-icon'):riftRelicIcon('Сердце бездны','is-loot-icon')} ${item.name}${item.count>1?` ×${item.count}`:''}`;
   return item.name||item.kind;
@@ -2379,6 +2382,7 @@ function riftChoiceButton(label,value,description=''){return `<button type="butt
 function setRiftChoices(items,handler){
   const box=$('riftChoices'),bound=state.rifts?.active?{id:state.rifts.active.id,type:state.rifts.active.type}:null;
   box.innerHTML=items.join('');
+  box.classList.remove('is-sacrifice-picker');
   box.classList.toggle('is-dense',items.length>6);
   box.classList.toggle('is-ultra-dense',items.length>12);
   box.dataset.riftId=bound?.id||'';box.dataset.riftType=bound?.type||'';
@@ -2513,7 +2517,7 @@ function riftSacrificeQuality(f){if(!f)return 0;if(isRiftFish(f)){if(f.rarity===
 function availableSacrificeFish(predicate=()=>true){return state.fish.filter(f=>!f.removed&&!f.tradeFish&&!f.riftSacrificed&&predicate(f));}
 function takeSacrifice(id,r){const f=state.fish.find(x=>x.id===id);if(!f||f.removed||f.tradeFish)return null;f.riftSacrificed=true;f.removed=true;r.sacrifices.push({id:f.id,name:f.name,category:f.category,rarity:f.rarity,riftFish:isRiftFish(f),source:f.source,weight:f.weight});setFishHistorySacrificed(f,r.type);return f;}
 function selectSacrifice(r,prompt,predicate,onDone,allowRisk=true){
-  const fish=availableSacrificeFish(predicate);r.message=prompt;renderRift();const items=fish.map(f=>riftChoiceButton(`${capitalize(f.name)} — ${kg(f.weight)}`,f.id));if(allowRisk)items.push(riftChoiceButton('Не отдавать ничего','none','Продолжить с повышенным риском'));setRiftChoices(items.length?items:[riftChoiceButton('Подходящей рыбы нет — рискнуть','none')],v=>onDone(v==='none'?null:takeSacrifice(v,r)));
+  const fish=availableSacrificeFish(predicate);r.message=prompt;renderRift();const items=fish.map(f=>riftChoiceButton(`${capitalize(f.name)} — ${kg(f.weight)}`,f.id));if(allowRisk)items.push(riftChoiceButton('Не отдавать ничего','none','Продолжить с повышенным риском'));setRiftChoices(items.length?items:[riftChoiceButton('Подходящей рыбы нет — рискнуть','none')],v=>onDone(v==='none'?null:takeSacrifice(v,r)));$('riftChoices')?.classList.add('is-sacrifice-picker');
 }
 function beginRift(){const r=state.rifts.active;if(!r)return;r.status='active';r.depth=1;startRiftAmbient();runRiftStage(r);}
 function continueRift(){const r=state.rifts.active;if(!r)return;if(r.status==='offer'){beginRift();return;}if(r.awaitingChoice)return;if(r.resumeInterruptedStage){delete r.resumeInterruptedStage;runRiftStage(r);return;}if(r.type==='singularity'&&r.depth===3){r.depth=4;runRiftStage(r);return;}if(r.depth>=3){exitRift();return;}r.depth++;runRiftStage(r);}

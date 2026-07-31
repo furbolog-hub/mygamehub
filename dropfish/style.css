@@ -4790,3 +4790,142 @@ body.reduce-motion .history-item.type-rift .rift-relic-name-shine {
   object-fit:contain;
   transform:none;
 }
+
+/* Test UI polish: compact island/rift loot and keep every mobile choice reachable. */
+.island-card .island-loot-item :is(.is-loot-icon,.trade-item-icon),
+.island-card .island-loot-item :is(.is-loot-icon,.trade-item-icon) img {
+  width:28px;
+  height:28px;
+  max-width:28px;
+  max-height:28px;
+}
+.history-item.type-island .embedded-fish-main {
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) auto;
+  align-items:center;
+  gap:5px;
+}
+.history-item.type-island .embedded-fish-icon {
+  display:grid;
+  place-items:center;
+  width:44px;
+  min-width:44px;
+}
+.history-item.type-island .embedded-fish-name {
+  min-width:0;
+  line-height:1.02;
+  text-align:center;
+  overflow-wrap:normal;
+  word-break:normal;
+  hyphens:none;
+}
+.history-item.type-island .embedded-fish-title {
+  display:inline;
+  line-height:1.02;
+}
+.history-item.type-island .embedded-fish-status {
+  align-self:center;
+}
+.history-item.type-island .embedded-fish-item {
+  padding:4px 7px;
+}
+.history-item.type-island .embedded-fish-item.is-eaten .embedded-fish-icon .fish-eaten-main-icon,
+.history-item.type-island .embedded-fish-item.is-eaten .embedded-fish-icon .fish-status-icon {
+  width:42px;
+  height:42px;
+}
+
+.rift-card.is-awaiting-choice {
+  justify-content:flex-start;
+  padding-bottom:12px;
+  overflow-y:auto;
+  scrollbar-width:thin;
+}
+.rift-card.is-awaiting-choice .rift-monitor {
+  margin-top:clamp(125px,18dvh,190px);
+}
+.rift-card.is-awaiting-choice .rift-choices {
+  position:static;
+  width:94%;
+  margin:0;
+  transform:none;
+  overflow:visible;
+}
+.rift-card.is-awaiting-choice .rift-choices.is-sacrifice-picker {
+  display:flex;
+  flex-wrap:nowrap;
+  gap:6px;
+  padding:6px 8px 9px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x proximity;
+  overscroll-behavior-x:contain;
+  scrollbar-width:thin;
+  touch-action:pan-x;
+  -webkit-overflow-scrolling:touch;
+}
+.rift-card.is-awaiting-choice .rift-choices.is-sacrifice-picker button {
+  flex:0 0 min(44vw,185px);
+  min-height:42px;
+  scroll-snap-align:start;
+}
+.rift-loot li {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:42px;
+  text-align:center;
+}
+.rift-loot-entity {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-width:0;
+}
+.rift-loot-entity-copy {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  line-height:1.02;
+  text-align:center;
+}
+.rift-loot-entity-copy strong,
+.rift-loot-entity-copy small {
+  display:block;
+  margin:0;
+  line-height:1.02;
+}
+.rift-loot-entity-copy small {
+  color:inherit;
+  font-size:inherit;
+}
+.rift-loot-entity .is-loot-icon {
+  flex:0 0 30px;
+  width:30px;
+  height:30px;
+}
+.history-item.type-rift .embedded-fish-name .fish-category-icon[src*="/fish-categories/rift.webp"] {
+  display:none;
+}
+.history-item.type-rift .rift-fuzzy-source {
+  visibility:visible!important;
+  white-space:normal!important;
+}
+.history-item.type-rift .rift-fuzzy-canvas {
+  display:none!important;
+}
+@media(max-width:560px) {
+  .history-item.type-island .embedded-fish-main {
+    grid-template-columns:40px minmax(0,1fr) auto;
+  }
+  .history-item.type-island .embedded-fish-icon {
+    width:40px;
+    min-width:40px;
+  }
+  .rift-card.is-awaiting-choice .rift-monitor {
+    margin-top:clamp(115px,17dvh,165px);
+  }
+}
