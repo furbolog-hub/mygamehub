@@ -4799,6 +4799,37 @@ body.reduce-motion .history-item.type-rift .rift-relic-name-shine {
   max-width:28px;
   max-height:28px;
 }
+.island-card .island-loot-item {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  max-width:min(285px,78vw);
+  border-radius:10px;
+  white-space:normal;
+}
+.island-loot-purpose-copy {
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  justify-content:center;
+  gap:1px;
+  line-height:1.08;
+}
+.island-loot-purpose-copy strong {
+  font-size:.68rem;
+  line-height:1.08;
+}
+.island-loot-purpose-copy small {
+  color:#c8e4eb;
+  font-size:.58rem;
+  line-height:1.12;
+}
+.island-history-loot-copy .island-loot-purpose-copy {
+  gap:1px;
+}
+.island-history-loot-copy .island-loot-purpose-copy small {
+  color:#b9d8df;
+}
 .history-item.type-island .embedded-fish-main {
   display:grid;
   grid-template-columns:44px minmax(0,1fr) auto;
