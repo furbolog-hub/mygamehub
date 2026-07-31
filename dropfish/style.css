@@ -842,6 +842,10 @@ body.reduce-motion .golden-hour-impact .gold-add {
 .guide-content p { margin:0; color:#d1dce5; }
 .choice-buttons { display:grid; gap:9px; margin-top:16px; }
 .choice-buttons button { min-height:48px; border:0; border-radius:14px; cursor:pointer; font-weight:750; color:#06202e; background:linear-gradient(135deg,var(--accent),var(--accent-2)); }
+.choice-buttons button.choice-recommended {
+  outline:2px solid rgba(180,255,216,.72);
+  box-shadow:0 0 0 3px rgba(74,225,155,.12),0 8px 20px rgba(21,160,112,.2);
+}
 .choice-buttons .choice-cancel-btn { color:#d9e8f2; border:1px solid rgba(203,230,245,.2); background:rgba(255,255,255,.08); }
 .choice-buttons .choice-back-btn { color:#c9eaff; border:1px solid rgba(111,207,255,.28); background:rgba(45,119,157,.14); }
 .toast { position:fixed; z-index:99; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translate(-50%,30px); opacity:0; width:min(90%,520px); pointer-events:none; padding:12px 16px; border-radius:15px; background:#f8fbff; color:#112330; box-shadow:var(--shadow); transition:.22s ease; text-align:center; font-weight:700; }
@@ -2837,6 +2841,23 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
 }
 .history-item.type-fish > .trade-item-find { margin-top:2px; }
 .trade-item-find strong { color:#ff8fdb; text-shadow:none; animation:tradeItemShimmer 3.8s ease-in-out infinite; }
+.trade-item-find-count {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:27px;
+  margin-left:5px;
+  padding:1px 6px;
+  border:1px solid rgba(255,151,222,.42);
+  border-radius:999px;
+  color:#ffd4f1;
+  background:rgba(191,51,143,.24);
+  font-size:.72rem;
+  line-height:1.25;
+  font-weight:950;
+  text-decoration:none;
+  white-space:nowrap;
+}
 .trade-item-find.is-traded {
   color:#89949b;
   border-color:rgba(145,156,164,.2);
