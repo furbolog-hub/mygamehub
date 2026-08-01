@@ -1399,6 +1399,7 @@ function renderFlipperImpact(fish) {
   const gear=bonusIconMarkup('Ласты','is-compact-icon');
   const nautilus=impact.nautilus?' <span class="gear-nautilus">🛳️ усиление Штурвала</span>':'';
   const cancelled=impact.cancelledByOctopus;
+  const excludedByFishLoss=fishIsEaten(fish)||Boolean(fish.abyssLost)||Boolean(fish.riftSacrificeLabel);
   const cancelledNote=cancelled?'<small class="flipper-cancelled-note">Этот вес не входит в итоговый расчёт <span class="flipper-cancelled-source">(Осьминог)</span></small>':'';
   const storedFactors=Array.isArray(impact.bonusFactors)?impact.bonusFactors.map(item=>item.factor):[];
   const legacyFactor=impact.count>1?Number(Math.pow(impact.factor,1/impact.count).toFixed(3)):impact.factor;
@@ -1406,7 +1407,7 @@ function renderFlipperImpact(fish) {
   const factorBreakdown=individualFactors.length>1
     ?`${individualFactors.map(value=>`Ласты ×${value}`).join(' · ')} <span class="flipper-total-factor">= общий ×${impact.factor}</span>`
     :`Ласты ×${individualFactors[0]}`;
-  return `<div class="gear-impact flipper-impact${cancelled?' is-cancelled':''}"><span class="gear-icon">${gear}</span><span><strong>${factorBreakdown}</strong>${nautilus} <span class="gear-arrow">→</span> <span class="gear-target">${capitalize(fish.name)}</span><small>${kg(impact.before)} × ${impact.factor} = <b class="gear-result">${kg(impact.after)}</b> • каждая вторая подходящая рыба</small>${cancelledNote}</span></div>`;
+  return `<div class="gear-impact flipper-impact${cancelled?' is-cancelled':''}${excludedByFishLoss?' is-excluded-by-fish-loss':''}"><span class="gear-icon">${gear}</span><span><strong>${factorBreakdown}</strong>${nautilus} <span class="gear-arrow">→</span> <span class="gear-target">${capitalize(fish.name)}</span><small>${kg(impact.before)} × ${impact.factor} = <b class="gear-result">${kg(impact.after)}</b> • каждая вторая подходящая рыба</small>${cancelledNote}</span></div>`;
 }
 
 function renderSparkChaosImpact(fish) {

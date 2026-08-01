@@ -1230,7 +1230,9 @@ $('board').addEventListener('click',event=>{
 
 $('nextBtn').addEventListener('click',goNext);
 $('backLocationBtn').addEventListener('click',goBack);
+/* PUBLIC_STRIP_DEBUG_START */
 $('newGameBtn').addEventListener('click',resetGame);
+/* PUBLIC_STRIP_DEBUG_END */
 $('resultCloseBtn').addEventListener('click',()=>{state.resultDialogDismissed=true; $('resultDialog').close(); save(); render();});
 $('resultsBtn')?.addEventListener('click',()=>{ if(state.finalResult) showResult(); });
 $('soundToggle')?.addEventListener('click',toggleSounds);

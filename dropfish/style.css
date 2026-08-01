@@ -2542,6 +2542,20 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
   white-space:nowrap;
 }
 .flipper-impact.is-cancelled .flipper-total-factor { color:#ff7d89; }
+.flipper-impact.is-excluded-by-fish-loss {
+  border-color:rgba(255,76,91,.78);
+  background:linear-gradient(100deg,rgba(126,15,29,.58),rgba(38,10,17,.72));
+  box-shadow:inset 0 0 18px rgba(255,45,66,.18),0 0 10px rgba(255,35,55,.1);
+  color:#d9959c;
+}
+.flipper-impact.is-excluded-by-fish-loss > :is(.gear-icon,span:last-child) {
+  opacity:.72;
+  filter:saturate(.48) brightness(.78);
+}
+.flipper-impact.is-excluded-by-fish-loss :is(.gear-arrow,.gear-result,.flipper-total-factor) {
+  color:#ff6877;
+  text-shadow:0 0 8px rgba(255,38,61,.32);
+}
 .flipper-bonus-status { margin-top:.2rem; padding:.38rem .65rem; gap:.12rem; }
 .flipper-bonus-status span { margin-top:.04rem; line-height:1.22; }
 @media (max-width:560px){
@@ -4748,6 +4762,30 @@ html body[class] .merged-weather-card .lake-stat-strip{
   background:
     linear-gradient(110deg,rgba(114,101,180,.25),rgba(56,126,157,.2));
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
+}
+.history-item.type-rift .embedded-fish-main {
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) auto;
+  align-items:center;
+  gap:5px;
+  flex-wrap:nowrap;
+}
+.history-item.type-rift .embedded-fish-icon {
+  display:grid;
+  place-items:center;
+  width:44px;
+  min-width:44px;
+}
+.history-item.type-rift .embedded-fish-name {
+  min-width:0;
+  line-height:1.02;
+}
+.history-item.type-rift .embedded-fish-status {
+  align-self:center;
+  margin-left:0;
+}
+.history-item.type-rift .embedded-fish-item {
+  padding:4px 7px;
 }
 .history-item.type-rift .rift-loot-result-item {
   border-color:rgba(190,210,255,.24);
