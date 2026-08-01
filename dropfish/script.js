@@ -3504,6 +3504,7 @@ function finishGame() {
   TelegramApp?.HapticFeedback?.notificationOccurred?.('success');
   const payload={game:'dropfish',totalWeight:total,achievements:earned,finishedAt:ended.toISOString(),casts:state.castClicks};
   try { if (TelegramApp?.initData && typeof TelegramApp.sendData==='function') TelegramApp.sendData(JSON.stringify(payload)); } catch(e){ console.warn('sendData недоступен для этого способа запуска',e); }
+  void window.PublicSession?.finish?.(payload);
   saveDailyState();
 }
 

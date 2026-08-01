@@ -1025,7 +1025,9 @@ function finishSession(){
   const trackedBombLoss=Math.max(0,Math.round(Number(state.bombLossTotal)||0));
   const bombLoss=inferredBombLoss;
   state.finalResult={baseGross,gross,positiveGain:Math.max(0,gross-baseGross),before,bombLoss,trackedBombLoss,beetles:state.beetles,pct,loss,final,finishedAt,keyExchangeHarvest:state.keyExchangeHarvest||0,moleStolenTotal:moleLoss,moleStolenByLocation:Array.isArray(state.moleStolenByLocation)?state.moleStolenByLocation:[0,0,0]};
-  state.resultDialogDismissed=false; state.viewLocationIndex=state.locationIndex; save(); showResult();
+  state.resultDialogDismissed=false; state.viewLocationIndex=state.locationIndex; save();
+  void window.PublicSession?.finish?.(state.finalResult);
+  showResult();
 }
 function showResult(){
   const r=state.finalResult; if(!r) return;
