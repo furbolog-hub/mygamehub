@@ -4082,6 +4082,7 @@ function openGuide(tab='Погода') {
 
 
 
+/* PUBLIC_STRIP_DEBUG_START */
 function buildDropfishDebugPanel() {
   const grid=$('dropfishDebugGrid');
   const dialog=$('dropfishDebugDialog');
@@ -4187,6 +4188,7 @@ function buildDropfishDebugPanel() {
 
 
 buildDropfishDebugPanel();
+/* PUBLIC_STRIP_DEBUG_END */
 $('castBtn').addEventListener('click',castLine);
 $('historyList').addEventListener('click',event=>{
   const navigator=event.target.closest('[data-navigator-lock]');if(navigator){activateAstralNavigator(navigator.dataset.navigatorLock,navigator.dataset.navigatorFish);return;}

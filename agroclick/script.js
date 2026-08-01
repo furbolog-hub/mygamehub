@@ -1189,6 +1189,7 @@ function renderInventory(view=currentView()){
   document.querySelectorAll('[data-inv-type]').forEach(el=>el.addEventListener('click',()=>el.dataset.invType==='key'?useKey():useInventory(el.dataset.invType)));
 }
 
+/* PUBLIC_STRIP_DEBUG_START */
 function buildDebug(){
   const actions=[
     ['Показать поле',()=>{state.board.forEach(c=>{if(!c.opened)c.revealed=true});render();}],
@@ -1205,6 +1206,7 @@ function buildDebug(){
   $('debugGrid').innerHTML=actions.map((a,i)=>`<button type="button" data-debug="${i}">${a[0]}</button>`).join('');
   document.querySelectorAll('[data-debug]').forEach(b=>b.onclick=()=>{actions[Number(b.dataset.debug)][1]();save();});
 }
+/* PUBLIC_STRIP_DEBUG_END */
 
 // Надёжно перехватываем тап по кролику до того, как событие достигнет кнопки грядки.
 // Делегирование на постоянном контейнере продолжает работать после каждого renderBoard().
@@ -1232,11 +1234,16 @@ $('newGameBtn').addEventListener('click',resetGame);
 $('resultCloseBtn').addEventListener('click',()=>{state.resultDialogDismissed=true; $('resultDialog').close(); save(); render();});
 $('resultsBtn')?.addEventListener('click',()=>{ if(state.finalResult) showResult(); });
 $('soundToggle')?.addEventListener('click',toggleSounds);
+/* PUBLIC_STRIP_DEBUG_START */
 $('debugToggle').addEventListener('click',()=>$('debugDialog').showModal());
+/* PUBLIC_STRIP_DEBUG_END */
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).close()));
 initGuideDialog();
 renderSoundToggle();
-buildDebug(); render(); save();
+/* PUBLIC_STRIP_DEBUG_START */
+buildDebug();
+/* PUBLIC_STRIP_DEBUG_END */
+render(); save();
 
 
 function resolveStatusAssetKey(row={}){
