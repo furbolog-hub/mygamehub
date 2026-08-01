@@ -1525,6 +1525,31 @@ function transmuteTrash(trash, source='Глубоководное нечто') {
   return fish;
 }
 
+function syncDeepThingConversionDetails() {
+  const counter=`Превращено единиц хлама в гигантов: ${state.deepThingConvertedCount}`;
+  state.history.forEach(row=>{
+    if(row.type!=='legendary'||!['Глубоководное нечто','Штурвал Наутилуса'].includes(row.text))return;
+    const detail=String(row.detail||'').trim();
+    if(/Превращено единиц хлама в гигантов: \d+/.test(detail)){
+      row.detail=detail.replace(/Превращено единиц хлама в гигантов: \d+/,counter);
+    }else if(detail.startsWith('(')&&detail.endsWith(')')){
+      row.detail=`${detail.slice(0,-1)}${detail.length>2?' • ':''}${counter})`;
+    }else{
+      row.detail=`(${[detail,counter].filter(Boolean).join(' • ')})`;
+    }
+  });
+}
+
+function renderNautilusSummon(row) {
+  if(row?.type!=='legendary'||row.text!=='Штурвал Наутилуса')return '';
+  return `<div class="nautilus-summon-chain">
+    <span class="nautilus-summon-source">${artifactIconMarkup('Штурвал Наутилуса','legendary','is-summon-icon')}</span>
+    <span class="nautilus-summon-arrow" aria-hidden="true">→</span>
+    <span class="nautilus-summon-target">${artifactIconMarkup('Глубоководное нечто','legendary','is-summon-icon')}</span>
+    <span class="nautilus-summon-copy"><strong>Призвано Глубоководное нечто</strong><small>Трансмутировано хлама: ${state.deepThingConvertedCount}</small></span>
+  </div>`;
+}
+
 function renderEmbeddedFishList(row) {
   if (row.transmutation) return '';
   if (!Array.isArray(row.embeddedFishIds) || !row.embeddedFishIds.length) return '';
@@ -1973,6 +1998,7 @@ function processTrash(forcedName=null) {
 
   if (state.deepThingActive) {
     state.deepThingConvertedCount++;
+    syncDeepThingConversionDetails();
     transmuteTrash(trash,state.nautilus?'Штурвал Наутилуса / Глубоководное нечто':'Глубоководное нечто');
   }
 }
@@ -2289,8 +2315,8 @@ function activateDeepThing(source='Глубоководное нечто') {
   state.deepThingActive=true;
   const items=state.trash.filter(t=>!t.converted);
   state.deepThingConvertedCount+=items.length;
+  syncDeepThingConversionDetails();
   items.forEach(item=>transmuteTrash(item,source));
-  appendLatestHistoryDetail('legendary',`Превращено единиц хлама в гигантов: ${items.length}`);
 }
 function activateMegalodon() {
   const recoverableEaten=state.eaten.filter(f=>!f.islandColossus),recoveredIds=new Set([...state.stolen,...recoverableEaten,...state.fish.filter(f=>f.debuffLimited&&!f.islandColossus)].map(f=>f.id));
@@ -3697,6 +3723,7 @@ function renderHistory() {
     const angusGiftRow=h.mergedHistoryRowId?state.history.find(row=>row.id===h.mergedHistoryRowId):null;
     const angusGiftArtifact=angusGiftRow?.artifactId?state.artifacts.find(artifact=>artifact.id===angusGiftRow.artifactId):null;
     const angusGiftArtifactMarkup=angusGiftArtifact?`<div class="angus-gift-artifact"><span class="angus-gift-artifact-icon">${artifactIconMarkup(artifactVisualName(angusGiftArtifact),angusGiftArtifact.tier,'is-history-icon')}</span><span class="angus-gift-artifact-copy">${artifactCategoryBadge(angusGiftArtifact.tier)}<span><strong>${artifactVisualName(angusGiftArtifact)}</strong>${angusGiftRow.detail?`<small class="history-detail">${angusGiftRow.detail}</small>`:''}</span></span></div>`:'';
+    const nautilusSummon=renderNautilusSummon(angusGiftRow||h);
     const embeddedFish=renderEmbeddedFishList(angusGiftRow||h);
     const riftLootResults=renderRiftLootResults(h);
     const islandLootResults=renderIslandLootResults(h);
@@ -3782,10 +3809,10 @@ function renderHistory() {
       trashThreadImpact||firstWaterImpact||moonShellImpact||maskImpact||scubaImpact||diceImpact||
       finalOrcaImpact||gearBonusStatus||scubaBonusStatus||tradeItemFind||abyssObjectChanges||
       tradeShipHistory||coinAction||abyssDecision||expeditionAction||navigatorAction||transmutation||
-      angusGiftArtifactMarkup||embeddedFish||islandLootResults||riftLootResults
+      angusGiftArtifactMarkup||nautilusSummon||embeddedFish||islandLootResults||riftLootResults
     );
     const abyssClass=abyssPersonality?` abyss-${abyssPersonality}`:'';
-    return `<li data-history-id="${h.id}" class="history-item type-${h.type} is-compact-row${rowHasExtendedContent?' has-extended-content':''}${islandCompletion?' is-island-completion':''}${h.threadRemoved?' is-thread-removed':''}${h.eaten&&!fish?.mythicSkeleton?' is-eaten':''}${fish?.mythicSkeleton&&!fish?.islandSkeleton?' is-chaos-skeleton':''}${fish?.islandSkeleton?' is-island-skeleton':''}${h.stolen?' is-stolen':''}${h.abyssLost?' is-abyss-lost':''}${h.islandDisplaced?' is-island-displaced':''}${h.islandTraded?' is-island-traded':''}${expeditionItem&&expeditionItem.status!=='active'?' is-expedition-inactive':''}${h.abyssManifestation?' is-abyss-manifestation':''}${h.abyssDecision?' has-abyss-decision':''}${h.transmutation?' is-transmutation':''}${weatherClass}${orcaHistoryClass}${abyssClass}${h.id===lastAnimatedHistoryId?' is-new':''}">${riftLightning}${abyssPulse}${riftOriginIcon}${artifactTierBadge}<strong>${mainLine}</strong>${separateHistoryDetail}${impactContent?`<small class="history-impact-note${h.islandDisplaced||fish?.islandSkeleton?' island-displaced-note':''}${h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?' orca-eaten-hint':''}${h.abyssLost?' abyss-negative-hint':''}">${impactContent}</small>`:''}${islandDangerImpact}${megalodonImpact}${singularityImpact}${riftEffectImpact}${abyssFishImpacts}${goldenHourImpact}${leviathanImpact}${coinImpacts}${luminarImpacts}${debuffWeightImpact}${messageImpact}${flipperImpact}${pendingThreadImpact}${sparkChaosImpact}${trashThreadImpact}${firstWaterImpact}${moonShellImpact}${maskImpact}${scubaImpact}${diceImpact}${essenceImpact}${finalOrcaImpact}${gearBonusStatus}${scubaBonusStatus}${tradeItemFind}${abyssObjectChanges}${tradeShipHistory}${coinAction}${abyssDecision}${compactExpeditionHeader?'':expeditionAction}${navigatorAction}${transmutation}${angusGiftArtifactMarkup}${embeddedFish}${islandLootResults}${riftLootResults}</li>`;
+    return `<li data-history-id="${h.id}" class="history-item type-${h.type} is-compact-row${rowHasExtendedContent?' has-extended-content':''}${islandCompletion?' is-island-completion':''}${h.threadRemoved?' is-thread-removed':''}${h.eaten&&!fish?.mythicSkeleton?' is-eaten':''}${fish?.mythicSkeleton&&!fish?.islandSkeleton?' is-chaos-skeleton':''}${fish?.islandSkeleton?' is-island-skeleton':''}${h.stolen?' is-stolen':''}${h.abyssLost?' is-abyss-lost':''}${h.islandDisplaced?' is-island-displaced':''}${h.islandTraded?' is-island-traded':''}${expeditionItem&&expeditionItem.status!=='active'?' is-expedition-inactive':''}${h.abyssManifestation?' is-abyss-manifestation':''}${h.abyssDecision?' has-abyss-decision':''}${h.transmutation?' is-transmutation':''}${weatherClass}${orcaHistoryClass}${abyssClass}${h.id===lastAnimatedHistoryId?' is-new':''}">${riftLightning}${abyssPulse}${riftOriginIcon}${artifactTierBadge}<strong>${mainLine}</strong>${separateHistoryDetail}${impactContent?`<small class="history-impact-note${h.islandDisplaced||fish?.islandSkeleton?' island-displaced-note':''}${h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?' orca-eaten-hint':''}${h.abyssLost?' abyss-negative-hint':''}">${impactContent}</small>`:''}${islandDangerImpact}${megalodonImpact}${singularityImpact}${riftEffectImpact}${abyssFishImpacts}${goldenHourImpact}${leviathanImpact}${coinImpacts}${luminarImpacts}${debuffWeightImpact}${messageImpact}${flipperImpact}${pendingThreadImpact}${sparkChaosImpact}${trashThreadImpact}${firstWaterImpact}${moonShellImpact}${maskImpact}${scubaImpact}${diceImpact}${essenceImpact}${finalOrcaImpact}${gearBonusStatus}${scubaBonusStatus}${tradeItemFind}${abyssObjectChanges}${tradeShipHistory}${coinAction}${abyssDecision}${compactExpeditionHeader?'':expeditionAction}${navigatorAction}${transmutation}${angusGiftArtifactMarkup}${nautilusSummon}${embeddedFish}${islandLootResults}${riftLootResults}</li>`;
   }).join('');
   requestAnimationFrame(initRiftFuzzyTitles);
   if (lastAnimatedHistoryId) {
@@ -3920,7 +3947,7 @@ const GUIDE = {
     ['Бездонный ларь','Даёт 1–5 рыб до 19,9 кг с очень низким шансом гиганта. Каждая созданная Ларём рыба после каждого обычного заброса до конца сессии получает +1 кг к текущему весу; другие бонусы и артефакты не прекращают этот рост. Ларь также с общим шансом редкого экспедиционного предмета может содержать одну из страниц, встречающихся в Послании в бутылке.'],['Компас потерянных глубин','Первый Компас один раз меняет погоду и возвращает лимит к 10. Каждый повторный добавляет 2 заброса и сразу проверяет 2% шанс Ангуса. При неудаче добавляет три проверки по 5% на следующих обычных забросах; дополнительные Компасы продлевают след, но не повышают шанс выше 5%.'],['Послание в бутылке','Возвращает украденную Чайкой рыбу и удваивает повреждённый Раком/Уткой улов. Если посланию нечего вернуть или удвоить, перед завершением сессии бутылку можно открыть: внутри находится один из четырёх экспедиционных документов, который затем расшифровывается по обычным правилам.'],['Чешуя Левиафана','+5 забросов; будущие рыбы получают +5, +10, +15 кг и далее.'],['Эссенция «Великан Океанов»','Применяется в конце сессии: две самые лёгкие оставшиеся рыбы получают ×5 каждая; если осталась только одна рыба — она получает ×10. Если рыбы не осталось, Эссенция не применяется. В строках затронутых рыб показываются исходный вес, новый вес и множитель.']
   ],
   'Легендарные': [
-    ['Глубоководное нечто','Превращает весь хлам в рыб-гигантов.'],['Гексаэдр пятой грани','Выбор: +5 забросов или ×5 финальный вес.'],['Штурвал Наутилуса','Удваивает силу бонусов и призывает Глубоководное нечто.'],['Плавник мегалодона','Нейтрализует дебафы, восстанавливает улов и повышает шанс гиганта на 50%.']
+    ['Глубоководное нечто','Превращает весь уже пойманный и весь будущий хлам в рыб-гигантов.'],['Гексаэдр пятой грани','Выбор: +5 забросов или ×5 финальный вес.'],['Штурвал Наутилуса','Удваивает силу бонусов и призывает Глубоководное нечто: весь уже пойманный и весь будущий хлам превращается в рыб-гигантов.'],['Плавник мегалодона','Нейтрализует дебафы, восстанавливает улов и повышает шанс гиганта на 50%.']
   ],
   'Мифические': [
     ['Око Шторма','Выпадает только в Грозу и Шторм с шансом 0,5%. Вручную показывает три точных результата. Их можно принять или отвергнуть, пробудив четырёхзабросовое Буйство Шторма.'],
@@ -3978,7 +4005,7 @@ const GUIDE = {
     ['Ужин чайки','Чайка должна украсть самую тяжёлую на тот момент рыбу с исходным весом не менее 20 кг.'],
     ['Рыба ушла','Поймать рыбу, но завершить игру без рыбы из-за дебафов.'],
     ['Не мой день','Получить хлам 4 раза подряд.'],
-    ['Дар Бездны','Превратить не менее 3 единиц хлама в гигантов с помощью Глубоководного нечто.'],
+    ['Дар Бездны','Превратить не менее 3 единиц хлама в гигантов с помощью Глубоководного нечто — полученного напрямую или призванного Штурвалом Наутилуса.'],
     ['Морской хаос','Получить за сессию бонус, дебаф, эпический и легендарный артефакт.'],
     ['За гранью','Пройти все этапы любого Разлома и вынести добычу с максимальной глубины. Для Сингулярной ямы требуется 4-й этап, для остальных Разломов — 3-й. Спасение защитой на максимальной глубине также учитывается.'],
     ['Призрачное слияние','Выбрать Печать слияния в Призрачном шлейфе, получить легендарную рыбу или гиганта и успешно вынести добычу.'],

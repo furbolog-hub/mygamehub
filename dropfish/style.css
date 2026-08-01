@@ -1945,6 +1945,23 @@ body.test-build.game-finished .cast-panel { display:grid; grid-template-columns:
 .transmutation-summary.is-eaten .transmutation-fish-name,.transmutation-summary.is-stolen .transmutation-fish-name { color:#7c8992; text-decoration:line-through; text-shadow:none; }
 .transmutation-effects { display:grid; gap:4px; min-width:0; }
 .transmutation-effects > :is(.gear-impact,.scuba-impact,.essence-impact) { margin-top:0; }
+.nautilus-summon-chain {
+  display:grid;
+  grid-template-columns:34px 18px 34px minmax(0,1fr);
+  align-items:center;
+  gap:6px;
+  margin-top:4px;
+  padding:6px 8px;
+  border:1px solid rgba(255,190,91,.24);
+  border-radius:10px;
+  background:linear-gradient(110deg,rgba(113,73,26,.22),rgba(61,35,108,.25));
+}
+.nautilus-summon-source,.nautilus-summon-target { display:grid; place-items:center; min-width:0; }
+.nautilus-summon-chain .artifact-entity-icon.is-summon-icon { width:32px; height:32px; }
+.nautilus-summon-arrow { color:#ffd06f; font-size:1rem; font-weight:950; text-align:center; text-shadow:0 0 9px rgba(255,190,75,.45); }
+.nautilus-summon-copy { display:grid; gap:1px; min-width:0; line-height:1.18; }
+.nautilus-summon-copy strong { color:#ffe0a2; font-size:.76rem; }
+.nautilus-summon-copy small { color:#c7b9d9; font-size:.68rem; font-weight:750; }
 @media(max-width:560px){
   .transmutation-summary { grid-template-columns:26px minmax(48px,auto) 14px 82px minmax(0,1fr); gap:4px; }
   .transmutation-fish-icon { width:82px; }
