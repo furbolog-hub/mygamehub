@@ -682,7 +682,9 @@ function coinIconMarkup(type, extraClass='') {
 const WEATHER_WARNING_ICON_PATH='./assets/icons/weather/weather-warning.webp';
 const UI_ICON_PATH='./assets/icons/ui/';
 const UI_ICON_FILES=Object.freeze({
+  /* PUBLIC_STRIP_DEBUG_START */
   debug:'debug-panel.webp',
+  /* PUBLIC_STRIP_DEBUG_END */
   soundOn:'sound-on.webp',
   soundOff:'sound-off.webp',
   animationOn:'animation-on.webp',

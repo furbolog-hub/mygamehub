@@ -1,7 +1,9 @@
+param([string[]]$Games = @('dropfish', 'agroclick'))
+
 $ErrorActionPreference = 'Stop'
 
 $workspace = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$games = @('dropfish', 'agroclick')
+$games = $Games
 $stripPattern = '(?s)/\* PUBLIC_STRIP_DEBUG_START \*/.*?/\* PUBLIC_STRIP_DEBUG_END \*/'
 
 foreach ($game in $games) {
@@ -22,8 +24,17 @@ foreach ($game in $games) {
   $stripCount = [regex]::Matches($sourceText, $stripPattern).Count
   if ($stripCount -lt 1) { throw "$game has no PUBLIC_STRIP_DEBUG section" }
   $publicSource = [regex]::Replace($sourceText, $stripPattern, '')
-  if ($publicSource -match 'PUBLIC_STRIP_DEBUG|buildDropfishDebugPanel|buildDebug\s*\(|debugToggle|dropfishDebug') {
+  if ($game -eq 'dropfish') {
+    $testFlag = 'const BUILD_CONFIG = { unlimitedSessions: true };'
+    $publicFlag = 'const BUILD_CONFIG = { unlimitedSessions: false };'
+    if (-not $publicSource.Contains($testFlag)) { throw 'dropfish BUILD_CONFIG test flag was not found' }
+    $publicSource = $publicSource.Replace($testFlag, $publicFlag)
+  }
+  if ($publicSource -match '(?i)PUBLIC_STRIP_DEBUG|buildDropfishDebugPanel|buildDebug\s*\(|debugToggle|dropfishDebug|debug-panel|debugBtn') {
     throw "$game public staging source still contains debug code"
+  }
+  if ($game -eq 'dropfish' -and $publicSource -notmatch 'BUILD_CONFIG\s*=\s*\{\s*unlimitedSessions:\s*false\s*\}') {
+    throw 'dropfish public staging source is not daily-limited'
   }
 
   try {
