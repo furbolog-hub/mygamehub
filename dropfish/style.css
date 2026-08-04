@@ -619,7 +619,9 @@ body.reduce-motion .rift-fish-gradient-name {
 .history-impact-note:has(.fish-effect-badge) .fish-effect-badge { margin-right:0; }
 .history-fish-layout.has-status-badge {
   grid-template-columns:46px minmax(0,1fr) 112px;
+  width:100%;
 }
+.history-fish-layout.has-rift-fish-icon.has-status-badge { grid-template-columns:64px minmax(0,1fr) 112px; }
 .history-fish-status-badge {
   display:flex;
   align-items:center;
@@ -627,6 +629,7 @@ body.reduce-motion .rift-fish-gradient-name {
   align-self:center;
   width:112px;
   min-width:0;
+  justify-self:end;
 }
 .history-fish-status-badge .fish-effect-badge { margin-right:0; }
 .history-item.type-fish:is(.is-stolen,.is-eaten) > strong {
@@ -2160,8 +2163,29 @@ html.iphone-safari-browser body.game-finished:not(.test-build) .app-shell {
   line-height:1.35;
 }
 .essence-impact > span:last-child { display:flex; align-items:center; min-height:28px; }
+.essence-impact .essence-impact-copy {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  min-width:0;
+}
+.essence-impact-calculation { white-space:nowrap; font-variant-numeric:tabular-nums; }
 .essence-impact .essence-icon { width:28px; height:28px; flex:0 0 28px; overflow:visible; font-size:1rem; filter:drop-shadow(0 0 7px rgba(199,138,255,.45)); }
 .essence-impact .essence-icon img { width:38px; height:38px; }
+.history-item.is-primordial-chaos .history-entity-layout { align-items:center; }
+.history-item.is-primordial-chaos .history-entity-copy {
+  display:flex;
+  align-self:stretch;
+  flex-direction:column;
+  justify-content:center;
+  padding-top:0;
+}
+@media(max-width:420px){
+  .history-fish-layout.has-rift-fish-icon.has-status-badge { grid-template-columns:64px minmax(0,1fr) 100px; }
+  .essence-impact .essence-impact-copy { gap:5px; }
+}
 .history-item.is-eaten .essence-impact,
 .history-item.is-stolen .essence-impact { opacity:.62; }
 
