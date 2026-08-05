@@ -3059,11 +3059,13 @@ function ensureDungeon(){const base=initialState().dungeon;state.dungeon={...bas
 function activeDungeonPrompt(){const encounter=state.dungeon?.encounter;return encounter&&['piranhas','trail'].includes(encounter.phase)?encounter:null;}
 function dungeonImg(file,label,extra=''){return `<span class="dungeon-icon${extra?` ${extra}`:''}" title="${label}"><img src="${DUNGEON_ASSET_PATH}${file}" alt="" aria-hidden="true" decoding="async" onerror="this.parentElement.classList.add('is-missing')"><span>${label.slice(0,1)}</span></span>`;}
 function dungeonAvailableFish(){return state.fish.filter(f=>!f.removed&&!fishIsEaten(f)&&!fishIsStolen(f)&&!f.islandDisplaced&&!f.islandTraded&&!f.riftSacrificeLabel&&!f.dungeonSacrifice);}
+function driveOffOrcaWithPiranhas(){const activeOrcas=state.debuffs.filter(d=>d.name==='Касатка'&&d.active);if(!activeOrcas.length)return false;activeOrcas.forEach(d=>{d.active=false;d.drivenOffByPiranhas=true;const row=state.history.find(h=>h.id===d.historyRowId);if(row)row.detail='(касатка отступила под напором стаи пираний)';});state.orcaNeutralized=true;return true;}
 function maybeSpawnPiranhas(fish){
-  ensureDungeon();if(fish.source!=='Заброс'||!fish.direct||fish.removed)return;
+  ensureDungeon();if(state.weather==='storm'||fish.source!=='Заброс'||!fish.direct||fish.removed)return;
   state.dungeon.ordinaryFishSinceRoll=(state.dungeon.ordinaryFishSinceRoll||0)+1;
   if(state.dungeon.ordinaryFishSinceRoll<BALANCE.dungeon.piranhaEveryFish)return;
   state.dungeon.ordinaryFishSinceRoll=0;if(state.dungeon.encounter||!chance(BALANCE.dungeon.piranhaChance))return;
+  driveOffOrcaWithPiranhas();
   const row=addHistory('Пираньи вечной тьмы','dungeon','(Фиолетовые силуэты кружат в воде • жертву можно выбрать до четвёртого заброса)',{numbered:false,dungeonAction:'sacrifice'});
   state.dungeon.encounter={id:uid(),phase:'piranhas',historyRowId:row.id,castsUsed:0,spawnedOnCast:state.castClicks,sacrifice:null,cleanWeight:null,weapon:null,ally:null,playerHp:BALANCE.dungeon.playerHealth,bossHp:BALANCE.dungeon.bossHealth,round:0,log:[],speed:1};
 }
@@ -3776,7 +3778,7 @@ function render() {
   activeBonuses('').forEach(()=>{});
   state.bonuses.forEach(b=>{const disabled=state.disabledBonusIds.has(b.id),enhanced=Boolean(b.abyssEnhanced);pushGroupedEffect({label:`${bonusIconMarkup(b.name,'is-effect-icon')}<span class="effect-chip-copy">${b.name}${enhanced?' (усилен Симбиотом)':''}${disabled?' (отключён)':''}</span>`,kind:'bonus',exhausted:disabled},`${b.name}:${enhanced?'enhanced':'base'}:${disabled?'disabled':'active'}`);});
   state.artifacts.filter(a=>!a.traded).forEach(a=>{const exhausted=a.eyeStatus==='exhausted'||(a.name==='Искра Хаоса'&&a.used),usable=a.name==='Око Шторма'&&!a.used,visualName=artifactVisualName(a);pushGroupedEffect({label:`${artifactIconMarkup(visualName,a.tier,'is-effect-icon')}<span class="effect-chip-copy">${visualName}${exhausted?' (исчерпано)':''}</span>`,kind:a.tier,artifactId:a.id,usable,exhausted},`${visualName}:${usable?'usable':exhausted?'exhausted':'active'}`);});
-  state.debuffs.forEach(d=>pushGroupedEffect({label:`${debuffIconMarkup(d.name,'is-effect-icon')}<span class="effect-chip-copy">${d.name}</span>`,kind:'debuff',exhausted:!d.active},`${d.name}:${d.active?'active':'exhausted'}`));
+  state.debuffs.filter(d=>!d.drivenOffByPiranhas).forEach(d=>pushGroupedEffect({label:`${debuffIconMarkup(d.name,'is-effect-icon')}<span class="effect-chip-copy">${d.name}</span>`,kind:'debuff',exhausted:!d.active},`${d.name}:${d.active?'active':'exhausted'}`));
   const tradeCounts=tradeItemCounts();
   const activeTradeEffectKeys=new Set(['moonTideShell','firstWaterFlask','fadedRelicFragment','enchantedIdol','ceremonialMask']);
   const islandTradeOnlyKeys=new Set(['enchantedIdol','ceremonialMask']);
@@ -3920,7 +3922,7 @@ function renderHistory() {
     const historyShipKind=h.type==='tradeShip'&&(h.tradeShipSource==='recyclon'||/Рециклон/i.test(String(h.text||'')))?'recyclon':'trade';
      const icon=h.type==='fish'&&h.islandDisplaced?'<span class="island-displaced-cross">✖</span>':h.type==='fish'&&fish?(skeletonHistoryIcon||dungeonSacrificeIcon||dungeonAllyIcon||eatenHistoryIcon||fishCategoryIcons(fish)):h.type==='coin'?coinIconMarkup(coinForRow?.type||'copper'):h.type==='weather'?weatherWarningIconMarkup('is-history-icon'):expeditionItem?expeditionItemIconMarkup(expeditionItem.name,'is-history-icon'):h.type==='tradeShip'?shipIconMarkup(historyShipKind,'is-history-icon'):(dungeonEventIcon||abyssEntityIcon||entityBasedIcon||icons[h.type]||'');
      const weatherClass=h.type==='weather'&&h.weatherKey?` weather-${h.weatherKey}`:'';
-     const orcaHistoryClass=h.type==='debuff'&&/Касатка/i.test(String(h.text||''))?' is-orca-debuff':'';
+     const orcaHistoryClass=h.type==='debuff'&&/Касатка/i.test(String(h.text||''))?` is-orca-debuff${historyDebuff?.drivenOffByPiranhas?' is-orca-driven-off':''}`:'';
     const rowAmbient=historyAmbientMarkup(h);
     const riftLightning=h.type==='rift'?riftLightningMarkup(h):'';
     const abyssPulse=h.type==='abyssal'&&!h.abyssManifestation?abyssalPulseMarkup(h):'';
@@ -3989,7 +3991,9 @@ function renderHistory() {
     const compactEntityHeader=(['bonus','debuff','epic','legendary','mythic','trash'].includes(h.type)&&Boolean(entityBasedIcon))||(h.type==='abyssal'&&Boolean(abyssEntityIcon))||h.type==='angus'||h.type==='tradeShip'||h.type==='coin'||h.type==='weather';
     const compactFishHeader=h.type==='fish'&&Boolean(fish);
     const compactExpeditionHeader=Boolean(expeditionItem);
-    const compactEntityDetailText=historyDebuff?.name==='Касатка'
+    const compactEntityDetailText=historyDebuff?.name==='Касатка'&&historyDebuff.drivenOffByPiranhas
+      ? 'касатка отступила под напором стаи пираний'
+      : historyDebuff?.name==='Касатка'
       ? `Съедает всю рыбу весом от 5,5 кг • съедено: ${state.eaten.length}`
       : h.type==='tradeShip'
       ? (historyShipKind==='recyclon'?'«Рециклон» готов переработать хлам обычных забросов.':'Команда судна готова обменять редкие находки на крупную рыбу.')

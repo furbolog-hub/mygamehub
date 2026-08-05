@@ -5310,3 +5310,25 @@ body.reduce-motion .dungeon-placed-object.is-ally {
 @keyframes dungeonAllyPastelPulse{from{transform:translateX(-52%);opacity:.52}to{transform:translateX(52%);opacity:.9}}
 body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;transform:none;opacity:.35}
 @media(max-width:520px){.history-item.type-dungeon>strong{padding-left:45px}.history-item.type-dungeon>.history-detail,.history-item.type-dungeon>.dungeon-history-action{margin-left:45px}.dungeon-battle-world .battle-log{top:39%;width:30%;height:36%;max-height:none}.dungeon-battle-world .battle-log-player{left:2%}.dungeon-battle-world .battle-log-boss{right:2%}}
+.history-item.type-debuff.is-orca-debuff.is-orca-driven-off {
+  animation:none!important;
+  color:#8d969c!important;
+  border-color:rgba(137,147,153,.34)!important;
+  border-left-color:#78838a!important;
+  background:linear-gradient(110deg,rgba(88,98,104,.12),rgba(43,49,53,.08))!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  opacity:.76;
+}
+.history-item.type-debuff.is-orca-debuff.is-orca-driven-off,
+.history-item.type-debuff.is-orca-debuff.is-orca-driven-off * {
+  text-decoration:none!important;
+}
+.history-item.type-debuff.is-orca-debuff.is-orca-driven-off > strong,
+.history-item.type-debuff.is-orca-debuff.is-orca-driven-off > .history-detail {
+  color:#959ea4!important;
+}
+.history-item.type-debuff.is-orca-debuff.is-orca-driven-off img {
+  filter:grayscale(1)!important;
+  opacity:.68!important;
+}
