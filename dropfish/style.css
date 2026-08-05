@@ -5151,6 +5151,45 @@ body.reduce-motion .history-item.type-rift .rift-relic-name-shine {
 .dungeon-modal .dungeon-splash{background:url('./assets/dungeons/eternal-darkness-vault/entrance.webp') center/100% 100% no-repeat!important}
 .dungeon-modal .dungeon-world,.dungeon-modal .dungeon-battle-world{background-image:url('./assets/dungeons/eternal-darkness-vault/dungeon-interior.webp')}
 .dungeon-modal .dungeon-result{background-image:linear-gradient(#050511aa,#050511e8),url('./assets/dungeons/eternal-darkness-vault/dungeon-interior.webp')!important}
+.gear-bonus-status.pending {
+  gap:0;
+  margin-top:3px;
+  padding:4px 9px;
+  line-height:1.05;
+}
+.gear-bonus-status.pending > strong { line-height:1.05; }
+.gear-bonus-status.pending > span {
+  margin-top:1px;
+  font-size:.72rem;
+  line-height:1.05;
+}
+.chip.effect-dungeon .effect-chip-copy small {
+  display:block;
+  margin-top:2px;
+  max-width:25rem;
+  color:#ffd0bb;
+  font-size:.68rem;
+  line-height:1.12;
+  white-space:normal;
+}
+
+/* The dungeon must use Telegram's measured visible viewport, including its safe areas. */
+.dungeon-modal[open] {
+  position:fixed;
+  inset:0;
+  box-sizing:border-box;
+  width:100vw;
+  max-width:none;
+  height:var(--fit-height,100dvh);
+  max-height:var(--fit-height,100dvh);
+  margin:0;
+  padding:var(--tg-inset-top,env(safe-area-inset-top,0px)) var(--tg-inset-right,env(safe-area-inset-right,0px)) var(--tg-inset-bottom,env(safe-area-inset-bottom,0px)) var(--tg-inset-left,env(safe-area-inset-left,0px));
+  overflow:hidden;
+}
+.dungeon-modal .dungeon-card {
+  width:min(720px,100%,calc((var(--fit-height,100dvh) - var(--tg-inset-top,0px) - var(--tg-inset-bottom,0px)) * .8125));
+  max-height:calc(var(--fit-height,100dvh) - var(--tg-inset-top,0px) - var(--tg-inset-bottom,0px));
+}
 .dungeon-icon.is-history-icon{width:38px;height:38px;min-width:38px;border-radius:10px;background:#25131a;vertical-align:middle}
 .dungeon-icon.is-history-icon>span{font-size:17px}
 .history-fish-status-badge .ballistier-wrath-fish-badge{width:34px!important;height:34px!important;min-width:34px;padding:0;border:0;border-radius:50%;background:transparent;box-shadow:none;overflow:hidden}
