@@ -521,7 +521,8 @@ const ARTIFACT_ICON_FILES=Object.freeze({
   })
 });
 function artifactIconMarkup(name,tier='epic',extraClass=''){
-  const file=ARTIFACT_ICON_FILES[tier]?.[name];if(!file)return entityIcon(name,tier==='epic'?'💜':'◆');
+  const cleanName=String(name||'').trim(),canonicalName=tier==='mythic'&&/первобытн(?:ый|ого)\s+хаос/i.test(cleanName)?'Первобытный хаос':cleanName;
+  const file=ARTIFACT_ICON_FILES[tier]?.[canonicalName];if(!file)return entityIcon(cleanName,tier==='epic'?'💜':'◆');
   return `<span class="artifact-entity-icon${extraClass?` ${extraClass}`:''}"><img src="${ARTIFACT_ICON_PATH}${tier}/${file}" alt="" aria-hidden="true" decoding="async"></span>`;
 }
 function artifactCategoryBadge(tier){
@@ -3925,7 +3926,7 @@ function renderHistory() {
      const historyArtifact=h.artifactId?state.artifacts.find(artifact=>artifact.id===h.artifactId):null;
      const historyDebuff=h.type==='debuff'?(state.debuffs||[]).find(debuff=>debuff.historyRowId===h.id):null;
     const expeditionItem=h.expeditionItemId?state.islands?.items?.find(item=>item.id===h.expeditionItemId):null;
-    const isPrimordialChaos=h.type==='mythic'&&/^\s*Первобытный хаос\b/i.test(String(h.text||''));
+    const isPrimordialChaos=h.type==='mythic'&&(/первобытн(?:ый|ого)\s+хаос/i.test(String(h.text||''))||historyArtifact?.name==='Первобытный хаос');
     const historyArtifactVisualName=h.type==='mythic'?(historyArtifact?artifactVisualName(historyArtifact):isPrimordialChaos?'Первобытный хаос':h.text):h.text;
     const entityBasedIcon=['epic','legendary','mythic'].includes(h.type)?artifactIconMarkup(historyArtifactVisualName,h.type,'is-history-icon'):h.type==='bonus'?bonusIconMarkup(h.text,'is-history-icon'):h.type==='trash'?trashIconMarkup('is-history-icon'):h.type==='debuff'?debuffIconMarkup(h.text,'is-history-icon'):null;
     const coinForRow=h.type==='coin'&&h.coinId?state.coins.find(item=>item.id===h.coinId):null;
@@ -3954,7 +3955,9 @@ function renderHistory() {
     const transmutation=renderTransmutation(h);
      const impactNote=h.type==='fish'&&h.islandTraded?'(Обменян особому торговому судну, вызванному Рунической ракетой)':h.type==='fish'&&h.islandDisplaced?`(Вытеснена эффектом ${fishEffectBadge('unstable-presence','Нестабильное присутствие')})`:h.type==='fish'&&fish?.islandSkeleton?`(${fishEffectBadge('unstable-presence','Нестабильное присутствие')} полностью лишило рыбу веса и превратило её в скелет)`:h.type==='fish'&&fish?.mythicSkeleton?'(Пассивное свойство «Искры Хаоса» превратило рыбу в скелет)':h.type==='fish'&&h.riftSacrificeLabel?`(${h.riftSacrificeLabel})`:h.type==='fish'&&h.abyssLost?`(${h.abyssLost})`:h.type==='fish'&&h.eaten&&!fish?.smoldering&&!fish?.ballistierSkeleton&&!fish?.ballistierEscaped?'(Съедена Касаткой)':h.type==='fish'&&h.stolen?'(Украдена Чайкой)':h.type==='fish'&&fish?.messageRestored?'<span class="message-return-note">↩ Возвращена Посланием в бутылке</span>':'';
      const wrathFishBadge=h.type==='fish'?ballistierWrathFishBadge(fish):'';
-     const impactBadge=wrathFishBadge||(h.type==='fish'&&h.stolen?fishEffectBadge('stolen','Украдена Чайкой'):h.type==='fish'&&h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?fishEffectBadge('eaten-by-orca','Съедена Касаткой'):'');
+     const debuffFishBadge=h.type==='fish'&&h.stolen?fishEffectBadge('stolen','Украдена Чайкой'):h.type==='fish'&&h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?fishEffectBadge('eaten-by-orca','Съедена Касаткой'):'';
+     const impactBadges=[debuffFishBadge,wrathFishBadge].filter(Boolean);
+     const impactBadge=impactBadges.length?`<span class="history-fish-status-stack${impactBadges.length>1?' has-multiple':''}">${impactBadges.join('')}</span>`:'';
     const impactContent=impactBadge||fish?.abyssLost||h.islandDisplaced||h.riftSacrificeLabel?'':impactNote;
     const fishSource=fish?fishHistorySourceLabel(h.fishSource||fish.source):'';
     const visibleText=fish?fishTitleText(fish):h.text;
