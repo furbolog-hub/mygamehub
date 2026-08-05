@@ -2208,7 +2208,7 @@ function processEpic(name=pick(DATA.epics), fromAngus=false) {
   return epicRow;
 }
 function restoreByMessage(artifact,row) {
-  state.stolen.forEach(f=>{f.removed=false; setFishHistoryStolen(f,false); if(!state.fish.includes(f)) state.fish.push(f);});
+  state.stolen.forEach(f=>{f.removed=false;f.messageRestored=true; setFishHistoryStolen(f,false); if(!state.fish.includes(f)) state.fish.push(f);});
   const restored=state.stolen.length; if(restored>0)state.recoveredByMessage=true; state.stolen=[];
   let doubled=0,blocked=0;state.fish.filter(f=>!f.removed&&f.debuffLimited).forEach(f=>{const before=f.weight;if(f.islandDistorted){f.messageImpact={before,after:f.weight,blocked:true};blocked++;return;}f.weight=round1(f.weight*2);if(Number.isFinite(f.unrestrictedWeight))f.unrestrictedWeight=round1(f.unrestrictedWeight*2);f.messageImpact={before,after:f.weight,blocked:false};f.tags.push('Послание ×2');doubled++;enforceOrca(f);});
   const used=restored>0||doubled>0;if(artifact){artifact.messageUnused=!used;artifact.messageResolved=used;artifact.historyRowId=row?.id||null;}
@@ -3952,7 +3952,7 @@ function renderHistory() {
     const dungeonPrediction=renderDungeonPrediction(h);
     const dungeonSmolder=renderBallistierSmolder(fish);
     const transmutation=renderTransmutation(h);
-     const impactNote=h.type==='fish'&&h.islandTraded?'(Обменян особому торговому судну, вызванному Рунической ракетой)':h.type==='fish'&&h.islandDisplaced?`(Вытеснена эффектом ${fishEffectBadge('unstable-presence','Нестабильное присутствие')})`:h.type==='fish'&&fish?.islandSkeleton?`(${fishEffectBadge('unstable-presence','Нестабильное присутствие')} полностью лишило рыбу веса и превратило её в скелет)`:h.type==='fish'&&fish?.mythicSkeleton?'(Пассивное свойство «Искры Хаоса» превратило рыбу в скелет)':h.type==='fish'&&h.riftSacrificeLabel?`(${h.riftSacrificeLabel})`:h.type==='fish'&&h.abyssLost?`(${h.abyssLost})`:h.type==='fish'&&h.eaten&&!fish?.smoldering&&!fish?.ballistierSkeleton&&!fish?.ballistierEscaped?'(Съедена Касаткой)':h.type==='fish'&&h.stolen?'(Украдена Чайкой)':'';
+     const impactNote=h.type==='fish'&&h.islandTraded?'(Обменян особому торговому судну, вызванному Рунической ракетой)':h.type==='fish'&&h.islandDisplaced?`(Вытеснена эффектом ${fishEffectBadge('unstable-presence','Нестабильное присутствие')})`:h.type==='fish'&&fish?.islandSkeleton?`(${fishEffectBadge('unstable-presence','Нестабильное присутствие')} полностью лишило рыбу веса и превратило её в скелет)`:h.type==='fish'&&fish?.mythicSkeleton?'(Пассивное свойство «Искры Хаоса» превратило рыбу в скелет)':h.type==='fish'&&h.riftSacrificeLabel?`(${h.riftSacrificeLabel})`:h.type==='fish'&&h.abyssLost?`(${h.abyssLost})`:h.type==='fish'&&h.eaten&&!fish?.smoldering&&!fish?.ballistierSkeleton&&!fish?.ballistierEscaped?'(Съедена Касаткой)':h.type==='fish'&&h.stolen?'(Украдена Чайкой)':h.type==='fish'&&fish?.messageRestored?'<span class="message-return-note">↩ Возвращена Посланием в бутылке</span>':'';
      const wrathFishBadge=h.type==='fish'?ballistierWrathFishBadge(fish):'';
      const impactBadge=wrathFishBadge||(h.type==='fish'&&h.stolen?fishEffectBadge('stolen','Украдена Чайкой'):h.type==='fish'&&h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?fishEffectBadge('eaten-by-orca','Съедена Касаткой'):'');
     const impactContent=impactBadge||fish?.abyssLost||h.islandDisplaced||h.riftSacrificeLabel?'':impactNote;
