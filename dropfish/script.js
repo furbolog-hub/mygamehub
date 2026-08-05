@@ -576,6 +576,14 @@ const BALANCE = Object.freeze({
   session: Object.freeze({
     casts: 10
   }),
+  dungeon: Object.freeze({
+    piranhaChance:.10,
+    piranhaEveryFish:3,
+    trailCasts:3,
+    playerHealth:500,
+    bossHealth:3000,
+    rounds:10
+  }),
   catch: Object.freeze({
     baseWeights: Object.freeze({
       normal: 58.8,
@@ -753,6 +761,7 @@ function initialState() {
     rifts:{naturalOpened:false,active:null,completed:0,failed:0,declined:0,maxDepthCompleted:false,feats:[],relics:[],temporaryEffects:[],pendingDanger:false},
     islands:{items:[],expeditions:[],active:null,unstablePresence:false,sharpFinRod:false,flares:0,destructiveFlares:0,finishPromptResolved:false,flareFinishResolved:false,completed:0,navigators:[],navigatorCategory:null,fadedRelicFragments:0,moonShellActiveId:null,moonShellProtected:false,moonShellDoubles:0,moonShellLeviathanGranted:false,firstWaterWeakening:false,feats:[]},
     abyssal:{entity:null},
+    dungeon:{ordinaryFishSinceRoll:0,encounter:null,runs:0,rewards:[],wrath:false,feats:[]},
     sessionDate:null, finalResult:null
   };
 }
@@ -762,7 +771,7 @@ function serializeState(value) {
 function hydrateState(raw) {
   const parsed = JSON.parse(raw);
   const base=initialState();
-  const restored={...base, ...parsed, rifts:{...base.rifts,...(parsed.rifts||{})}, islands:{...base.islands,...(parsed.islands||{})}, abyssal:{...base.abyssal,...(parsed.abyssal||{})}, mythic:{...base.mythic,...(parsed.mythic||{})}, disabledBonusIds:new Set(parsed.disabledBonusIds || [])};
+  const restored={...base, ...parsed, rifts:{...base.rifts,...(parsed.rifts||{})}, islands:{...base.islands,...(parsed.islands||{})}, abyssal:{...base.abyssal,...(parsed.abyssal||{})}, dungeon:{...base.dungeon,...(parsed.dungeon||{})}, mythic:{...base.mythic,...(parsed.mythic||{})}, disabledBonusIds:new Set(parsed.disabledBonusIds || [])};
   (restored.fish||[]).forEach(fish=>{
     if(Array.isArray(fish.tags))fish.tags=fish.tags.filter(tag=>!/^\s*Ласты\s*[×xх]\s*[\d.,]+/i.test(String(tag))&&!/ограничение\s+до\s+[\d.,]+\s*кг/i.test(String(tag)));
   });
@@ -1191,7 +1200,8 @@ function unstablePresenceVisualText(value){
 }
 function fishHistoryStatus(h,fish){
   if(!fish)return null;
-  if(fish.islandSkeleton||fish.mythicSkeleton||fish.abyssSkeleton)return {file:'skeleton',label:'Рыба превратилась в скелет',kind:'skeleton'};
+  if(fish.islandSkeleton||fish.mythicSkeleton||fish.abyssSkeleton||fish.ballistierSkeleton)return {file:'skeleton',label:'Рыба превратилась в скелет',kind:'skeleton'};
+  if(fish.dungeonSacrifice)return {file:'dungeon-sacrifice',label:'Рыба принесена в жертву пираньям',kind:'sacrifice'};
   if(h.riftSacrificeLabel||fish.riftSacrificeLabel)return {file:'rift-sacrifice',label:'Рыба принесена в жертву Разлому',kind:'sacrifice'};
   if(h.eaten||fishIsEaten(fish))return {file:'eaten',label:'Рыба съедена',kind:'eaten'};
   if(h.arcade||fish.arcadeCatch||fish.source==='Аркадный улов')return {file:'arcade-catch',label:'Аркадная рыба',kind:'arcade'};
@@ -1206,7 +1216,7 @@ function fishInlineStatusIcon(h,fish){
   return `<span class="fish-inline-status status-${status.kind}" title="${status.label}" aria-label="${status.label}">${fishStatusIcon(status.file,status.label)}</span>`;
 }
 function fishSkeletonMainIcon(fish){
-  if(!fish?.islandSkeleton&&!fish?.mythicSkeleton&&!fish?.abyssSkeleton)return '';
+  if(!fish?.islandSkeleton&&!fish?.mythicSkeleton&&!fish?.abyssSkeleton&&!fish?.ballistierSkeleton)return '';
   const label='Рыба превратилась в скелет';
   return `<span class="fish-skeleton-main-icon" title="${label}" aria-label="${label}">${fishStatusIcon('skeleton',label)}</span>`;
 }
@@ -1217,6 +1227,11 @@ function fishEatenMainIcon(h,fish){
   if(!eatenByPredator&&!eatenByOrca)return '';
   const label=eatenByPredator?'Рыба съедена Хищником':'Рыба съедена Касаткой';
   return `<span class="fish-eaten-main-icon" title="${label}" aria-label="${label}">${fishStatusIcon('eaten',label)}</span>`;
+}
+function fishDungeonSacrificeMainIcon(fish){
+  if(!fish?.dungeonSacrifice)return '';
+  const label='Принесена в жертву магматическим пираньям';
+  return `<span class="fish-eaten-main-icon dungeon-sacrifice-main-icon" title="${label}" aria-label="${label}">${fishStatusIcon('dungeon-sacrifice',label)}</span>`;
 }
 function fishSizeMarker(fish){
   if(!fish||fish.category!=='heavy'&&fish.category!=='giant')return '';
@@ -1274,6 +1289,7 @@ function fishDisplayName(fish){
     : name;
 }
 function fishTitleText(fish) {
+  if(fish.ballistierEscaped)return `${capitalize(fish.name)} — <span class="dungeon-escaped-label">сорвалась</span>`;
   if(fish.islandSkeleton){const before=Number.isFinite(fish.islandOriginalWeight)?fish.islandOriginalWeight:.1;return `Рыбный скелет (${capitalize(fish.skeletonOf)}) — <span class="island-weight-before">${kg(before)}</span> <span class="island-weight-arrow">→</span> <span class="island-weight-final">${kg(0)}</span> <span class="island-weight-difference">(−${kg(before)})</span>`;}
   if(fish.mythicSkeleton)return `Рыбный скелет (${capitalize(fish.skeletonOf)})`;
   if(fish.islandColossus)return `${capitalize(fish.name)} — ${kg(fish.weight)}`;
@@ -1450,7 +1466,7 @@ function renderLuminarImpacts(fish){
   const labels={normal:'обычная рыба',heavy:'тяжеловес',giant:'рыба-гигант'};
   return impacts.map((impact,index)=>{const changed=impact.beforeCategory!==impact.afterCategory;return `<div class="gear-impact luminar-impact"><span class="gear-icon">${artifactIconMarkup('Люминар Удильщика','mythic','is-compact-icon')}</span><span><strong>Люминар Удильщика${impacts.length>1?` ${index+1} из ${impacts.length}`:''}: +${impact.plus} кг</strong><small>${kg(impact.before)} + ${impact.plus} кг = <b class="gear-result">${kg(impact.after)}</b>${changed?`<br>Категория: ${labels[impact.beforeCategory]} → <b class="gear-result">${labels[impact.afterCategory]}</b>`:''}</small></span></div>`;}).join('');
 }
-function renderDebuffWeightImpact(fish){if(!fish?.debuffLimited||!Number.isFinite(fish.preDebuffWeight)||!Number.isFinite(fish.debuffBaseWeight))return '';const source=fish.debuffSource||'Дебаф';return `<div class="gear-impact fish-debuff-impact"><span class="fish-debuff-impact-copy"><strong>${source}</strong><small>${kg(fish.preDebuffWeight)} → <b class="island-weight-final">${kg(fish.debuffBaseWeight)}</b></small></span><span class="fish-effect-badge-slot">${fishEffectBadge('weight-limit','Ограничение в весе')}</span></div>`;}
+function renderDebuffWeightImpact(fish){if(!fish?.debuffLimited||!Number.isFinite(fish.preDebuffWeight)||!Number.isFinite(fish.debuffBaseWeight))return '';const source=fish.debuffSource||'Дебаф';return `<div class="gear-impact fish-debuff-impact"><span class="fish-debuff-impact-copy"><strong>${source}:</strong><small>${kg(fish.preDebuffWeight)} → <b class="island-weight-final">${kg(fish.debuffBaseWeight)}</b></small></span><span class="fish-effect-badge-slot">${fishEffectBadge('weight-limit','Ограничение в весе')}</span></div>`;}
 function renderMessageImpact(fish){const impact=fish?.messageImpact;if(!impact)return '';const icon=artifactIconMarkup('Послание в бутылке','epic','is-compact-icon');if(impact.blocked)return `<div class="gear-impact message-impact is-blocked"><span class="gear-icon">${icon}</span><span><strong>Послание не восстановило вес</strong><small><span class="island-negative-hint">Действует «Нестабильное присутствие»</span><br>Вес остался ${kg(impact.after)}</small></span></div>`;return `<div class="gear-impact message-impact"><span class="gear-icon">${icon}</span><span><strong>Послание в бутылке ×2</strong><small>${kg(impact.before)} ×2 = <b class="gear-result">${kg(impact.after)}</b></small></span></div>`;}
 function renderCoinAction(row) {
   if (!row.coinId) return '';
@@ -1763,7 +1779,8 @@ function activeMythics(name){return state.artifacts.filter(a=>a.name===name&&!a.
 function categoryForWeight(weight){return weight>=20?'giant':weight>=10?'heavy':'normal';}
 function mythicCatchDescriptor(weather=state.weather,allowMythic=true){
   const mythic=allowMythic?rollMythicName(weather):null;if(mythic)return {type:'mythic',name:mythic};
-  const type=chance(BALANCE.catch.coinChance)?'coin':weightedResult(currentWeights());
+  let type=chance(BALANCE.catch.coinChance)?'coin':weightedResult(currentWeights());
+  if(state.dungeon?.rewards?.some(item=>item.key==='eye'&&!item.used)&&['normal','heavy','giant'].includes(type))type='giant';
   if(['normal','heavy','giant'].includes(type))return {type,fishName:pick(type==='giant'?DATA.giants:DATA.fish),weight:type==='giant'?rand1(20,40):type==='heavy'?rand1(10,19.9):rand1(.1,9.9)};
   if(type==='trash')return {type,name:pick(DATA.trash)};
   if(type==='bonus')return {type,name:pick(DATA.bonuses)};
@@ -1791,7 +1808,11 @@ function currentDebuffEventChance() {
   return BALANCE.debuffs.eventChance.default;
 }
 function maybeTriggerDebuffEvent() {
-  if (chance(currentDebuffEventChance())) processDebuff();
+  if (!chance(currentDebuffEventChance()))return;
+  if(state.dungeon?.rewards?.some(item=>item.key==='eye'&&!item.used)){
+    const predicted=chooseDebuff();addHistory(`Око Балистьера предвидит дебаф: ${predicted}`,'dungeon','(Принять событие или отказаться; отказ не возвращает заброс)',{numbered:false,dungeonDebuffPrediction:predicted,dungeonPredictionOpen:true});renderHistory();return;
+  }
+  processDebuff();
 }
 function chooseCoinType() {
   const weights=Object.fromEntries(COIN_TYPES.map(item=>[item.key,item.weight]));
@@ -1931,6 +1952,7 @@ function makeFish(category='normal', source='Заброс', direct=true, options
       return f;
     }
   }
+  if(applyBallistierWrathToFish(f)){state.fish.push(f);const escapedRow=parentHistoryId?null:addFishHistory(f,source);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);if(escapedRow){escapedRow.ballistierEscaped=true;escapedRow.detail='(Сорвалась • вес неизвестен • Гнев Балистьера)';}return f;}
   state.fish.push(f);
   // Достижения за прямой тяжёлый улов учитывают фактическое состояние рыбы.
   // Если Утка или Рак уже ограничили её вес, она больше не считается
@@ -1940,6 +1962,7 @@ function makeFish(category='normal', source='Заброс', direct=true, options
   let fishHistoryRow=null;
   if (parentHistoryId) attachFishToHistoryRow(parentHistoryId, f.id);
   else fishHistoryRow=addFishHistory(f,source);
+  maybeSpawnPiranhas(f);
   maybeGrantTradeItem(fishHistoryRow,f);
   const stolenByWaitingSeagull=resolvePendingSeagullWithFish(f);
   if (stolenByWaitingSeagull) return f;
@@ -2486,6 +2509,7 @@ function declineRift(){const r=state.rifts.active;if(!r)return;state.rifts.decli
 function failRift(reason='Критический провал уничтожил накопленную добычу.',expectedRift=null){
   const r=state.rifts.active;if(!r)return false;
   if(expectedRift&&(r.id!==expectedRift.id||r.type!==expectedRift.type)){console.warn('Провал другого Разлома отклонён',{expected:{id:expectedRift.id,type:expectedRift.type},active:{id:r.id,type:r.type},reason});return false;}
+  if(r.guaranteedSuccess){r.awaitingChoice=false;r.message=`Ядро бездны переписало неудачный исход.<br><small>${reason} Следующая попытка этого этапа гарантированно безопасна.</small>`;setRiftChoices([],()=>{});renderRift();saveDailyState();toast('Ядро бездны предотвратило провал');return true;}
   if(r.protected){
     r.protected=false;r.awaitingChoice=false;
     r.message=`🛡️ Защита Скрытой бездны предотвратила схлопывание.<br><small>Рискованная награда потеряна, накопленная добыча сохранена. Решение о выходе остаётся за вами.</small>`;
@@ -2898,18 +2922,18 @@ function commitIslandLoot(a,parentHistoryId=null){
   const colossi=a.loot.filter(x=>x.kind==='colossus');
   const config=ISLANDS[a.island]||ISLANDS.destructiveTides,source=config.name;
   if(colossi.length){state.fish.filter(f=>!f.removed&&!f.islandColossus&&!f.islandMoray&&!f.islandGraniteCatfish&&!f.islandEchoRay&&!f.moonShellProtected).forEach(markFishDisplaced);state.islands.unstablePresence=true;}
-  colossi.forEach(x=>{const f={id:uid(),name:x.name,category:'islandColossus',rarity:x.tier,originalWeight:x.weight,weight:x.weight,source,direct:false,removed:false,tags:['<span class="island-negative-hint">Нестабильное присутствие</span>',...(x.locationName?[islandLootOrigin(x,config.name)]:[])],debuffLimited:false,islandColossus:true,dangerImpact:x.dangerImpact};state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);else addFishHistory(f,source);});
+  colossi.forEach(x=>{const f={id:uid(),name:x.name,category:'islandColossus',rarity:x.tier,originalWeight:x.weight,weight:x.weight,source,direct:false,removed:false,tags:['<span class="island-negative-hint">Нестабильное присутствие</span>',...(x.locationName?[islandLootOrigin(x,config.name)]:[])],debuffLimited:false,islandColossus:true,dangerImpact:x.dangerImpact};applyBallistierWrathToFish(f);state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);else addFishHistory(f,source);});
   const supplyIslandFish=a.loot.filter(x=>x.kind==='mistSupplies'&&x.islandFish).map(pack=>({...pack.islandFish,locationName:pack.locationName,islandName:pack.islandName,repeatedLocation:pack.repeatedLocation})),morays=[...a.loot.filter(x=>x.kind==='moray'),...supplyIslandFish.filter(x=>x.kind==='moray')],supplyColossi=supplyIslandFish.filter(x=>x.kind==='colossus');
   if(colossi.length||supplyColossi.length)playSound('unstablePresence');
-  supplyColossi.forEach(x=>{const f={id:uid(),name:x.name,category:'islandColossus',rarity:x.tier,originalWeight:x.weight,weight:x.weight,source,direct:false,removed:false,tags:['<span class="island-negative-hint">Нестабильное присутствие</span>',...(x.locationName?[islandLootOrigin(x,config.name)]:[])],debuffLimited:false,islandColossus:true};state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});
+  supplyColossi.forEach(x=>{const f={id:uid(),name:x.name,category:'islandColossus',rarity:x.tier,originalWeight:x.weight,weight:x.weight,source,direct:false,removed:false,tags:['<span class="island-negative-hint">Нестабильное присутствие</span>',...(x.locationName?[islandLootOrigin(x,config.name)]:[])],debuffLimited:false,islandColossus:true};applyBallistierWrathToFish(f);state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});
   if(supplyColossi.length&&!state.islands.unstablePresence){state.fish.filter(f=>!f.removed&&!f.islandColossus&&!f.islandMoray&&!f.islandGraniteCatfish&&!f.islandEchoRay&&!f.moonShellProtected).forEach(markFishDisplaced);state.islands.unstablePresence=true;}
-  const committedMorays=[];morays.forEach(x=>{const affected=state.islands.unstablePresence,weight=affected?round1(x.weight*.5):x.weight,f={id:uid(),name:x.name,category:'islandMoray',rarity:x.tier,originalWeight:weight,weight,source,direct:false,removed:false,tags:[...(x.locationName?[islandLootOrigin(x,config.name)]:[]),...(affected?['<span class="island-negative-hint">Нестабильное присутствие: вес мурены уменьшен на 50%</span>']:[])],debuffLimited:false,islandMoray:true,morayOriginalWeight:affected?x.weight:null,morayUnstableApplied:affected};state.fish.push(f);committedMorays.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});
+  const committedMorays=[];morays.forEach(x=>{const affected=state.islands.unstablePresence,weight=affected?round1(x.weight*.5):x.weight,f={id:uid(),name:x.name,category:'islandMoray',rarity:x.tier,originalWeight:weight,weight,source,direct:false,removed:false,tags:[...(x.locationName?[islandLootOrigin(x,config.name)]:[]),...(affected?['<span class="island-negative-hint">Нестабильное присутствие: вес мурены уменьшен на 50%</span>']:[])],debuffLimited:false,islandMoray:true,morayOriginalWeight:affected?x.weight:null,morayUnstableApplied:affected};applyBallistierWrathToFish(f);state.fish.push(f);committedMorays.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});
   if(colossi.length||supplyColossi.length)state.fish.filter(f=>f.islandMoray&&!f.removed&&!f.morayUnstableApplied).forEach(f=>{f.morayOriginalWeight=f.weight;f.weight=round1(f.weight*.5);f.originalWeight=f.weight;f.morayUnstableApplied=true;f.tags.push('<span class="island-negative-hint">Нестабильное присутствие: вес мурены уменьшен на 50%</span>');});
-  const graniteCatfish=a.loot.filter(x=>x.kind==='graniteCatfish');graniteCatfish.forEach(x=>{const affected=state.islands.unstablePresence,weight=affected?round1(x.weight*.5):x.weight,f={id:uid(),name:x.name,category:'islandGraniteCatfish',rarity:x.tier,originalWeight:weight,weight,source,direct:false,removed:false,tags:[...(x.locationName?[islandLootOrigin(x,config.name)]:[]),...(affected?['<span class="island-negative-hint">Нестабильное присутствие: вес гранитного сома уменьшен на 50%</span>']:[]),'Активное свойство: 25% шанс сохранить лимит обычного заброса'],debuffLimited:false,islandGraniteCatfish:true,graniteSavedCasts:0,graniteOriginalWeight:affected?x.weight:null,graniteUnstableApplied:affected};state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});if(graniteCatfish.length&&parentHistoryId)appendHistoryDetailById(parentHistoryId,'Гранитный сом активирован: каждый обычный заброс с шансом 25% не расходует лимит');
+  const graniteCatfish=a.loot.filter(x=>x.kind==='graniteCatfish');graniteCatfish.forEach(x=>{const affected=state.islands.unstablePresence,weight=affected?round1(x.weight*.5):x.weight,f={id:uid(),name:x.name,category:'islandGraniteCatfish',rarity:x.tier,originalWeight:weight,weight,source,direct:false,removed:false,tags:[...(x.locationName?[islandLootOrigin(x,config.name)]:[]),...(affected?['<span class="island-negative-hint">Нестабильное присутствие: вес гранитного сома уменьшен на 50%</span>']:[]),'Активное свойство: 25% шанс сохранить лимит обычного заброса'],debuffLimited:false,islandGraniteCatfish:true,graniteSavedCasts:0,graniteOriginalWeight:affected?x.weight:null,graniteUnstableApplied:affected};applyBallistierWrathToFish(f);state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});if(graniteCatfish.length&&parentHistoryId)appendHistoryDetailById(parentHistoryId,'Гранитный сом активирован: каждый обычный заброс с шансом 25% не расходует лимит');
   if(colossi.length||supplyColossi.length)state.fish.filter(f=>f.islandGraniteCatfish&&!f.removed&&!f.graniteUnstableApplied).forEach(f=>{if(!f.graniteOriginalWeight)f.graniteOriginalWeight=f.weight;f.weight=round1(f.weight*.5);f.originalWeight=f.weight;f.graniteUnstableApplied=true;f.tags.push('<span class="island-negative-hint">Нестабильное присутствие: вес гранитного сома уменьшен на 50%</span>');});
-  const echoRays=a.loot.filter(x=>x.kind==='echoRay');echoRays.forEach(x=>{const affected=state.islands.unstablePresence,weight=affected?round1(x.weight*.5):x.weight,f={id:uid(),name:x.name,category:'islandEchoRay',rarity:x.tier,originalWeight:weight,weight,source,direct:false,removed:false,tags:[...(x.locationName?[islandLootOrigin(x,config.name)]:[]),...(affected?['<span class="island-negative-hint">Нестабильное присутствие: вес ската уменьшен на 50%</span>']:[]),'Память течения: 20% шанс эхо-улова'],debuffLimited:false,islandEchoRay:true,echoCatches:0,echoOriginalWeight:affected?x.weight:null,echoUnstableApplied:affected};state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});
+  const echoRays=a.loot.filter(x=>x.kind==='echoRay');echoRays.forEach(x=>{const affected=state.islands.unstablePresence,weight=affected?round1(x.weight*.5):x.weight,f={id:uid(),name:x.name,category:'islandEchoRay',rarity:x.tier,originalWeight:weight,weight,source,direct:false,removed:false,tags:[...(x.locationName?[islandLootOrigin(x,config.name)]:[]),...(affected?['<span class="island-negative-hint">Нестабильное присутствие: вес ската уменьшен на 50%</span>']:[]),'Память течения: 20% шанс эхо-улова'],debuffLimited:false,islandEchoRay:true,echoCatches:0,echoOriginalWeight:affected?x.weight:null,echoUnstableApplied:affected};applyBallistierWrathToFish(f);state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});
   if(colossi.length||supplyColossi.length)state.fish.filter(f=>f.islandEchoRay&&!f.removed&&!f.echoUnstableApplied).forEach(f=>{f.echoOriginalWeight=f.weight;f.weight=round1(f.weight*.5);f.originalWeight=f.weight;f.echoUnstableApplied=true;f.tags.push('<span class="island-negative-hint">Нестабильное присутствие: вес ската уменьшен на 50%</span>');});
-  a.loot.filter(x=>x.kind==='mistSupplies').forEach(pack=>{pack.standardFish.forEach(category=>{const natural=category==='giant'?rand1(20,40):category==='heavy'?rand1(10,19.9):rand1(.1,9.9),distorted=state.islands.unstablePresence,weight=distorted?rollIslandDistortedWeight(natural):natural,f={id:uid(),name:pick(category==='giant'?DATA.giants:DATA.fish),category,originalWeight:weight,weight,source:'Припасы ордена Мглистой Дымки',direct:false,removed:weight===0,tags:distorted?['<span class="island-negative-hint">Применено «Нестабильное присутствие»</span>']:[],debuffLimited:false,islandDistorted:distorted,islandOriginalWeight:distorted?natural:null,islandDistortedWeight:distorted?weight:null};if(weight===0){f.skeletonOf=f.name;f.name=`рыбный скелет (${f.name})`;f.islandSkeleton=f.mythicSkeleton=true;}state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});if(pack.resource)state.tradeItems.push({id:uid(),key:pack.resource.key,name:pack.resource.name,icon:pack.resource.icon,exchanged:false,islandTrade:true,mistSupplies:true});});
+  a.loot.filter(x=>x.kind==='mistSupplies').forEach(pack=>{pack.standardFish.forEach(category=>{const natural=category==='giant'?rand1(20,40):category==='heavy'?rand1(10,19.9):rand1(.1,9.9),distorted=state.islands.unstablePresence,weight=distorted?rollIslandDistortedWeight(natural):natural,f={id:uid(),name:pick(category==='giant'?DATA.giants:DATA.fish),category,originalWeight:weight,weight,source:'Припасы ордена Мглистой Дымки',direct:false,removed:weight===0,tags:distorted?['<span class="island-negative-hint">Применено «Нестабильное присутствие»</span>']:[],debuffLimited:false,islandDistorted:distorted,islandOriginalWeight:distorted?natural:null,islandDistortedWeight:distorted?weight:null};if(weight===0){f.skeletonOf=f.name;f.name=`рыбный скелет (${f.name})`;f.islandSkeleton=f.mythicSkeleton=true;}else applyBallistierWrathToFish(f);state.fish.push(f);if(parentHistoryId)attachFishToHistoryRow(parentHistoryId,f.id);});if(pack.resource)state.tradeItems.push({id:uid(),key:pack.resource.key,name:pack.resource.name,icon:pack.resource.icon,exchanged:false,islandTrade:true,mistSupplies:true});});
   if(activeDebuff('Касатка')&&!state.megalodon){const newColossusCount=colossi.length+supplyColossi.length,targets=state.fish.filter(f=>f.islandColossus&&!f.removed&&!f.orcaChecked),target=newColossusCount?[...targets].sort((a,b)=>b.weight-a.weight)[0]:null;if(target){target.orcaChecked=true;if(chance(.5)){target.removed=true;state.eaten.push(target);setFishHistoryEaten(target,true);const unstableRemains=refreshUnstablePresence();addHistory(`Касатка съела исполина ${target.name}`,'debuff',`(${kg(target.weight)} • проверка 50%${unstableRemains?'':' • «Нестабильное присутствие» прекращено'})`,{numbered:false});}else addHistory(`Исполин ${target.name} отбился от Касатки`,'island','(Касатка ушла и не тронула другую рыбу)',{numbered:false});}else committedMorays.filter(f=>!f.removed).forEach(f=>{f.removed=true;state.eaten.push(f);setFishHistoryEaten(f,true);addHistory(`Касатка съела ${f.name}`,'debuff',`(${kg(f.weight)} • обычная вероятность 100%)`,{numbered:false});});}
   a.loot.filter(x=>x.kind==='trade').forEach(x=>state.tradeItems.push({id:uid(),key:x.key,name:x.name,icon:x.icon,exchanged:false,islandTrade:true}));
   a.loot.filter(x=>x.kind==='idol').forEach(()=>state.tradeItems.push({id:uid(),key:'enchantedIdol',name:'Зачарованный идол',icon:'🗿',exchanged:false,islandTrade:true}));
@@ -3026,13 +3050,156 @@ function catchArcadeCreature(token) {
   setTimeout(()=>removeArcadeCreature(token),220);
 }
 
+const DUNGEON_ASSET_PATH='./assets/dungeons/eternal-darkness-vault/';
+const DUNGEON_NAME='Хранилище вечной тьмы';
+const DUNGEON_WEAPONS=Object.freeze({dagger:{name:'Кинжал',file:'weapon-dagger.webp'},sword:{name:'Меч',file:'weapon-sword.webp'},hammer:{name:'Молот',file:'weapon-hammer.webp'},shield:{name:'Щит',file:'weapon-shield.webp'}});
+const DUNGEON_ALLIES=Object.freeze({eel:{name:'Электрический угорь',file:'ally-electric-eel.webp'},stonefish:{name:'Рыба-камень',file:'ally-stonefish.webp'},shark:{name:'Гоблиновая акула',file:'ally-goblin-shark.webp'},crab:{name:'Краб-йети',file:'ally-yeti-crab.webp'}});
+const DUNGEON_REWARDS=Object.freeze({eye:{name:'Око Балистьера',file:'loot-ballistier-eye.webp'},flame:{name:'Пылающее ядро',file:'loot-burning-core.webp'},abyss:{name:'Ядро бездны',file:'loot-abyss-core.webp'}});
+function ensureDungeon(){const base=initialState().dungeon;state.dungeon={...base,...(state.dungeon||{})};if(!Array.isArray(state.dungeon.rewards))state.dungeon.rewards=[];if(!Array.isArray(state.dungeon.feats))state.dungeon.feats=[];}
+function activeDungeonPrompt(){const encounter=state.dungeon?.encounter;return encounter&&['piranhas','trail'].includes(encounter.phase)?encounter:null;}
+function dungeonImg(file,label,extra=''){return `<span class="dungeon-icon${extra?` ${extra}`:''}" title="${label}"><img src="${DUNGEON_ASSET_PATH}${file}" alt="" aria-hidden="true" decoding="async" onerror="this.parentElement.classList.add('is-missing')"><span>${label.slice(0,1)}</span></span>`;}
+function dungeonAvailableFish(){return state.fish.filter(f=>!f.removed&&!fishIsEaten(f)&&!fishIsStolen(f)&&!f.islandDisplaced&&!f.islandTraded&&!f.riftSacrificeLabel&&!f.dungeonSacrifice);}
+function maybeSpawnPiranhas(fish){
+  ensureDungeon();if(fish.source!=='Заброс'||!fish.direct||fish.removed)return;
+  state.dungeon.ordinaryFishSinceRoll=(state.dungeon.ordinaryFishSinceRoll||0)+1;
+  if(state.dungeon.ordinaryFishSinceRoll<BALANCE.dungeon.piranhaEveryFish)return;
+  state.dungeon.ordinaryFishSinceRoll=0;if(state.dungeon.encounter||!chance(BALANCE.dungeon.piranhaChance))return;
+  const row=addHistory('Пираньи вечной тьмы','dungeon','(Фиолетовые силуэты кружат в воде • жертву можно выбрать до четвёртого заброса)',{numbered:false,dungeonAction:'sacrifice'});
+  state.dungeon.encounter={id:uid(),phase:'piranhas',historyRowId:row.id,castsUsed:0,sacrifice:null,cleanWeight:null,weapon:null,ally:null,playerHp:BALANCE.dungeon.playerHealth,bossHp:BALANCE.dungeon.bossHealth,round:0,log:[],speed:1};
+}
+function expireDungeonEncounterBeforeCast(){
+  ensureDungeon();const d=state.dungeon.encounter;if(!d||!['piranhas','trail'].includes(d.phase)||d.castsUsed<BALANCE.dungeon.trailCasts)return false;
+  const row=state.history.find(h=>h.id===d.historyRowId);if(row){row.dungeonAction=null;row.detail=d.phase==='trail'?'(Алый след растворился • вход в подземелье закрыт)':'(Стайка не дождалась жертвы и уплыла)';}
+  state.dungeon.encounter=null;return true;
+}
+function advanceDungeonEncounterAfterCast(){const d=state.dungeon?.encounter;if(d&&['piranhas','trail'].includes(d.phase))d.castsUsed=(d.castsUsed||0)+1;}
+function openDungeonSacrifice(){
+  const d=state.dungeon?.encounter;if(!d||d.phase!=='piranhas')return;const fish=dungeonAvailableFish();if(!fish.length){toast('Нет доступной рыбы для жертвы');return;}
+  const scene=$('dungeonScene');scene.innerHTML=`<section class="dungeon-picker"><p class="dungeon-kicker">Пираньи вечной тьмы</p><h2>Выберите рыбу-жертву</h2><p>Её чистый вес сохранится для расчёта боя, но не войдёт в итог сессии.</p><div class="dungeon-fish-grid">${fish.map(f=>`<button type="button" data-dungeon-fish="${f.id}">${fishCategoryIcons(f,'is-dungeon-icon')}<strong>${capitalize(f.name)}</strong><small>${kg(f.weight)} • чистый вес ${kg(dungeonFishCleanWeight(f))}</small></button>`).join('')}</div><button type="button" class="secondary-btn" data-dungeon-close>Продолжить рыбалку</button></section>`;
+  scene.onclick=e=>{if(e.target.closest('[data-dungeon-close]')){$('dungeonDialog').close();return;}const button=e.target.closest('[data-dungeon-fish]');if(button)sacrificeDungeonFish(button.dataset.dungeonFish);};$('dungeonDialog').showModal();
+}
+function sacrificeDungeonFish(id){
+  const d=state.dungeon?.encounter,fish=dungeonAvailableFish().find(f=>f.id===id);if(!d||d.phase!=='piranhas'||!fish)return;
+  fish.removed=true;fish.dungeonSacrifice=true;d.sacrifice={id:fish.id,name:fish.name,weight:fish.weight,originalWeight:fish.originalWeight,cleanWeight:dungeonFishCleanWeight(fish)};d.phase='trail';d.castsUsed=0;
+  const fishRow=state.history.find(h=>h.type==='fish'&&h.fishId===fish.id);if(fishRow){fishRow.dungeonSacrifice=true;fishRow.detail=`(Принесена в жертву магматическим пираньям • ${kg(fish.weight)} исключено из итога)`;}
+  const row=state.history.find(h=>h.id===d.historyRowId);if(row){row.text='Алый след';row.detail=`(Пираньи приняли ${capitalize(fish.name)} • вход доступен ещё 3 заброса)`;row.dungeonAction='dive';}
+  $('dungeonDialog').close();commitState();
+}
+function dungeonFishCleanWeight(fish){return fish?.debuffLimited&&Number.isFinite(fish.debuffBaseWeight)?fish.debuffBaseWeight:(Number(fish?.originalWeight)||0);}
+function dungeonSacrificeCleanWeight(sacrifice){if(!sacrifice)return 0;if(Number.isFinite(sacrifice.cleanWeight))return sacrifice.cleanWeight;const fish=state.fish.find(f=>f.id===sacrifice.id);return fish?dungeonFishCleanWeight(fish):(Number(sacrifice.originalWeight)||0);}
+function dungeonCleanWeight(d){return round1(state.fish.filter(f=>!f.removed).reduce((sum,f)=>sum+dungeonFishCleanWeight(f),0)+dungeonSacrificeCleanWeight(d.sacrifice));}
+function beginDungeonDive(){const d=state.dungeon?.encounter;if(!d||d.phase!=='trail')return;d.phase='splash';d.cleanWeight=dungeonCleanWeight(d);render();renderDungeon();}
+function dungeonButtonIcon(file,label){return `${dungeonImg(file,label)}<span class="dungeon-object-label">${label}</span>`;}
+function dungeonPlacedObject(kind,file,label,slot,action=''){const data=action?` data-${action}="${slot}"`:'';return `<button type="button" class="dungeon-placed-object is-${kind} slot-${slot}"${data}>${dungeonButtonIcon(file,label)}</button>`;}
+function dungeonLevelHeading(level,title){return `<header class="dungeon-level-heading"><span>${level}</span><strong>${title}</strong></header>`;}
+function dungeonWorld(d,phase,overlay=''){
+  const weapon=d.weapon?DUNGEON_WEAPONS[d.weapon]:null,ally=d.ally?DUNGEON_ALLIES[d.ally]:null;
+  const weaponSlot=Number.isInteger(d.weaponSlot)?d.weaponSlot:0,allySlot=Number.isInteger(d.allySlot)?d.allySlot:0;
+  const chests=Array.from({length:4},(_,i)=>d.weapon?(i===weaponSlot?dungeonPlacedObject('weapon',weapon.file,weapon.name,i):''):dungeonPlacedObject('chest','chest.webp',`Сундук ${i+1}`,i,'dungeon-chest')).join('');
+  const orbs=Array.from({length:4},(_,i)=>d.ally?(i===allySlot?dungeonPlacedObject('ally',ally.file,ally.name,i):''):dungeonPlacedObject('orb','ally-orb.webp',`Сфера ${i+1}`,i,'dungeon-orb')).join('');
+  const reveal=phase==='weapon'||phase==='weaponLoot'?1:phase==='ally'||phase==='allyLoot'?2:3;
+  return `<section class="dungeon-world reveal-${reveal}">
+    <div class="dungeon-level level-three">${reveal>=3?`${dungeonLevelHeading('Третий уровень','Балистьер — могучий страж')}<div class="dungeon-boss-anchor">${dungeonImg('boss-ballistier.webp','Балистьер','is-boss')}<small>3000 здоровья</small></div>${phase==='boss'?'<button type="button" class="primary-btn dungeon-fight-btn" data-dungeon-fight>Начать сражение</button>':''}`:''}</div>
+    <div class="dungeon-level level-two">${reveal>=2?`${dungeonLevelHeading('Второй уровень',d.ally?'Союзник выбран':'Выберите сферу союзника')}<div class="dungeon-level-objects">${orbs}</div>`:''}</div>
+    <div class="dungeon-level level-one">${dungeonLevelHeading('Первый уровень',d.weapon?'Оружие получено':'Выберите один из четырёх сундуков')}<div class="dungeon-level-objects">${chests}</div></div>
+    ${reveal<3?'<div class="dungeon-fog fog-level-three" aria-hidden="true"></div>':''}${reveal<2?'<div class="dungeon-fog fog-level-two" aria-hidden="true"></div>':''}
+    ${reveal>1?`<div class="dungeon-reveal-wave reveal-wave-${reveal}" aria-hidden="true"></div>`:''}${overlay}
+  </section>`;
+}
+function renderDungeon(){
+  const d=state.dungeon?.encounter,dialog=$('dungeonDialog'),scene=$('dungeonScene');if(!d||!dialog||!scene)return;
+  dialog.dataset.phase=d.phase;
+  if(d.phase==='splash')scene.innerHTML=`<section class="dungeon-splash"><div class="dungeon-splash-weight">Чистый вес отряда: <strong>${kg(d.cleanWeight)}</strong></div><button type="button" class="primary-btn dungeon-enter" data-dungeon-enter>Войти</button></section>`;
+  else if(d.phase==='weapon')scene.innerHTML=dungeonWorld(d,'weapon');
+  else if(d.phase==='weaponLoot')scene.innerHTML=dungeonWorld(d,'weaponLoot',dungeonLootScene('Получено оружие',DUNGEON_WEAPONS[d.weapon],dungeonWeaponDescription(d.weapon),'weapon-confirm'));
+  else if(d.phase==='ally')scene.innerHTML=dungeonWorld(d,'ally');
+  else if(d.phase==='allyLoot')scene.innerHTML=dungeonWorld(d,'allyLoot',dungeonLootScene('К отряду присоединяется',DUNGEON_ALLIES[d.ally],dungeonAllyDescription(d.ally),'ally-confirm'));
+  else if(d.phase==='boss')scene.innerHTML=dungeonWorld(d,'boss');
+  else if(d.phase==='battle')scene.innerHTML=dungeonBattleMarkup(d);
+  else if(d.phase==='result')scene.innerHTML=dungeonResultMarkup(d);
+  scene.onclick=handleDungeonClick;if(!dialog.open)dialog.showModal();
+  requestAnimationFrame(()=>scene.querySelectorAll('.battle-log-entries').forEach(log=>{log.scrollTop=log.scrollHeight;}));
+}
+function dungeonLootScene(title,item,description,action){return `<div class="dungeon-loot-backdrop"><section class="dungeon-loot-pop ui-dialog-panel"><p class="dungeon-kicker">Добыча</p><h2>${title}</h2>${dungeonImg(item.file,item.name,'is-loot')}<h3>${item.name}</h3><p>${description}</p><button type="button" class="primary-btn" data-dungeon-${action}>Подтвердить</button></section></div>`;}
+function dungeonWeaponDescription(key){return {dagger:'Быстрые повторы, критические и накапливаемые точные удары.',sword:'Тройной базовый урон и глубокие раны.',hammer:'Случайная мощь и шанс оглушения.',shield:'Поглощение атак и защищённые криты.'}[key];}
+function dungeonAllyDescription(key){return {eel:'Каждый третий ход атакует и накапливает статическое электричество.',stonefish:'Каждый третий ход принимает 80% основной атаки.',shark:'Каждый третий ход атакует и усиливает следующий удар.',crab:'Каждый третий ход возвращает основную атаку боссу.'}[key];}
+function handleDungeonClick(e){
+  const d=state.dungeon?.encounter;if(!d)return;
+  if(e.target.closest('[data-dungeon-enter]')){d.phase='weapon';renderDungeon();return;}
+  if(e.target.closest('[data-dungeon-chest]')){const button=e.target.closest('[data-dungeon-chest]');d.weaponSlot=Number(button.dataset.dungeonChest);d.weapon=pick(Object.keys(DUNGEON_WEAPONS));d.phase='weaponLoot';renderDungeon();return;}
+  if(e.target.closest('[data-dungeon-weapon-confirm]')){d.phase='ally';renderDungeon();return;}
+  if(e.target.closest('[data-dungeon-orb]')){const button=e.target.closest('[data-dungeon-orb]');d.allySlot=Number(button.dataset.dungeonOrb);d.ally=pick(Object.keys(DUNGEON_ALLIES));d.phase='allyLoot';renderDungeon();return;}
+  if(e.target.closest('[data-dungeon-ally-confirm]')){d.phase='boss';renderDungeon();return;}
+  if(e.target.closest('[data-dungeon-fight]')){startDungeonBattle();return;}
+  if(e.target.closest('[data-dungeon-speed]')){d.speed=d.speed===1?4:1;e.target.closest('[data-dungeon-speed]').textContent=d.speed===4?'Скорость ×4':'Ускорить ×4';return;}
+  if(e.target.closest('[data-dungeon-return]')){finishDungeonReturn();}
+}
+function battleLogTone(event){if(event?.tone)return event.tone;const text=String(event?.text||'');if(/принимает|перенаправ/i.test(text))return 'mitigation';if(/поглощ|готова|оглушён|блок|защит/i.test(text))return 'positive';if(/^−|−\d|урон|магма/i.test(`${event?.floatText||''} ${text}`))return 'damage';return 'neutral';}
+function battleLogColumn(events,side,title){return `<aside class="battle-log battle-log-${side}"><h3>${title}</h3><div class="battle-log-entries">${events.map(x=>`<p class="tone-${battleLogTone(x)}">${x.text}</p>`).join('')}</div></aside>`;}
+function dungeonBattleMarkup(d){const playerPct=Math.max(0,d.playerHp/BALANCE.dungeon.playerHealth*100),bossPct=Math.max(0,d.bossHp/BALANCE.dungeon.bossHealth*100),event=d.lastBattleEvent,toPlayer=d.log.filter(x=>x.target==='player'),toBoss=d.log.filter(x=>x.target==='boss');return `<section class="dungeon-battle-world"><div class="dungeon-battle-hud"><span>Раунд ${Math.max(1,d.round)} / ${BALANCE.dungeon.rounds}</span><button type="button" class="secondary-btn battle-speed" data-dungeon-speed>${d.speed===4?'Скорость ×4':'Ускорить ×4'}</button></div><div class="battle-actor boss-actor">${dungeonImg('boss-ballistier.webp','Балистьер','is-battle-boss')}<strong>Балистьер</strong></div><div class="battle-health boss"><span>Балистьер</span><div class="battle-health-track"><i style="width:${bossPct}%"></i></div><strong>${Math.max(0,d.bossHp)} / ${BALANCE.dungeon.bossHealth}</strong></div><div class="battle-actor ally-actor">${dungeonImg(DUNGEON_ALLIES[d.ally].file,DUNGEON_ALLIES[d.ally].name,'is-fighter')}<small>${DUNGEON_ALLIES[d.ally].name}</small></div><div class="battle-actor player-actor">${dungeonImg(DUNGEON_WEAPONS[d.weapon].file,DUNGEON_WEAPONS[d.weapon].name,'is-fighter')}<strong>Игрок</strong></div><div class="battle-health player"><span>Игрок</span><div class="battle-health-track"><i style="width:${playerPct}%"></i></div><strong>${Math.max(0,d.playerHp)} / ${BALANCE.dungeon.playerHealth}</strong></div>${!reduceMotion&&event?`<div class="dungeon-damage-float target-${event.target} is-${event.side}" data-event="${event.id}"><strong>${event.floatText}</strong><small>${event.caption||''}</small></div>`:''}${battleLogColumn(toPlayer,'player','По игроку')}${battleLogColumn(toBoss,'boss','По Балистьеру')}</section>`;}
+function battleLog(d,side,text,target='boss',floatText='',tone=''){const event={id:(d.battleEventId||0)+1,side,text,target,floatText:floatText||text,caption:text,tone};d.battleEventId=event.id;d.log.push(event);d.lastBattleEvent=event;if(d.log.length>30)d.log.shift();}
+function playerAttack(d,turn){
+  const w=Math.max(.1,d.cleanWeight),even=turn%2===0;let damage=0,notes=[];
+  if(d.weapon==='dagger'){const crit=even&&chance(.5),hit=w*(crit?2:1);damage=hit*(even?2:1);if(crit)notes.push('крит');if(even)notes.push('повтор');if(turn%3===0&&chance(.5)){const precise=Math.floor(rand(10,21));d.preciseStrikes=(d.preciseStrikes||0)+precise;notes.push(`точные удары +${precise} (всего ${d.preciseStrikes})`);}}
+  if(d.weapon==='sword'){const base=w*3,crit=chance(.5);damage=base*(crit?3:1);if(crit)notes.push('крит');if(even&&chance(.5)){d.deepWounds=(d.deepWounds||0)+15;damage+=d.deepWounds;notes.push(`глубокие раны ${d.deepWounds}`);}}
+  if(d.weapon==='hammer'){const base=w+pick([10,20,30,40,50]),mult=chance(.5)?2:3;damage=base*mult;notes.push(`крит ×${mult}`);if(even&&chance(.35)){d.bossStunned=true;notes.push('оглушение');}}
+  if(d.weapon==='shield'){damage=w+10;if(even&&chance(.5)){damage+=30;notes.push('крит');}if(even&&chance(.5)){d.absorb=true;notes.push('поглощение');}}
+  if(d.goblinBoost){damage+=50;d.goblinBoost=false;notes.push('усиление +50');}
+  damage=Math.round(damage);d.bossHp=Math.max(0,d.bossHp-damage);battleLog(d,'player',`Игрок: −${damage}${notes.length?` (${notes.join(', ')})`:''}`,'boss',`−${damage}`);
+}
+function allyAction(d,turn){if(turn%3!==0)return false;d.stoneRedirect=false;d.yetiReflect=false;if(d.ally==='eel'){const damage=Math.floor(rand(50,101)),staticCharge=Math.floor(rand(10,21));d.bossHp=Math.max(0,d.bossHp-damage);d.staticElectricity=(d.staticElectricity||0)+staticCharge;battleLog(d,'ally',`Электрический шок: −${damage} • статическое электричество +${staticCharge} (всего ${d.staticElectricity})`,'boss',`−${damage}`,'ally-electric');}if(d.ally==='stonefish'){d.stoneRedirect=true;battleLog(d,'ally','Каменная стойкость готова','player','80% защиты','ally-stone');}if(d.ally==='shark'){const damage=Math.floor(rand(100,201));d.bossHp=Math.max(0,d.bossHp-damage);d.goblinBoost=true;battleLog(d,'ally',`Терзающий выпад: −${damage}, следующая атака +50`,'boss',`−${damage}`,'ally-shark');}if(d.ally==='crab'){d.yetiReflect=true;battleLog(d,'ally','Хитрый трюк готов','boss','Отражение','ally-crab');}return true;}
+function bossAttack(d){if(d.bossStunned){d.bossStunned=false;battleLog(d,'boss','Балистьер оглушён и пропускает атаку','boss','ОГЛУШЁН');return 0;}d.bossAttacks=(d.bossAttacks||0)+1;let damage=40;if(chance(.3))damage+=pick([10,20,30]);if(d.yetiReflect){d.bossHp=Math.max(0,d.bossHp-damage);d.yetiReflect=false;battleLog(d,'ally',`Хитрый трюк возвращает боссу ${damage} урона`,'boss',`−${damage}`,'ally-crab');}else if(d.absorb){d.absorb=false;battleLog(d,'player',`Щит полностью поглощает ${damage} урона`,'player','ПОГЛОЩЕНО');}else if(d.stoneRedirect){const playerDamage=Math.round(damage*.2);d.playerHp=Math.max(0,d.playerHp-playerDamage);d.stoneRedirect=false;battleLog(d,'ally',`Рыба-камень принимает 80%, игрок получает ${playerDamage}`,'player',`−${playerDamage}`,'ally-stone');}else{d.playerHp=Math.max(0,d.playerHp-damage);battleLog(d,'boss',`Балистьер: −${damage}`,'player',`−${damage}`);}return d.bossAttacks>=5&&d.playerHp>0?Math.floor(rand(10,21)):0;}
+function applyBossMagma(d,magma){if(!magma||d.playerHp<=0)return;d.playerHp=Math.max(0,d.playerHp-magma);battleLog(d,'boss',`Жидкая магма: −${magma}`,'player',`−${magma}`,'magma');}
+function applyDaggerPreciseStrikes(d){const damage=Math.max(0,Math.round(d.preciseStrikes||0));if(d.weapon!=='dagger'||!damage||d.bossHp<=0)return 0;d.bossHp=Math.max(0,d.bossHp-damage);battleLog(d,'player',`Точные удары: −${damage}`,'boss',`−${damage}`);return damage;}
+function applyStaticElectricity(d){const damage=Math.max(0,Math.round(d.staticElectricity||0));if(d.ally!=='eel'||!damage||d.bossHp<=0)return 0;d.bossHp=Math.max(0,d.bossHp-damage);battleLog(d,'ally',`Статическое электричество: −${damage}`,'boss',`−${damage}`,'ally-electric');return damage;}
+function dungeonBattleDelay(d){return d.speed===4?260:1050;}
+function startDungeonBattle(){const d=state.dungeon.encounter;d.phase='battle';d.playerHp=BALANCE.dungeon.playerHealth;d.bossHp=BALANCE.dungeon.bossHealth;d.round=0;d.log=[];d.speed=1;d.bossAttacks=0;d.preciseStrikes=0;d.staticElectricity=0;d.battleEventId=0;d.lastBattleEvent=null;d.battleToken=uid();renderDungeon();runDungeonRound(d.battleToken);}
+function runDungeonRound(token){const d=state.dungeon?.encounter;if(!d||d.phase!=='battle'||token!==d.battleToken)return;if(d.round>=BALANCE.dungeon.rounds||d.playerHp<=0||d.bossHp<=0){resolveDungeonBattle();return;}const turn=++d.round;playerAttack(d,turn);renderDungeon();setTimeout(()=>{const active=state.dungeon?.encounter;if(!active||active.phase!=='battle'||active.battleToken!==token)return;if(active.bossHp<=0){resolveDungeonBattle();return;}const allyActed=allyAction(active,turn);if(allyActed)renderDungeon();setTimeout(()=>{const current=state.dungeon?.encounter;if(!current||current.phase!=='battle'||current.battleToken!==token)return;if(current.bossHp<=0){resolveDungeonBattle();return;}const magma=bossAttack(current);applyDaggerPreciseStrikes(current);applyStaticElectricity(current);renderDungeon();const finishBossTurn=()=>setTimeout(()=>runDungeonRound(token),dungeonBattleDelay(current));if(current.bossHp<=0){setTimeout(()=>resolveDungeonBattle(),dungeonBattleDelay(current));return;}if(magma){setTimeout(()=>{const latest=state.dungeon?.encounter;if(!latest||latest.phase!=='battle'||latest.battleToken!==token)return;applyBossMagma(latest,magma);renderDungeon();finishBossTurn();},dungeonBattleDelay(current));}else finishBossTurn();},allyActed?dungeonBattleDelay(active):80);},dungeonBattleDelay(d));}
+function rollDungeonAllyWeight(){if(chance(.5))return {weight:rand1(20,40),rarity:'giant'};const rarity=weightedResult({rare:45,epic:30,heavy:15,legendary:8,giant:2}),ranges={rare:[1,9.9],epic:[10,19.9],heavy:[10,19.9],legendary:[20,39.9],giant:[20,40]},range=ranges[rarity];return {weight:rand1(range[0],range[1]),rarity};}
+function grantDungeonAlly(d){
+  if(d.allyReward)return d.allyReward;
+  const roll=rollDungeonAllyWeight(),ally=DUNGEON_ALLIES[d.ally],fish={id:uid(),name:ally.name,category:categoryForWeight(roll.weight),rarity:roll.rarity,originalWeight:roll.weight,weight:roll.weight,source:DUNGEON_NAME,direct:false,removed:false,tags:[],dungeonAlly:true,dungeonAllyKey:d.ally};
+  state.fish.push(fish);addFishHistory(fish,fish.source);d.allyReward={fishId:fish.id,name:ally.name,weight:roll.weight,rarity:roll.rarity};return d.allyReward;
+}
+function resolveDungeonBattle(){
+  const d=state.dungeon.encounter;d.phase='result';let outcome,reward=null;
+  if(d.playerHp<=0){outcome='wrath';state.dungeon.wrath=true;state.fish.filter(f=>!f.removed).forEach(f=>f.smoldering=true);addHistory('Гнев Балистьера','dungeon','(Все рыбы начинают тлеть • будущий улов срывается с вероятностью 50%)',{numbered:false,dungeonOutcome:'wrath'});}
+  else{grantDungeonAlly(d);if(d.bossHp<=0){outcome='victory';reward='eye';grantDungeonReward(reward);}else if(d.bossHp<BALANCE.dungeon.bossHealth*.5){outcome='reward';reward=chance(.5)?'flame':'abyss';grantDungeonReward(reward);}else outcome='ally';}
+  const feats=new Set(state.dungeon.feats||[]);if(outcome==='reward')feats.add('eternalDarknessCore');if(outcome==='victory'){feats.add('ballistierEye');if(d.ally==='stonefish')feats.add('pocketTank');}if(d.playerHp>0&&d.round>=BALANCE.dungeon.rounds&&d.playerHp<=50)feats.add('lastBreath');state.dungeon.feats=[...feats];
+  d.outcome=outcome;d.reward=reward;state.dungeon.runs=(state.dungeon.runs||0)+1;renderDungeon();saveDailyState();
+}
+function grantDungeonReward(key){ensureDungeon();const item={id:uid(),key,name:DUNGEON_REWARDS[key].name,used:false},bossHp=state.dungeon.encounter?.bossHp;state.dungeon.rewards.push(item);addHistory(item.name,'dungeon',Number.isFinite(bossHp)?`(Награда Балистьера • здоровье босса: ${bossHp}/${BALANCE.dungeon.bossHealth})`:'(Выдано через тестовую панель)',{numbered:false,dungeonReward:key});}
+function dungeonResultMarkup(d){const item=d.reward?DUNGEON_REWARDS[d.reward]:null,ally=DUNGEON_ALLIES[d.ally],survived=d.outcome!=='wrath',title=d.outcome==='victory'?'Балистьер повержен':d.outcome==='reward'?'Испытание пройдено':d.outcome==='ally'?'Отряд возвращается':'Гнев Балистьера',allyCopy=survived?`${ally.name} обрёл вес ${kg(d.allyReward?.weight||0)} и отправляется с вами.`:'',copy=d.outcome==='victory'?`${allyCopy} Получен уникальный трофей — Око Балистьера.`:d.outcome==='reward'?`${allyCopy} Здоровье босса опущено ниже 50%, получена дополнительная награда.`:d.outcome==='ally'?allyCopy:'Вы потеряли сознание и вернулись к обычной рыбалке. Союзник остался в подземелье.',loot=survived?`<div class="dungeon-result-loot"><span>${dungeonImg(ally.file,ally.name,'is-loot')}<strong>${ally.name}</strong></span>${item?`<span>${dungeonImg(item.file,item.name,'is-loot')}<strong>${item.name}</strong></span>`:''}</div>`:dungeonImg('effect-ballistier-wrath.webp','Гнев Балистьера','is-loot');return `<section class="dungeon-result"><p class="dungeon-kicker">Итог сражения</p><h2>${title}</h2>${loot}<p>${copy}</p><button type="button" class="primary-btn" data-dungeon-return>Вернуться к забросам</button></section>`;}
+function finishDungeonReturn(){$('dungeonDialog').close();state.dungeon.encounter=null;commitState();if(state.castsLeft<=0)maybeFinalizeSession();}
+function smolderFishBeforeCast(){if(!state.dungeon?.wrath)return;state.fish.filter(f=>!f.removed).forEach(f=>{const loss=Math.floor(rand(1,6)),before=f.weight;f.weight=round1(Math.max(0,f.weight-loss));f.smolderLoss=(f.smolderLoss||0)+round1(before-f.weight);if(f.weight<=0){f.removed=true;f.ballistierSkeleton=true;f.skeletonOf=f.name;f.name=`рыбный скелет (${f.name})`;}});}
+function applyBallistierWrathToFish(f){if(!state.dungeon?.wrath)return false;if(chance(.5)){f.removed=true;f.ballistierEscaped=true;return true;}f.smoldering=true;return false;}
+function renderDungeonHistoryAction(row){const d=state.dungeon?.encounter;if(!d||row.id!==d.historyRowId)return '';if(row.dungeonAction==='sacrifice'&&d.phase==='piranhas')return `<div class="dungeon-history-action"><button type="button" data-dungeon-sacrifice>Выбрать жертву</button><small>До исчезновения: ${Math.max(0,BALANCE.dungeon.trailCasts-d.castsUsed)} забр.</small></div>`;if(row.dungeonAction==='dive'&&d.phase==='trail')return `<div class="dungeon-history-action"><button type="button" data-dungeon-dive>Начать погружение</button><small>Алый след: ${Math.max(0,BALANCE.dungeon.trailCasts-d.castsUsed)} забр.</small></div>`;return '';}
+function dungeonHistoryIconMarkup(row){
+  if(row.type!=='dungeon')return '';
+  if(row.dungeonReward&&DUNGEON_REWARDS[row.dungeonReward]){const item=DUNGEON_REWARDS[row.dungeonReward];return dungeonImg(item.file,item.name,'is-history-icon');}
+  if(row.dungeonOutcome==='wrath'||/Гнев Балистьера/i.test(String(row.text||'')))return dungeonImg('effect-ballistier-wrath.webp','Гнев Балистьера','is-history-icon');
+  if(row.dungeonDebuffPrediction)return dungeonImg(DUNGEON_REWARDS.eye.file,DUNGEON_REWARDS.eye.name,'is-history-icon');
+  return dungeonImg('piranhas-eternal-darkness.webp','Пираньи вечной тьмы','is-history-icon');
+}
+function renderDungeonPrediction(row){if(!row.dungeonPredictionOpen)return '';return `<div class="dungeon-history-action dungeon-prediction-action"><button type="button" data-dungeon-debuff="accept" data-history-row="${row.id}">Принять</button><button type="button" data-dungeon-debuff="decline" data-history-row="${row.id}">Отказаться</button></div>`;}
+function renderBallistierSmolder(fish){if(!fish?.smoldering||fish.removed)return '';return `<small class="history-detail dungeon-smolder-note">Тлеет от Гнева Балистьера${fish.smolderLoss?` • потеряно ${kg(fish.smolderLoss)}`:''}</small>`;}
+function ballistierWrathFishBadge(fish){
+  if(!fish?.smoldering&&!fish?.ballistierSkeleton&&!fish?.ballistierEscaped)return '';
+  const label='Гнев Балистьера';
+  return `<span class="fish-effect-badge ballistier-wrath-fish-badge" title="${label}" aria-label="${label}"><img src="${DUNGEON_ASSET_PATH}effect-ballistier-wrath.webp" alt="" aria-hidden="true" decoding="async"></span>`;
+}
+function resolveDungeonDebuffPrediction(rowId,accept){const row=state.history.find(h=>h.id===rowId&&h.dungeonPredictionOpen);if(!row)return;row.dungeonPredictionOpen=false;row.detail=accept?'(Предсказание принято)':'(Предсказание отвергнуто • заброс израсходован)';if(accept)processDebuff(row.dungeonDebuffPrediction);commitState();}
+function useDungeonAbyssCore(id){ensureDungeon();const core=state.dungeon.rewards.find(item=>item.id===id&&item.key==='abyss'&&!item.used);if(!core||state.rifts?.active||state.dungeon.encounter||state.finished){toast('Сейчас Ядро бездны использовать нельзя');return;}core.used=true;makeRift(pick(Object.keys(RIFT_TYPES)),true);state.rifts.active.guaranteedSuccess=true;state.rifts.active.message+='<br><strong>Ядро бездны: все проверки этого Разлома защищены от провала.</strong>';renderRift();saveDailyState();}
+
 function castLine() {
-  if (state.finished || state.castsLeft<=0 || $('choiceDialog').open || $('riftDialog')?.open || state.islands?.active || hasPendingAbyssalDecision()) return;
+  if (state.finished || state.castsLeft<=0 || $('choiceDialog').open || $('riftDialog')?.open || $('dungeonDialog')?.open || state.islands?.active || hasPendingAbyssalDecision()) return;
+  expireDungeonEncounterBeforeCast();
   TelegramApp?.HapticFeedback?.impactOccurred?.('medium');
   if (!state.sessionDate) state.sessionDate=localDayKey();
   playSound('cast');
   animateCast();
   state.castClicks++; state.castsLeft--;
+  smolderFishBeforeCast();
   const fishStart=state.fish.length;
   const prepared=state.rifts?.preparedCatch;
   const eyeDescriptor=!prepared?nextEyeDescriptor():null;
@@ -3071,6 +3238,7 @@ function castLine() {
   maybeFindExpeditionItem('Обычный заброс');
   const activeGraniteCatfish=state.fish.find(f=>f.islandGraniteCatfish&&!f.removed);if(activeGraniteCatfish&&chance(.25)){state.castsLeft++;activeGraniteCatfish.graniteSavedCasts=(activeGraniteCatfish.graniteSavedCasts||0)+1;renderHistory();}
   if (!riftOpened&&!hasPendingAbyssalDecision()) maybeScheduleArcadeAfterCast();
+  advanceDungeonEncounterAfterCast();
   if (state.castsLeft<=0 && !$('choiceDialog').open) maybeFinalizeSession();
   commitState();
 }
@@ -3138,6 +3306,7 @@ function finalFishSnapshot() {
     }
   }
   if (state.diceFinalMultiplier>1) fish.filter(f=>!f.tradeFish&&!f.islandColossus).forEach(f=>{const before=f.weight;f.weight=round1(f.weight*state.diceFinalMultiplier);const original=state.fish.find(item=>item.id===f.id);if(original)original.diceImpact={before,after:f.weight,factor:state.diceFinalMultiplier};});
+  if(state.dungeon?.rewards?.some(item=>item.key==='eye'&&!item.used))fish.forEach(f=>{const before=f.weight;f.weight=round1(f.weight+10);const original=state.fish.find(item=>item.id===f.id);if(original)original.ballistierEyeImpact={before,after:f.weight};});
   if(activeDebuff('Касатка')&&!state.megalodon){
     fish.forEach(f=>{
       if(f.tradeFish||f.weight<5.5||f.finalOrcaProtected)return;
@@ -3245,6 +3414,13 @@ function achievements(finalFish,total) {
   if (state.deepThingConvertedCount>=3) a.push('Дар Бездны');
   if (Object.values(state.sessionCategories||{}).every(Boolean)) a.push('Морской хаос');
 
+  // Хранилище вечной тьмы
+  const dungeonFeats=new Set(state.dungeon?.feats||[]);
+  if(dungeonFeats.has('eternalDarknessCore')) a.push('Сквозь вечную тьму');
+  if(dungeonFeats.has('ballistierEye')) a.push('Око за око');
+  if(dungeonFeats.has('pocketTank')) a.push('Карманный танк');
+  if(dungeonFeats.has('lastBreath')) a.push('На последнем дыхании');
+
   // Разломы
   if (state.rifts?.maxDepthCompleted) a.push('За гранью');
   if (state.rifts?.feats?.includes('phantomMerge')) a.push('Призрачное слияние');
@@ -3350,7 +3526,7 @@ function eligibleFinalCastTradeCoin(){
 }
 function createTradeFish(item) {
   const categories=item.key==='firstWaterFlask'?['giant']:item.key==='moonTideShell'?Array.from({length:Math.floor(rand(1,6))},()=>{const r=Math.random();return r<.6?'normal':r<.9?'heavy':'giant';}):[chance(BALANCE.tradeShip.giantChance)?'giant':'heavy'];let first=null;
-  categories.forEach(category=>{const original=category==='giant'?rand1(20,40):category==='heavy'?rand1(10,19.9):rand1(.1,9.9),fish={id:uid(),name:pick(category==='giant'?DATA.giants:DATA.fish),category,originalWeight:original,weight:original,source:'Торговое судно',direct:false,tradeFish:true,removed:false,tags:['обмен с торговым судном','защищена от <span class="island-negative-hint">«Нестабильного присутствия»</span>'],debuffLimited:false,islandDistorted:false,islandOriginalWeight:null,islandDistortedWeight:null};state.fish.push(fish);const exchange={id:uid(),itemId:item.id,itemKey:item.key,itemName:item.name,itemIcon:item.icon,fishId:fish.id,fishName:fish.name,category,weight:fish.weight,tradeShipHistoryId:state.tradeShipHistoryId};state.tradeExchanges.push(exchange);if(!first)first=exchange;});
+  categories.forEach(category=>{const original=category==='giant'?rand1(20,40):category==='heavy'?rand1(10,19.9):rand1(.1,9.9),fish={id:uid(),name:pick(category==='giant'?DATA.giants:DATA.fish),category,originalWeight:original,weight:original,source:'Торговое судно',direct:false,tradeFish:true,removed:false,tags:['обмен с торговым судном','защищена от <span class="island-negative-hint">«Нестабильного присутствия»</span>'],debuffLimited:false,islandDistorted:false,islandOriginalWeight:null,islandDistortedWeight:null};applyBallistierWrathToFish(fish);state.fish.push(fish);const exchange={id:uid(),itemId:item.id,itemKey:item.key,itemName:item.name,itemIcon:item.icon,fishId:fish.id,fishName:fish.name,category,weight:fish.weight,tradeShipHistoryId:state.tradeShipHistoryId};state.tradeExchanges.push(exchange);if(!first)first=exchange;});
   item.exchanged=true;item.exchangeReason='trade';if(item.key==='moonTideShell'&&state.islands.moonShellActiveId===item.id)state.islands.moonShellActiveId=null;if(item.key==='fadedRelicFragment')state.islands.fadedRelicFragments=Math.max(0,(state.islands.fadedRelicFragments||0)-1);return first;
 }
 function exchangeFinalCastCoin(coinId,showEffect=true){
@@ -3358,7 +3534,7 @@ function exchangeFinalCastCoin(coinId,showEffect=true){
   if(!coin||coin.id!==coinId)return;
   const unstableActive=Boolean(state.islands?.unstablePresence),unstableApplied=unstableActive&&chance(.5);
   for(let index=0;index<2;index++){
-    const naturalWeight=rand1(.1,9.9),baseWeight=unstableApplied?rollIslandDistortedWeight(naturalWeight):naturalWeight;const fish={id:uid(),name:pick(DATA.fish),category:'normal',originalWeight:baseWeight,weight:baseWeight,source:'Торговое судно: монета последнего заброса',direct:false,tradeFish:true,removed:baseWeight===0,tags:['выгодный обмен монеты',...(unstableApplied?['<span class="island-negative-hint">Связь с последним забросом сохранилась: применено «Нестабильное присутствие»</span>']:unstableActive?['Торговый обмен разорвал связь с последним забросом — вес сохранён']:[])],debuffLimited:false,islandDistorted:unstableApplied,islandOriginalWeight:unstableApplied?naturalWeight:null,islandDistortedWeight:unstableApplied?baseWeight:null};if(baseWeight===0){fish.skeletonOf=fish.name;fish.name=`рыбный скелет (${fish.name})`;fish.islandSkeleton=true;fish.mythicSkeleton=true;}state.fish.push(fish);
+    const naturalWeight=rand1(.1,9.9),baseWeight=unstableApplied?rollIslandDistortedWeight(naturalWeight):naturalWeight;const fish={id:uid(),name:pick(DATA.fish),category:'normal',originalWeight:baseWeight,weight:baseWeight,source:'Торговое судно: монета последнего заброса',direct:false,tradeFish:true,removed:baseWeight===0,tags:['выгодный обмен монеты',...(unstableApplied?['<span class="island-negative-hint">Связь с последним забросом сохранилась: применено «Нестабильное присутствие»</span>']:unstableActive?['Торговый обмен разорвал связь с последним забросом — вес сохранён']:[])],debuffLimited:false,islandDistorted:unstableApplied,islandOriginalWeight:unstableApplied?naturalWeight:null,islandDistortedWeight:unstableApplied?baseWeight:null};if(baseWeight===0){fish.skeletonOf=fish.name;fish.name=`рыбный скелет (${fish.name})`;fish.islandSkeleton=true;fish.mythicSkeleton=true;}else applyBallistierWrathToFish(fish);state.fish.push(fish);
     state.tradeExchanges.push({id:uid(),itemId:coin.id,itemKey:'finalCastCoin',itemName:coin.name,coinType:coin.type,fishId:fish.id,fishName:fish.name,category:'normal',weight:fish.weight,coinTrade:true,tradeShipHistoryId:state.tradeShipHistoryId});
   }
   coin.used=true;coin.exchangedForTrade=true;coin.exchangeReason='trade';
@@ -3397,7 +3573,7 @@ function exchangeSiphonophoreThread(id){
 }
 function rollRecyclonCategory(){const r=Math.random();return r<.5?'normal':r<.85?'heavy':'giant';}
 function createRecyclonFish(category,itemName,itemIcon=shipIconMarkup('recyclon','is-compact-icon')){
-  const weight=category==='giant'?rand1(20,40):category==='heavy'?rand1(10,19.9):rand1(.1,9.9),name=pick(category==='giant'?DATA.giants:DATA.fish),fish={id:uid(),name,category,originalWeight:weight,weight,source:'Перерабатывающее судно «Рециклон»',direct:false,tradeFish:true,removed:false,tags:['получена от «Рециклона»','защищена от <span class="island-negative-hint">«Нестабильного присутствия»</span>'],debuffLimited:false,islandDistorted:false,islandOriginalWeight:null,islandDistortedWeight:null};state.fish.push(fish);state.tradeExchanges.push({id:uid(),itemId:uid(),itemKey:'recyclon',itemName,itemIcon,fishId:fish.id,fishName:fish.name,category,weight:fish.weight,tradeShipHistoryId:state.tradeShipHistoryId});return fish;
+  const weight=category==='giant'?rand1(20,40):category==='heavy'?rand1(10,19.9):rand1(.1,9.9),name=pick(category==='giant'?DATA.giants:DATA.fish),fish={id:uid(),name,category,originalWeight:weight,weight,source:'Перерабатывающее судно «Рециклон»',direct:false,tradeFish:true,removed:false,tags:['получена от «Рециклона»','защищена от <span class="island-negative-hint">«Нестабильного присутствия»</span>'],debuffLimited:false,islandDistorted:false,islandOriginalWeight:null,islandDistortedWeight:null};applyBallistierWrathToFish(fish);state.fish.push(fish);state.tradeExchanges.push({id:uid(),itemId:uid(),itemKey:'recyclon',itemName,itemIcon,fishId:fish.id,fishName:fish.name,category,weight:fish.weight,tradeShipHistoryId:state.tradeShipHistoryId});return fish;
 }
 function recycleAllTrash(){if(state.tradeShipSource!=='recyclon'||state.tradeShipCompleted)return;const trash=state.trash.filter(x=>x.recyclonEligible&&!x.converted&&!x.recycled);trash.forEach(item=>{item.recycled=true;item.converted=true;const row=state.history.find(h=>h.id===item.historyRowId);if(row)row.detail=`${row.detail||''} (Передан «Рециклону»)`.trim();createRecyclonFish(rollRecyclonCategory(),capitalize(item.name),trashIconMarkup('is-compact-icon'));});if(trash.length)addHistory('«Рециклон» переработал хлам','tradeShip',`(${trash.length} шт. → ${trash.length} рыб)`,{numbered:false});renderTradeDialog();commitState();}
 function renderRecyclonDialog(){
@@ -3477,7 +3653,7 @@ function beginTradeShip(source='natural') {
   else completeTradeShip();
 }
 function maybeFinalizeSession() {
-  if (state.finished || state.castsLeft>0 || $('choiceDialog')?.open || state.rifts?.active || state.islands?.active || hasPendingAbyssalDecision()) return;
+  if (state.finished || state.castsLeft>0 || $('choiceDialog')?.open || state.rifts?.active || state.islands?.active || state.dungeon?.encounter || hasPendingAbyssalDecision()) return;
   if(promptUnusedMessage())return;
   if(promptPendingExpeditions())return;
   if(promptFinalFlare())return;
@@ -3498,6 +3674,7 @@ function finishGame() {
   resolveEssencesAtFinish();
   const finalFish=finalFishSnapshot();
   let total=round1(finalFish.reduce((s,f)=>s+f.weight,0));
+  const burningCores=(state.dungeon?.rewards||[]).filter(item=>item.key==='flame'&&!item.used).length;if(burningCores)total=round1(total*Math.pow(1.05,burningCores));
   const earned=achievements(finalFish,total);
   const ended=new Date();
   state.finalResult={total,earned,finishedAt:ended.toISOString()};
@@ -3594,6 +3771,8 @@ function render() {
     effects.push({label:`${riftTemporaryEffectIconMarkup(e,'is-effect-icon')}<span class="effect-chip-copy">${compactName}</span>`,kind:'rift'});
   });
   state.rifts.relics.filter(r=>!r.used).forEach(r=>pushGroupedEffect({label:`<span class="rift-relic-effect-main">${riftRelicIcon(r.name,'is-effect-icon')}<span class="effect-chip-copy">${r.name}</span></span>`,kind:'rift',relicId:r.id,automatic:r.name==='Фантомный осколок',relicHint:r.name==='Око скрытой бездны'?'':r.name==='Обсидиановый ключ'&&state.rifts.obsidianArmed?'ожидает автоматической смены':RIFT_RELIC_ACTIVE_HINTS[r.name]||'использовать'},r.name));
+  ensureDungeon();state.dungeon.rewards.filter(item=>!item.used).forEach(item=>{const def=DUNGEON_REWARDS[item.key];pushGroupedEffect({label:`${dungeonImg(def.file,def.name,'is-effect-icon')}<span class="effect-chip-copy">${def.name}</span>`,kind:'dungeon',dungeonRewardId:item.id,usableDungeon:item.key==='abyss'},item.key);});
+  {const encounter=activeDungeonPrompt();if(encounter){const casts=Math.max(0,BALANCE.dungeon.trailCasts-(encounter.castsUsed||0)),label=encounter.phase==='piranhas'?'Пираньи вечной тьмы':'Алый след',hint=encounter.phase==='piranhas'?`ожидают жертву • ${casts} забр.`:`вход доступен • ${casts} забр.`;effects.push({label:`${dungeonImg('piranhas-eternal-darkness.webp','Пираньи вечной тьмы','is-effect-icon')}<span class="effect-chip-copy">${label} • ${hint}</span>`,kind:'dungeon'});}}
   if(hasRetainedAbyssal()){const entity=abyssalEntity(),def=ABYSSAL_PERSONALITIES[entity.personality];effects.push({label:entity.manifested?`${abyssalIconMarkup(entity.personality,'is-effect-icon')}<span class="effect-chip-copy">${def.name}</span>`:`${abyssalIconMarkup(null,'is-effect-icon')}<span class="effect-chip-copy">Неизвестная абиссальная форма жизни</span>`,kind:'abyssal'});}
   if(state.rifts.active)effects.push({label:`${fishCategoryIcon('rift','Разлом','is-effect-icon')}<span class="effect-chip-copy">Исследуется: ${RIFT_TYPES[state.rifts.active.type].short}</span>`,kind:'rift'});
   state.islands.items.filter(x=>x.status==='active').forEach(x=>effects.push({label:`${expeditionItemIconMarkup(x.name,'is-effect-icon')}<span class="effect-chip-copy">${x.name}</span>`,kind:'island'}));
@@ -3611,7 +3790,7 @@ function render() {
   if((state.angusTrailCasts||0)>0)effects.push({label:`🧭 След старого рыбака: ${state.angusTrailCasts} забр. • Ангус 5%`,kind:'epic'});
   if(state.islands.flares>0)effects.push({label:`${islandLootIconMarkup({kind:'flare',name:'Руническая сигнальная ракета'},'is-effect-icon')}<span class="effect-chip-copy">Руническая сигнальная ракета ×${state.islands.flares}</span>`,kind:'island',flare:true});
   const effectLabel=e=>{const count=(e.count||1)>1?` ×${e.count}`:'';return count&&/effect-chip-copy/.test(e.label)?e.label.replace(/<\/span>\s*$/,`${count}</span>`):`${e.label}${count}`;};
-  $('effectsList').innerHTML=effects.length?effects.map(e=>e.flare?`<button type="button" class="chip effect-island island-flare-btn" data-island-flare>${effectLabel(e)}<small>запустить</small></button>`:e.usableTradeKey?`<button type="button" class="chip effect-trade island-item-use-btn" data-island-item-use="${e.usableTradeKey}">${effectLabel(e)}<small>использовать</small></button>`:e.relicId?`<button type="button" class="chip effect-${e.kind} rift-relic-btn" data-rift-relic="${e.relicId}">${e.relicHint?effectLabel(e).replace(/<\/span>\s*<\/span>$/,`<small>${e.relicHint}</small></span></span>`):effectLabel(e)}</button>`:e.usable?`<button type="button" class="chip effect-${e.kind} mythic-use-btn" data-mythic-use="${e.artifactId}">${effectLabel(e)}<small>использовать</small></button>`:`<span class="chip effect-${e.kind}${e.negative?' island-negative-effect':''}${e.exhausted?' is-exhausted':''}">${effectLabel(e)}</span>`).join(''):'<span class="muted">Пока нет</span>';
+  $('effectsList').innerHTML=effects.length?effects.map(e=>e.flare?`<button type="button" class="chip effect-island island-flare-btn" data-island-flare>${effectLabel(e)}<small>запустить</small></button>`:e.usableDungeon?`<button type="button" class="chip effect-dungeon dungeon-reward-use-btn" data-dungeon-reward="${e.dungeonRewardId}">${effectLabel(e)}<small>использовать</small></button>`:e.usableTradeKey?`<button type="button" class="chip effect-trade island-item-use-btn" data-island-item-use="${e.usableTradeKey}">${effectLabel(e)}<small>использовать</small></button>`:e.relicId?`<button type="button" class="chip effect-${e.kind} rift-relic-btn" data-rift-relic="${e.relicId}">${e.relicHint?effectLabel(e).replace(/<\/span>\s*<\/span>$/,`<small>${e.relicHint}</small></span></span>`):effectLabel(e)}</button>`:e.usable?`<button type="button" class="chip effect-${e.kind} mythic-use-btn" data-mythic-use="${e.artifactId}">${effectLabel(e)}<small>использовать</small></button>`:`<span class="chip effect-${e.kind}${e.negative?' island-negative-effect':''}${e.exhausted?' is-exhausted':''}">${effectLabel(e)}</span>`).join(''):'<span class="muted">Пока нет</span>';
   $('effectCount').textContent=effects.filter(effect=>!effect.exhausted).length;
   const inventory=document.querySelector('.inventory');
   const kinds=new Set(effects.map(e=>e.kind));
@@ -3701,7 +3880,9 @@ function initRiftFuzzyTitles() {
 
 function renderHistory() {
   const icons={fish:'🐟',bonus:'✅',debuff:'🛑',epic:'💜',legendary:'🧡',mythic:'◆',trash:'🔘',coin:'🪙',weather:'⚠️',angus:characterIconMarkup('angus','is-history-icon'),rift:'🌀',abyssal:'❓',island:'🗺️'};
-  const visibleHistory=state.history.filter(row=>!row.mergedIntoHistoryId);
+  let visibleHistory=state.history.filter(row=>!row.mergedIntoHistoryId);
+  const activePrompt=activeDungeonPrompt();
+  if(activePrompt){const index=visibleHistory.findIndex(row=>row.id===activePrompt.historyRowId);if(index>=0)visibleHistory=[...visibleHistory.slice(0,index),...visibleHistory.slice(index+1),visibleHistory[index]];}
   $('historyCount').textContent=visibleHistory.length;
   $('emptyHistory').classList.toggle('hidden',visibleHistory.length>0);
   let numberedRow=0;
@@ -3717,9 +3898,10 @@ function renderHistory() {
     const currentAbyss=abyssalEntity();
     const abyssPersonality=h.type==='abyssal'?historyAbyssalPersonality(h,currentAbyss):null;
     const abyssEntityIcon=h.type==='abyssal'?abyssalIconMarkup(abyssPersonality,'is-history-icon'):null;
-    const skeletonHistoryIcon=fish?fishSkeletonMainIcon(fish):'',eatenHistoryIcon=fish?fishEatenMainIcon(h,fish):'';
+    const dungeonEventIcon=h.type==='dungeon'?dungeonHistoryIconMarkup(h):null;
+    const skeletonHistoryIcon=fish?fishSkeletonMainIcon(fish):'',dungeonSacrificeIcon=fish?fishDungeonSacrificeMainIcon(fish):'',dungeonAllyIcon=fish?.dungeonAlly?dungeonImg(DUNGEON_ALLIES[fish.dungeonAllyKey].file,DUNGEON_ALLIES[fish.dungeonAllyKey].name,'is-history-icon'):'',eatenHistoryIcon=fish?fishEatenMainIcon(h,fish):'';
     const historyShipKind=h.type==='tradeShip'&&(h.tradeShipSource==='recyclon'||/Рециклон/i.test(String(h.text||'')))?'recyclon':'trade';
-     const icon=h.type==='fish'&&h.islandDisplaced?'<span class="island-displaced-cross">✖</span>':h.type==='fish'&&fish?(skeletonHistoryIcon||eatenHistoryIcon||fishCategoryIcons(fish)):h.type==='coin'?coinIconMarkup(coinForRow?.type||'copper'):h.type==='weather'?weatherWarningIconMarkup('is-history-icon'):expeditionItem?expeditionItemIconMarkup(expeditionItem.name,'is-history-icon'):h.type==='tradeShip'?shipIconMarkup(historyShipKind,'is-history-icon'):(abyssEntityIcon||entityBasedIcon||icons[h.type]||'');
+     const icon=h.type==='fish'&&h.islandDisplaced?'<span class="island-displaced-cross">✖</span>':h.type==='fish'&&fish?(skeletonHistoryIcon||dungeonSacrificeIcon||dungeonAllyIcon||eatenHistoryIcon||fishCategoryIcons(fish)):h.type==='coin'?coinIconMarkup(coinForRow?.type||'copper'):h.type==='weather'?weatherWarningIconMarkup('is-history-icon'):expeditionItem?expeditionItemIconMarkup(expeditionItem.name,'is-history-icon'):h.type==='tradeShip'?shipIconMarkup(historyShipKind,'is-history-icon'):(dungeonEventIcon||abyssEntityIcon||entityBasedIcon||icons[h.type]||'');
      const weatherClass=h.type==='weather'&&h.weatherKey?` weather-${h.weatherKey}`:'';
      const orcaHistoryClass=h.type==='debuff'&&/Касатка/i.test(String(h.text||''))?' is-orca-debuff':'';
     const rowAmbient=historyAmbientMarkup(h);
@@ -3732,9 +3914,13 @@ function renderHistory() {
     const embeddedFish=renderEmbeddedFishList(angusGiftRow||h);
     const riftLootResults=renderRiftLootResults(h);
     const islandLootResults=renderIslandLootResults(h);
+    const dungeonAction=renderDungeonHistoryAction(h);
+    const dungeonPrediction=renderDungeonPrediction(h);
+    const dungeonSmolder=renderBallistierSmolder(fish);
     const transmutation=renderTransmutation(h);
-    const impactNote=h.type==='fish'&&h.islandTraded?'(Обменян особому торговому судну, вызванному Рунической ракетой)':h.type==='fish'&&h.islandDisplaced?`(Вытеснена эффектом ${fishEffectBadge('unstable-presence','Нестабильное присутствие')})`:h.type==='fish'&&fish?.islandSkeleton?`(${fishEffectBadge('unstable-presence','Нестабильное присутствие')} полностью лишило рыбу веса и превратило её в скелет)`:h.type==='fish'&&fish?.mythicSkeleton?'(Пассивное свойство «Искры Хаоса» превратило рыбу в скелет)':h.type==='fish'&&h.riftSacrificeLabel?`(${h.riftSacrificeLabel})`:h.type==='fish'&&h.abyssLost?`(${h.abyssLost})`:h.type==='fish'&&h.eaten?'(Съедена Касаткой)':h.type==='fish'&&h.stolen?'(Украдена Чайкой)':'';
-    const impactBadge=h.type==='fish'&&h.stolen?fishEffectBadge('stolen','Украдена Чайкой'):h.type==='fish'&&h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?fishEffectBadge('eaten-by-orca','Съедена Касаткой'):'';
+     const impactNote=h.type==='fish'&&h.islandTraded?'(Обменян особому торговому судну, вызванному Рунической ракетой)':h.type==='fish'&&h.islandDisplaced?`(Вытеснена эффектом ${fishEffectBadge('unstable-presence','Нестабильное присутствие')})`:h.type==='fish'&&fish?.islandSkeleton?`(${fishEffectBadge('unstable-presence','Нестабильное присутствие')} полностью лишило рыбу веса и превратило её в скелет)`:h.type==='fish'&&fish?.mythicSkeleton?'(Пассивное свойство «Искры Хаоса» превратило рыбу в скелет)':h.type==='fish'&&h.riftSacrificeLabel?`(${h.riftSacrificeLabel})`:h.type==='fish'&&h.abyssLost?`(${h.abyssLost})`:h.type==='fish'&&h.eaten&&!fish?.smoldering&&!fish?.ballistierSkeleton&&!fish?.ballistierEscaped?'(Съедена Касаткой)':h.type==='fish'&&h.stolen?'(Украдена Чайкой)':'';
+     const wrathFishBadge=h.type==='fish'?ballistierWrathFishBadge(fish):'';
+     const impactBadge=wrathFishBadge||(h.type==='fish'&&h.stolen?fishEffectBadge('stolen','Украдена Чайкой'):h.type==='fish'&&h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?fishEffectBadge('eaten-by-orca','Съедена Касаткой'):'');
     const impactContent=impactBadge||fish?.abyssLost||h.islandDisplaced||h.riftSacrificeLabel?'':impactNote;
     const fishSource=fish?fishHistorySourceLabel(h.fishSource||fish.source):'';
     const visibleText=fish?fishTitleText(fish):h.text;
@@ -3814,10 +4000,10 @@ function renderHistory() {
       trashThreadImpact||firstWaterImpact||moonShellImpact||maskImpact||scubaImpact||diceImpact||
       finalOrcaImpact||gearBonusStatus||scubaBonusStatus||tradeItemFind||abyssObjectChanges||
       tradeShipHistory||coinAction||abyssDecision||expeditionAction||navigatorAction||transmutation||
-      angusGiftArtifactMarkup||nautilusSummon||embeddedFish||islandLootResults||riftLootResults
+      angusGiftArtifactMarkup||nautilusSummon||embeddedFish||islandLootResults||riftLootResults||dungeonAction||dungeonPrediction||dungeonSmolder
     );
     const abyssClass=abyssPersonality?` abyss-${abyssPersonality}`:'';
-    return `<li data-history-id="${h.id}" class="history-item type-${h.type} is-compact-row${rowHasExtendedContent?' has-extended-content':''}${isPrimordialChaos?' is-primordial-chaos':''}${islandCompletion?' is-island-completion':''}${h.threadRemoved?' is-thread-removed':''}${h.eaten&&!fish?.mythicSkeleton?' is-eaten':''}${fish?.mythicSkeleton&&!fish?.islandSkeleton?' is-chaos-skeleton':''}${fish?.islandSkeleton?' is-island-skeleton':''}${h.stolen?' is-stolen':''}${h.abyssLost?' is-abyss-lost':''}${h.islandDisplaced?' is-island-displaced':''}${h.islandTraded?' is-island-traded':''}${expeditionItem&&expeditionItem.status!=='active'?' is-expedition-inactive':''}${h.abyssManifestation?' is-abyss-manifestation':''}${h.abyssDecision?' has-abyss-decision':''}${h.transmutation?' is-transmutation':''}${weatherClass}${orcaHistoryClass}${abyssClass}${h.id===lastAnimatedHistoryId?' is-new':''}">${riftLightning}${abyssPulse}${riftOriginIcon}${artifactTierBadge}<strong>${mainLine}</strong>${separateHistoryDetail}${impactContent?`<small class="history-impact-note${h.islandDisplaced||fish?.islandSkeleton?' island-displaced-note':''}${h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?' orca-eaten-hint':''}${h.abyssLost?' abyss-negative-hint':''}">${impactContent}</small>`:''}${islandDangerImpact}${megalodonImpact}${singularityImpact}${riftEffectImpact}${abyssFishImpacts}${essenceImpact}${goldenHourImpact}${leviathanImpact}${coinImpacts}${luminarImpacts}${debuffWeightImpact}${messageImpact}${flipperImpact}${pendingThreadImpact}${sparkChaosImpact}${trashThreadImpact}${firstWaterImpact}${moonShellImpact}${maskImpact}${scubaImpact}${diceImpact}${finalOrcaImpact}${gearBonusStatus}${scubaBonusStatus}${tradeItemFind}${abyssObjectChanges}${tradeShipHistory}${coinAction}${abyssDecision}${compactExpeditionHeader?'':expeditionAction}${navigatorAction}${transmutation}${angusGiftArtifactMarkup}${nautilusSummon}${embeddedFish}${islandLootResults}${riftLootResults}</li>`;
+    return `<li data-history-id="${h.id}" class="history-item type-${h.type} is-compact-row${rowHasExtendedContent?' has-extended-content':''}${isPrimordialChaos?' is-primordial-chaos':''}${islandCompletion?' is-island-completion':''}${h.threadRemoved?' is-thread-removed':''}${h.eaten&&!fish?.mythicSkeleton?' is-eaten':''}${fish?.mythicSkeleton&&!fish?.islandSkeleton?' is-chaos-skeleton':''}${fish?.islandSkeleton?' is-island-skeleton':''}${fish?.dungeonAlly?' is-dungeon-ally-catch':''}${fish?.ballistierEscaped?' is-dungeon-escaped':''}${h.stolen?' is-stolen':''}${h.abyssLost?' is-abyss-lost':''}${h.islandDisplaced?' is-island-displaced':''}${h.islandTraded?' is-island-traded':''}${expeditionItem&&expeditionItem.status!=='active'?' is-expedition-inactive':''}${h.abyssManifestation?' is-abyss-manifestation':''}${h.abyssDecision?' has-abyss-decision':''}${h.transmutation?' is-transmutation':''}${weatherClass}${orcaHistoryClass}${abyssClass}${h.id===lastAnimatedHistoryId?' is-new':''}">${riftLightning}${abyssPulse}${riftOriginIcon}${artifactTierBadge}<strong>${mainLine}</strong>${separateHistoryDetail}${impactContent?`<small class="history-impact-note${h.islandDisplaced||fish?.islandSkeleton?' island-displaced-note':''}${h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?' orca-eaten-hint':''}${h.abyssLost?' abyss-negative-hint':''}">${impactContent}</small>`:''}${islandDangerImpact}${megalodonImpact}${singularityImpact}${riftEffectImpact}${abyssFishImpacts}${essenceImpact}${goldenHourImpact}${leviathanImpact}${coinImpacts}${luminarImpacts}${debuffWeightImpact}${messageImpact}${flipperImpact}${pendingThreadImpact}${sparkChaosImpact}${trashThreadImpact}${firstWaterImpact}${moonShellImpact}${maskImpact}${scubaImpact}${diceImpact}${finalOrcaImpact}${gearBonusStatus}${scubaBonusStatus}${tradeItemFind}${abyssObjectChanges}${tradeShipHistory}${coinAction}${abyssDecision}${compactExpeditionHeader?'':expeditionAction}${navigatorAction}${transmutation}${angusGiftArtifactMarkup}${nautilusSummon}${embeddedFish}${islandLootResults}${riftLootResults}${dungeonAction}${dungeonPrediction}${dungeonSmolder}</li>`;
   }).join('');
   requestAnimationFrame(initRiftFuzzyTitles);
   if (lastAnimatedHistoryId) {
@@ -4012,6 +4198,10 @@ const GUIDE = {
     ['Не мой день','Получить хлам 4 раза подряд.'],
     ['Дар Бездны','Превратить не менее 3 единиц хлама в гигантов с помощью Глубоководного нечто — полученного напрямую или призванного Штурвалом Наутилуса.'],
     ['Морской хаос','Получить за сессию бонус, дебаф, эпический и легендарный артефакт.'],
+    ['Сквозь вечную тьму','Выжить после 10 раундов в Хранилище вечной тьмы, опустить здоровье Балистьера ниже 50% и получить Пылающее ядро или Ядро бездны.'],
+    ['Око за око','Победить Балистьера в Хранилище вечной тьмы и получить Око Балистьера.'],
+    ['Карманный танк','Победить Балистьера вместе с союзником Рыба-камень. Вес вынесенного союзника не имеет значения.'],
+    ['На последнем дыхании','Достичь 10-го раунда боя с Балистьером, выжить и сохранить не более 50 единиц здоровья.'],
     ['За гранью','Пройти все этапы любого Разлома и вынести добычу с максимальной глубины. Для Сингулярной ямы требуется 4-й этап, для остальных Разломов — 3-й. Спасение защитой на максимальной глубине также учитывается.'],
     ['Призрачное слияние','Выбрать Печать слияния в Призрачном шлейфе, получить легендарную рыбу или гиганта и успешно вынести добычу.'],
     ['На грани имплозии','Извлечь чёрный ящик Батисферы DF‑1 при прочности корпуса не более 20% и успешно вынести добычу.'],
@@ -4118,6 +4308,13 @@ function buildDropfishDebugPanel() {
     ['Легендарные',DATA.legendary.map(name=>button(`${artifactIconMarkup(name,'legendary','is-debug-icon')} ${name}`,`legendary:${encodeURIComponent(name)}`)).join('')],
     ['Мифические',DATA.mythic.map(name=>button(`${artifactIconMarkup(name,'mythic','is-debug-icon')} ${name}`,`mythic:${encodeURIComponent(name)}`)).join('')],
     ['Разломы',Object.entries(RIFT_TYPES).map(([key,value])=>button(`${fishCategoryIcon('rift','Разлом','is-debug-icon')} ${value.short}`,`rift:${key}`)).join('')],
+    ['Подземелье',[
+      button(`${dungeonImg('piranhas-eternal-darkness.webp','Пираньи вечной тьмы','is-debug-icon')} Вызвать пираний`,'dungeon:piranhas'),
+      button(`${dungeonImg('loot-ballistier-eye.webp','Око','is-debug-icon')} Выдать Око`,'dungeon:reward:eye'),
+      button(`${dungeonImg('loot-burning-core.webp','Ядро','is-debug-icon')} Выдать Пылающее ядро`,'dungeon:reward:flame'),
+      button(`${dungeonImg('loot-abyss-core.webp','Ядро','is-debug-icon')} Выдать Ядро бездны`,'dungeon:reward:abyss'),
+      button(`${dungeonImg('effect-ballistier-wrath.webp','Гнев','is-debug-icon')} Включить Гнев`,'dungeon:wrath','danger')
+    ].join('')],
     ['Острова',[
       button(`${expeditionItemIconMarkup('Тубус неизвестного картографа','is-debug-icon')} Выдать экспедиционный предмет`,'island:item'),
       button(`${expeditionItemIconMarkup('Страница дневника экспедиции','is-debug-icon')} Выдать и расшифровать`,'island:decoded'),
@@ -4165,6 +4362,9 @@ function buildDropfishDebugPanel() {
     else if(action.startsWith('legendary:')) processLegendary(decodeURIComponent(action.slice(10)));
     else if(action.startsWith('mythic:')) processMythic(decodeURIComponent(action.slice(7)),'Тестовая панель');
     else if(action.startsWith('rift:')){dialog.close();makeRift(action.slice(5),true);}
+    else if(action==='dungeon:piranhas'){ensureDungeon();state.dungeon.encounter=null;const row=addHistory('Пираньи вечной тьмы','dungeon','(Тестовый вызов • жертву можно выбрать позже)',{numbered:false,dungeonAction:'sacrifice'});state.dungeon.encounter={id:uid(),phase:'piranhas',historyRowId:row.id,castsUsed:0,sacrifice:null,cleanWeight:null,weapon:null,ally:null,playerHp:BALANCE.dungeon.playerHealth,bossHp:BALANCE.dungeon.bossHealth,round:0,log:[],speed:1};dialog.close();}
+    else if(action.startsWith('dungeon:reward:')){grantDungeonReward(action.slice('dungeon:reward:'.length));}
+    else if(action==='dungeon:wrath'){ensureDungeon();state.dungeon.wrath=true;state.fish.filter(f=>!f.removed).forEach(f=>f.smoldering=true);}
     else if(action==='island:item')maybeFindExpeditionItem('Тестовая панель',true);
     else if(action==='island:decoded'){dialog.close();const item=maybeFindExpeditionItem('Тестовая панель',true);decodeExpeditionItem(item.id,true);}
     else if(action==='island:open'){const expedition={id:uid(),island:'destructiveTides',status:'available',itemId:null};state.islands.expeditions.push(expedition);dialog.close();startIslandExpedition(expedition.id);}
@@ -4192,9 +4392,13 @@ function buildDropfishDebugPanel() {
 
 
 buildDropfishDebugPanel();
+{const preview=new URLSearchParams(location.search).get('dungeonPreview');if(['splash','weapon','weaponLoot','ally','allyLoot','boss','battle'].includes(preview)){ensureDungeon();state.dungeon.encounter={id:uid(),phase:preview,historyRowId:null,castsUsed:0,sacrifice:{id:'preview',name:'карпиодес',weight:7.6,originalWeight:7.6},cleanWeight:76,weapon:['weaponLoot','ally','allyLoot','boss','battle'].includes(preview)?'sword':null,weaponSlot:1,ally:['allyLoot','boss','battle'].includes(preview)?'eel':null,allySlot:2,playerHp:246,bossHp:1840,round:6,log:[],speed:1,bossAttacks:5,battleToken:uid()};if(preview==='battle'){battleLog(state.dungeon.encounter,'player','Игрок: −180 (крит)','boss','−180');}setTimeout(renderDungeon,0);}}
 /* PUBLIC_STRIP_DEBUG_END */
 $('castBtn').addEventListener('click',castLine);
 $('historyList').addEventListener('click',event=>{
+  const dungeonDebuff=event.target.closest('[data-dungeon-debuff]');if(dungeonDebuff){resolveDungeonDebuffPrediction(dungeonDebuff.dataset.historyRow,dungeonDebuff.dataset.dungeonDebuff==='accept');return;}
+  if(event.target.closest('[data-dungeon-sacrifice]')){openDungeonSacrifice();return;}
+  if(event.target.closest('[data-dungeon-dive]')){beginDungeonDive();return;}
   const navigator=event.target.closest('[data-navigator-lock]');if(navigator){activateAstralNavigator(navigator.dataset.navigatorLock,navigator.dataset.navigatorFish);return;}
   const study=event.target.closest('[data-expedition-study]');if(study){decodeExpeditionItem(study.dataset.expeditionStudy);return;}
   const go=event.target.closest('[data-expedition-go]');if(go){startIslandExpedition(go.dataset.expeditionGo);return;}
@@ -4213,7 +4417,7 @@ $('resultCard').addEventListener('click',event=>{
   renderResultCard();
   scrollResultCardAfterToggle(!expanded);
 });
-$('effectsList').addEventListener('click',event=>{if(event.target.closest('[data-island-flare]')){useRunicFlare();return;}const islandItem=event.target.closest('[data-island-item-use]');if(islandItem){if(islandItem.dataset.islandItemUse==='moonTideShell')useMoonTideShell();else if(islandItem.dataset.islandItemUse==='firstWaterFlask')useFirstWaterFlask();return;}const mythic=event.target.closest('[data-mythic-use]');if(mythic){useStormEye(mythic.dataset.mythicUse);return;}const button=event.target.closest('[data-rift-relic]');if(button)useRiftRelic(button.dataset.riftRelic);});
+$('effectsList').addEventListener('click',event=>{const dungeonReward=event.target.closest('[data-dungeon-reward]');if(dungeonReward){useDungeonAbyssCore(dungeonReward.dataset.dungeonReward);return;}if(event.target.closest('[data-island-flare]')){useRunicFlare();return;}const islandItem=event.target.closest('[data-island-item-use]');if(islandItem){if(islandItem.dataset.islandItemUse==='moonTideShell')useMoonTideShell();else if(islandItem.dataset.islandItemUse==='firstWaterFlask')useFirstWaterFlask();return;}const mythic=event.target.closest('[data-mythic-use]');if(mythic){useStormEye(mythic.dataset.mythicUse);return;}const button=event.target.closest('[data-rift-relic]');if(button)useRiftRelic(button.dataset.riftRelic);});
 $('effectsList').addEventListener('wheel',event=>{
   const list=event.currentTarget;
   if(list.scrollWidth<=list.clientWidth||Math.abs(event.deltaX)>=Math.abs(event.deltaY))return;
@@ -4226,6 +4430,7 @@ $('islandLocations').addEventListener('click',event=>{const button=event.target.
 $('islandContinueBtn').addEventListener('click',continueIsland);
 $('islandLeaveBtn').addEventListener('click',requestLeaveIsland);
 $('islandDialog').addEventListener('cancel',event=>event.preventDefault());
+$('dungeonDialog').addEventListener('cancel',event=>event.preventDefault());
 $('tradeOffers').addEventListener('click',event=>{
   const colossusButton=event.target.closest('[data-trade-colossus]');if(colossusButton){exchangeIslandColossus(colossusButton.dataset.tradeColossus);return;}
   const threadButton=event.target.closest('[data-trade-thread]');if(threadButton){exchangeSiphonophoreThread(threadButton.dataset.tradeThread);return;}
@@ -4244,6 +4449,7 @@ render();
 if(state.tradeShipArrived&&!state.tradeShipCompleted&&!hasTradeShipChoices())completeTradeShip();
 if(state.rifts?.active)renderRift();
 if(state.islands?.active){renderIsland();$('islandDialog').showModal();startIslandAmbient();}
+if(state.dungeon?.encounter&&!['piranhas','trail'].includes(state.dungeon.encounter.phase)){renderDungeon();if(state.dungeon.encounter.phase==='battle'){state.dungeon.encounter.battleToken=uid();setTimeout(()=>runDungeonRound(state.dungeon?.encounter?.battleToken),500);}}
 
 
 scheduleFishShadow();
