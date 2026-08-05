@@ -5484,3 +5484,25 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
   font-weight:800;
   text-align:center;
 }
+
+/* Active dungeon encounter: icon and copy form one compact visual unit. */
+.inventory .chip.effect-dungeon.dungeon-encounter-effect {
+  gap:2px;
+  padding-inline:7px 9px;
+}
+.inventory .chip.effect-dungeon.dungeon-encounter-effect .dungeon-icon.is-effect-icon {
+  flex-basis:32px;
+  width:32px;
+  height:38px;
+}
+.inventory .chip.effect-dungeon.dungeon-encounter-effect .effect-chip-copy {
+  margin-left:-10px;
+}
+
+/* Battle stage coordinates stay identical on every client through stage scaling. */
+.dungeon-modal .dungeon-battle-world .boss-actor {
+  top:23.5%;
+}
+.dungeon-modal .battle-health.boss {
+  top:31.5%;
+}
