@@ -5279,7 +5279,7 @@ body.reduce-motion .dungeon-placed-object.is-ally {
 .history-item.type-dungeon .dungeon-history-action{margin-top:3px;gap:7px}
 .history-item.type-dungeon .dungeon-history-action button{padding:7px 10px}
 .battle-health{position:absolute;z-index:14;display:grid;grid-template-columns:auto minmax(90px,1fr) auto;align-items:center;gap:7px;padding:5px 9px;border:1px solid #8b6baf99;border-radius:10px;background:#030511dc;color:#f4edff;font-size:clamp(9px,1.6vw,12px);text-shadow:0 2px 4px #000;box-shadow:0 5px 18px #0009}
-.battle-health.boss{top:42%;left:50%;width:min(62%,400px);transform:translateX(-50%)}
+.battle-health.boss{top:35%;left:50%;width:min(62%,400px);transform:translateX(-50%)}
 .battle-health.player{left:50%;bottom:2.5%;width:min(86%,550px);transform:translateX(-50%)}
 .battle-health-track{height:12px;border:2px solid #d7ae58;border-radius:999px;background:#190608;overflow:hidden}
 .battle-health-track i{display:block;height:100%;background:linear-gradient(90deg,#9c0810,#ff694e);transition:width .65s cubic-bezier(.2,.8,.2,1)}
@@ -5298,13 +5298,16 @@ body.reduce-motion .dungeon-placed-object.is-ally {
 .dungeon-battle-hud{top:1%;gap:6px;padding:3px 6px;border-color:#5d4a9960;background:#0406149c;min-height:0;border-radius:9px}
 .dungeon-battle-hud .battle-speed{min-height:0;height:30px;padding:3px 8px;border-radius:8px}
 .dungeon-battle-world .boss-actor>strong{display:none}
-.dungeon-battle-world .boss-actor{top:32%;z-index:7}
-.dungeon-battle-world .boss-actor .dungeon-icon{width:clamp(190px,39vw,285px);height:clamp(190px,39vw,285px);border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+.dungeon-battle-world .boss-actor{top:22%;z-index:7}
+.dungeon-battle-world .boss-actor .dungeon-icon{width:clamp(180px,34vw,255px);height:clamp(180px,34vw,255px);border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
 .dungeon-battle-world .boss-actor .dungeon-icon img{object-fit:contain}
 .dungeon-battle-world .ally-actor{top:58%;z-index:8}
 .dungeon-battle-world .ally-actor .dungeon-icon{width:clamp(98px,20vw,145px);height:clamp(98px,20vw,145px)}
 .dungeon-battle-world .player-actor{bottom:6%;z-index:8}
 .dungeon-battle-world .player-actor .dungeon-icon{width:clamp(105px,22vw,155px);height:clamp(105px,22vw,155px)}
+body.is-telegram .dungeon-battle-world .boss-actor{top:21%}
+body.is-telegram .dungeon-battle-world .boss-actor .dungeon-icon{width:clamp(150px,34vw,190px);height:clamp(150px,34vw,190px)}
+body.is-telegram .dungeon-battle-world .battle-health.boss{top:35%}
 .dungeon-battle-world .ally-actor .dungeon-icon,.dungeon-battle-world .player-actor .dungeon-icon{border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
 .dungeon-battle-world .ally-actor .dungeon-icon img,.dungeon-battle-world .player-actor .dungeon-icon img{object-fit:contain}
 .dungeon-battle-world .battle-log{top:39%;width:min(29%,190px);height:36%;max-height:none;box-sizing:border-box;padding:6px 7px;border-color:#725ca045;background:#03051180;backdrop-filter:blur(2px);overflow:hidden}

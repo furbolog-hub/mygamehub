@@ -3186,7 +3186,7 @@ function renderDungeon(){
   const d=state.dungeon?.encounter,dialog=$('dungeonDialog'),scene=$('dungeonScene');if(!d||!dialog||!scene)return;
   syncDungeonBattleMusic(d.phase==='battle');
   dialog.dataset.phase=d.phase;
-  if(d.phase==='splash')scene.innerHTML=`<section class="dungeon-splash"><div class="dungeon-splash-heading"><p class="dungeon-kicker">Подземелье</p><h2>${DUNGEON_NAME}</h2><div class="dungeon-splash-weight">Чистый вес отряда: <strong>${kg(d.cleanWeight)}</strong></div></div><button type="button" class="primary-btn dungeon-enter" data-dungeon-enter>Войти</button></section>`;
+  if(d.phase==='splash')scene.innerHTML=`<section class="dungeon-splash"><div class="dungeon-splash-weight">Чистый вес отряда: <strong>${kg(d.cleanWeight)}</strong></div><button type="button" class="primary-btn dungeon-enter" data-dungeon-enter>Войти</button></section>`;
   else if(d.phase==='weapon')scene.innerHTML=dungeonWorld(d,'weapon');
   else if(d.phase==='weaponLoot')scene.innerHTML=dungeonWorld(d,'weaponLoot',dungeonLootScene('Получено оружие',DUNGEON_WEAPONS[d.weapon],dungeonWeaponDescription(d.weapon),'weapon-confirm'));
   else if(d.phase==='ally')scene.innerHTML=dungeonWorld(d,'ally');
