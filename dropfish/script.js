@@ -79,7 +79,11 @@ const SOUND_PATHS = {
   islandDestructiveTides: './assets/audio/islands/music/destructive-tides.ogg',
   islandLeadenFog: './assets/audio/islands/music/leaden-fog.ogg',
   islandStoneGuardians: './assets/audio/islands/music/stone-guardians.ogg',
-  islandForgottenCurrents: './assets/audio/islands/music/forgotten-currents.ogg'
+  islandForgottenCurrents: './assets/audio/islands/music/forgotten-currents.ogg',
+  dungeonPiranhas: './assets/audio/dungeons/eternal-darkness-vault/piranhas-appear.ogg',
+  dungeonScarletTrail: './assets/audio/dungeons/eternal-darkness-vault/scarlet-trail.ogg',
+  dungeonEntrance: './assets/audio/dungeons/eternal-darkness-vault/dungeon-entrance.ogg',
+  dungeonBossBattle: './assets/audio/dungeons/eternal-darkness-vault/boss-battle.ogg'
 };
 
 const sounds = Object.fromEntries(
@@ -105,6 +109,9 @@ sounds.signalFlareLaunch.volume = 0.85;
 sounds.islandDiscovered.volume = 0.8;
 sounds.islandDanger.volume = 0.8;
 sounds.unstablePresence.volume = 0.85;
+sounds.dungeonPiranhas.volume = 0.85;
+sounds.dungeonScarletTrail.volume = 0.82;
+sounds.dungeonEntrance.volume = 0.88;
 sounds.riftAmbient.loop = true;
 ['islandDestructiveTides','islandLeadenFog','islandStoneGuardians','islandForgottenCurrents'].forEach(name=>{
   sounds[name].volume = 0.42;
@@ -159,11 +166,51 @@ function stopIslandAmbient(){
   if(audio){audio.pause();audio.currentTime=0;}
   activeIslandAmbient=null;
 }
+const DUNGEON_BATTLE_VOLUME=.46;
+const DUNGEON_BATTLE_FADE_SECONDS=2;
+let dungeonBattleMusicActive=false;
+let dungeonBattleFadeTimer=null;
+function resetDungeonBattleMusic(){
+  const audio=sounds.dungeonBossBattle;if(!audio)return;
+  audio.volume=DUNGEON_BATTLE_VOLUME;
+}
+function startDungeonBattleMusic(){
+  const audio=sounds.dungeonBossBattle;
+  if(!audio||!soundEnabled||localStorage.getItem('dropfishSoundsEnabled')==='false')return;
+  dungeonBattleMusicActive=true;
+  if(!dungeonBattleFadeTimer)dungeonBattleFadeTimer=setInterval(updateDungeonBattleFade,50);
+  if(!audio.paused)return;
+  resetDungeonBattleMusic();
+  const playback=audio.play();if(playback&&typeof playback.catch==='function')playback.catch(()=>{});
+}
+function stopDungeonBattleMusic(){
+  dungeonBattleMusicActive=false;
+  clearInterval(dungeonBattleFadeTimer);dungeonBattleFadeTimer=null;
+  const audio=sounds.dungeonBossBattle;if(!audio)return;
+  audio.pause();audio.currentTime=0;resetDungeonBattleMusic();
+}
+function syncDungeonBattleMusic(active){if(active)startDungeonBattleMusic();else stopDungeonBattleMusic();}
+sounds.dungeonBossBattle.loop=false;
+resetDungeonBattleMusic();
+function updateDungeonBattleFade(){
+  const audio=sounds.dungeonBossBattle;
+  if(!dungeonBattleMusicActive||!Number.isFinite(audio.duration)||audio.duration<=0)return;
+  const remaining=audio.duration-audio.currentTime;
+  audio.volume=remaining<=DUNGEON_BATTLE_FADE_SECONDS
+    ? DUNGEON_BATTLE_VOLUME*Math.max(0,remaining/DUNGEON_BATTLE_FADE_SECONDS)
+    : DUNGEON_BATTLE_VOLUME;
+}
+sounds.dungeonBossBattle.addEventListener('ended',()=>{
+  if(!dungeonBattleMusicActive||!soundEnabled)return;
+  sounds.dungeonBossBattle.currentTime=0;resetDungeonBattleMusic();
+  const playback=sounds.dungeonBossBattle.play();if(playback&&typeof playback.catch==='function')playback.catch(()=>{});
+});
 window.addEventListener('dropfishsoundchange', event => {
   soundEnabled = event.detail?.enabled !== false;
-  if (!soundEnabled) {stopRiftAmbient();stopIslandAmbient();}
+  if (!soundEnabled) {stopRiftAmbient();stopIslandAmbient();stopDungeonBattleMusic();}
   else if (state?.rifts?.active?.status === 'active' && $('riftDialog')?.open) startRiftAmbient();
   else if(state?.islands?.active&&$('islandDialog')?.open)startIslandAmbient();
+  else if(state?.dungeon?.encounter?.phase==='battle'&&$('dungeonDialog')?.open)startDungeonBattleMusic();
 });
 
 const MOTION_KEY = 'proFishingReduceMotion';
@@ -3074,6 +3121,7 @@ function maybeSpawnPiranhas(fish){
   driveOffOrcaWithPiranhas();
   const row=addHistory('Пираньи вечной тьмы','dungeon','(Фиолетовые силуэты кружат в воде • выбор жертвы откроется после следующего заброса)',{numbered:false,dungeonAction:'sacrifice'});
   state.dungeon.encounter={id:uid(),phase:'piranhas',historyRowId:row.id,castsUsed:0,spawnedOnCast:state.castClicks,sacrifice:null,cleanWeight:null,weapon:null,ally:null,playerHp:BALANCE.dungeon.playerHealth,bossHp:BALANCE.dungeon.bossHealth,round:0,log:[],speed:1};
+  playSound('dungeonPiranhas');
 }
 function syncDungeonPromptHistory(){
   const d=state.dungeon?.encounter;if(!d||!['piranhas','trail'].includes(d.phase))return;
@@ -3103,6 +3151,7 @@ function openDungeonSacrifice(){
 function sacrificeDungeonFish(id){
   const d=state.dungeon?.encounter,fish=dungeonAvailableFish().find(f=>f.id===id);if(!d||d.phase!=='piranhas'||!fish)return;
   fish.removed=true;fish.dungeonSacrifice=true;d.sacrifice={id:fish.id,name:fish.name,weight:fish.weight,originalWeight:fish.originalWeight,cleanWeight:dungeonFishCleanWeight(fish)};d.phase='trail';d.castsUsed=0;
+  playSound('dungeonScarletTrail');
   const fishRow=state.history.find(h=>h.type==='fish'&&h.fishId===fish.id);if(fishRow){fishRow.dungeonSacrifice=true;fishRow.detail=`(Принесена в жертву Пираньям вечной тьмы • ${kg(fish.weight)} исключено из итога)`;}
   const row=state.history.find(h=>h.id===d.historyRowId);if(row){row.text='Алый след';row.detail=`(Пираньи приняли ${capitalize(fish.name)} • вход доступен ещё 3 заброса)`;row.dungeonAction='dive';}
   $('dungeonDialog').close();commitState();
@@ -3110,7 +3159,7 @@ function sacrificeDungeonFish(id){
 function dungeonFishCleanWeight(fish){return fish?.debuffLimited&&Number.isFinite(fish.debuffBaseWeight)?fish.debuffBaseWeight:(Number(fish?.originalWeight)||0);}
 function dungeonSacrificeCleanWeight(sacrifice){if(!sacrifice)return 0;if(Number.isFinite(sacrifice.cleanWeight))return sacrifice.cleanWeight;const fish=state.fish.find(f=>f.id===sacrifice.id);return fish?dungeonFishCleanWeight(fish):(Number(sacrifice.originalWeight)||0);}
 function dungeonCleanWeight(d){return round1(state.fish.filter(f=>!f.removed).reduce((sum,f)=>sum+dungeonFishCleanWeight(f),0)+dungeonSacrificeCleanWeight(d.sacrifice));}
-function beginDungeonDive(){const d=state.dungeon?.encounter;if(!d||d.phase!=='trail')return;const row=state.history.find(h=>h.id===d.historyRowId);if(row){row.dungeonAction=null;row.detail=`(Пираньи приняли ${capitalize(d.sacrifice?.name||'жертву')} • погружение начато)`;}d.phase='splash';d.cleanWeight=dungeonCleanWeight(d);render();renderDungeon();}
+function beginDungeonDive(){const d=state.dungeon?.encounter;if(!d||d.phase!=='trail')return;const row=state.history.find(h=>h.id===d.historyRowId);if(row){row.dungeonAction=null;row.detail=`(Пираньи приняли ${capitalize(d.sacrifice?.name||'жертву')} • погружение начато)`;}d.phase='splash';d.cleanWeight=dungeonCleanWeight(d);playSound('dungeonEntrance');render();renderDungeon();}
 function abandonDungeonPrompt(expectedPhase){
   const d=state.dungeon?.encounter;if(!d||d.phase!==expectedPhase||!['piranhas','trail'].includes(d.phase))return;
   const row=state.history.find(h=>h.id===d.historyRowId);if(row){row.dungeonAction=null;row.detail=d.phase==='piranhas'?'(Пираньи вечной тьмы уплыли • жертва не принесена)':'(Игрок отказался от погружения • Алый след растворился)';}
@@ -3135,8 +3184,9 @@ function dungeonWorld(d,phase,overlay=''){
 }
 function renderDungeon(){
   const d=state.dungeon?.encounter,dialog=$('dungeonDialog'),scene=$('dungeonScene');if(!d||!dialog||!scene)return;
+  syncDungeonBattleMusic(d.phase==='battle');
   dialog.dataset.phase=d.phase;
-  if(d.phase==='splash')scene.innerHTML=`<section class="dungeon-splash"><div class="dungeon-splash-weight">Чистый вес отряда: <strong>${kg(d.cleanWeight)}</strong></div><button type="button" class="primary-btn dungeon-enter" data-dungeon-enter>Войти</button></section>`;
+  if(d.phase==='splash')scene.innerHTML=`<section class="dungeon-splash"><div class="dungeon-splash-heading"><p class="dungeon-kicker">Подземелье</p><h2>${DUNGEON_NAME}</h2><div class="dungeon-splash-weight">Чистый вес отряда: <strong>${kg(d.cleanWeight)}</strong></div></div><button type="button" class="primary-btn dungeon-enter" data-dungeon-enter>Войти</button></section>`;
   else if(d.phase==='weapon')scene.innerHTML=dungeonWorld(d,'weapon');
   else if(d.phase==='weaponLoot')scene.innerHTML=dungeonWorld(d,'weaponLoot',dungeonLootScene('Получено оружие',DUNGEON_WEAPONS[d.weapon],dungeonWeaponDescription(d.weapon),'weapon-confirm'));
   else if(d.phase==='ally')scene.innerHTML=dungeonWorld(d,'ally');
@@ -3197,7 +3247,7 @@ function resolveDungeonBattle(){
 }
 function grantDungeonReward(key){ensureDungeon();const def=DUNGEON_REWARDS[key],item={id:uid(),key,name:def.name,used:false,...(key==='eye'?{bonusCastsRemaining:4}:{})},bossHp=state.dungeon.encounter?.bossHp;state.dungeon.rewards.push(item);if(key==='eye')state.castsLeft+=4;const source=Number.isFinite(bossHp)?`Награда Балистьера • здоровье босса: ${bossHp}/${BALANCE.dungeon.bossHealth}`:'Выдано через тестовую панель',effect=key==='eye'?'добавлено 4 заброса':def.hint;const row=addHistory(item.name,'dungeon',`(${source}${effect?` • ${effect}`:''})`,{numbered:false,dungeonReward:key,dungeonRewardId:item.id});item.historyRowId=row.id;}
 function dungeonResultMarkup(d){const item=d.reward?DUNGEON_REWARDS[d.reward]:null,ally=DUNGEON_ALLIES[d.ally],survived=d.outcome!=='wrath',title=d.outcome==='victory'?'Балистьер повержен':d.outcome==='reward'?'Испытание пройдено':d.outcome==='ally'?'Отряд возвращается':'Гнев Балистьера',allyCopy=survived?`${ally.name} обрёл вес ${kg(d.allyReward?.weight||0)} и отправляется с вами.`:'',copy=d.outcome==='victory'?`${allyCopy} Получен уникальный трофей — Око Балистьера.`:d.outcome==='reward'?`${allyCopy} Здоровье босса опущено ниже 50%, получена дополнительная награда.`:d.outcome==='ally'?allyCopy:'Вы потеряли сознание и вернулись к обычной рыбалке. Союзник остался в подземелье.',loot=survived?`<div class="dungeon-result-loot"><span>${dungeonImg(ally.file,ally.name,'is-loot')}<strong>${ally.name}</strong></span>${item?`<span>${dungeonImg(item.file,item.name,'is-loot')}<strong>${item.name}</strong></span>`:''}</div>`:dungeonImg('effect-ballistier-wrath.webp','Гнев Балистьера','is-loot');return `<section class="dungeon-result"><p class="dungeon-kicker">Итог сражения</p><h2>${title}</h2>${loot}<p>${copy}</p><button type="button" class="primary-btn" data-dungeon-return>Вернуться к забросам</button></section>`;}
-function finishDungeonReturn(){$('dungeonDialog').close();state.dungeon.encounter=null;commitState();if(state.castsLeft<=0)maybeFinalizeSession();}
+function finishDungeonReturn(){stopDungeonBattleMusic();$('dungeonDialog').close();state.dungeon.encounter=null;commitState();if(state.castsLeft<=0)maybeFinalizeSession();}
 function smolderFishBeforeCast(){if(!state.dungeon?.wrath)return;state.fish.filter(f=>!f.removed).forEach(f=>{const loss=Math.floor(rand(1,6)),before=f.weight;f.weight=round1(Math.max(0,f.weight-loss));f.smolderLoss=(f.smolderLoss||0)+round1(before-f.weight);if(f.weight<=0){f.removed=true;f.ballistierSkeleton=true;f.skeletonOf=f.name;f.name=`рыбный скелет (${f.name})`;}});}
 function applyBallistierWrathToFish(f){if(!state.dungeon?.wrath)return false;if(chance(.5)){f.removed=true;f.ballistierEscaped=true;return true;}f.smoldering=true;return false;}
 function renderDungeonHistoryAction(row){const d=state.dungeon?.encounter;if(!d||row.id!==d.historyRowId)return '';if(row.dungeonAction==='sacrifice'&&d.phase==='piranhas'){const locked=isDungeonSacrificeLocked(d),lastCastOverride=!locked&&(d.castsUsed||0)<1,casts=Math.max(0,BALANCE.dungeon.trailCasts-d.castsUsed);return `<div class="dungeon-history-action"><button type="button" data-dungeon-sacrifice${locked?' disabled':''}>${locked?'Ждите следующего заброса':'Выбрать жертву'}</button><button type="button" class="secondary-btn" data-dungeon-abandon="piranhas">Не приносить жертву</button><small>${locked?'Выбор пока недоступен':lastCastOverride?'Последний заброс: жертва доступна':casts===0?'Последний шанс':`До исчезновения: ${casts} забр.`}</small></div>`;}if(row.dungeonAction==='dive'&&d.phase==='trail')return `<div class="dungeon-history-action"><button type="button" data-dungeon-dive>Начать погружение</button><button type="button" class="secondary-btn" data-dungeon-abandon="trail">Не погружаться</button><small>Алый след: ${Math.max(0,BALANCE.dungeon.trailCasts-d.castsUsed)} забр.</small></div>`;return '';}
@@ -4480,7 +4530,7 @@ $('tradeOffers').addEventListener('click',event=>{
 $('tradeAllBtn').addEventListener('click',()=>state.tradeShipSource==='recyclon'?recycleAllTrash():exchangeAllTradeItems());
 $('tradeFinishBtn').addEventListener('click',completeTradeShip);
 $('motionBtn').addEventListener('click',()=>{playSound('motion');reduceMotion=!reduceMotion;localStorage.setItem(MOTION_KEY,reduceMotion?'1':'0');applyMotionPreference();toast(reduceMotion?'Анимации уменьшены • аркадный режим доступен':'Полные анимации включены • аркадный режим доступен');});
-$('restartBtn').addEventListener('click',()=>{if(!BUILD_CONFIG.unlimitedSessions&&state.sessionDate){toast('Доступна только одна игровая сессия в сутки');return;}removeArcadeCreature(activeArcadeFish);state=initialState();state.weatherSeen=[state.weather];if(state.weather==='storm')state.stormSeen=true;if(BUILD_CONFIG.unlimitedSessions)localStorage.removeItem(TEST_SESSION_KEY);render();toast('Началась новая игровая сессия');});
+$('restartBtn').addEventListener('click',()=>{if(!BUILD_CONFIG.unlimitedSessions&&state.sessionDate){toast('Доступна только одна игровая сессия в сутки');return;}stopDungeonBattleMusic();removeArcadeCreature(activeArcadeFish);state=initialState();state.weatherSeen=[state.weather];if(state.weather==='storm')state.stormSeen=true;if(BUILD_CONFIG.unlimitedSessions)localStorage.removeItem(TEST_SESSION_KEY);render();toast('Началась новая игровая сессия');});
 $('guideBtn').addEventListener('click',()=>{playSound('guide');openGuide();});
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).close()));
 $('guideDialog').addEventListener('click',e=>{if(e.target===$('guideDialog'))$('guideDialog').close();});
