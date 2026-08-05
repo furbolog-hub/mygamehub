@@ -3141,7 +3141,7 @@ function expireDungeonEncounterBeforeCast(){
 function advanceDungeonEncounterAfterCast(){const d=state.dungeon?.encounter;if(!d||!['piranhas','trail'].includes(d.phase))return;if(d.phase==='piranhas'&&d.spawnedOnCast===state.castClicks){delete d.spawnedOnCast;syncDungeonPromptHistory();return;}d.castsUsed=(d.castsUsed||0)+1;if(d.phase==='trail'&&d.castsUsed>=BALANCE.dungeon.trailCasts)expireDungeonEncounterBeforeCast();else syncDungeonPromptHistory();}
 function openDungeonSacrifice(){
   const d=state.dungeon?.encounter;if(!d||d.phase!=='piranhas')return;if(isDungeonSacrificeLocked(d)){toast('Выбор жертвы откроется после следующего заброса');return;}const fish=dungeonAvailableFish();if(!fish.length){toast('Нет доступной рыбы для жертвы');return;}
-  const scene=$('dungeonScene');scene.innerHTML=`<section class="dungeon-picker"><p class="dungeon-kicker">Пираньи вечной тьмы</p><h2>Выберите рыбу-жертву</h2><p>Её чистый вес сохранится для расчёта боя, но не войдёт в итог сессии.</p><div class="dungeon-fish-grid">${fish.map(f=>`<button type="button" data-dungeon-fish="${f.id}">${fishCategoryIcons(f,'is-dungeon-icon')}<strong>${capitalize(f.name)}</strong><small>${kg(f.weight)} • чистый вес ${kg(dungeonFishCleanWeight(f))}</small></button>`).join('')}</div><button type="button" class="secondary-btn" data-dungeon-abandon="piranhas">Не приносить жертву</button><button type="button" class="secondary-btn" data-dungeon-close>Вернуться</button></section>`;
+  const scene=$('dungeonScene');scene.innerHTML=`<section class="dungeon-picker"><p class="dungeon-kicker">Пираньи вечной тьмы</p><h2>Выберите рыбу-жертву</h2><p>Её чистый вес сохранится для расчёта боя, но не войдёт в итог сессии.</p><div class="dungeon-fish-grid">${fish.map(f=>`<button type="button" data-dungeon-fish="${f.id}">${fishCategoryIcons(f,'is-dungeon-icon')}<strong>${capitalize(f.name)}</strong><small>${kg(f.weight)} • чистый вес ${kg(dungeonFishCleanWeight(f))}</small></button>`).join('')}</div><div class="dungeon-picker-actions"><button type="button" class="primary-btn" data-dungeon-abandon="piranhas">Не приносить жертву</button><button type="button" class="primary-btn" data-dungeon-close>Вернуться</button></div></section>`;
   let touchCandidate=null;
   scene.onpointerdown=e=>{const button=e.target.closest('[data-dungeon-fish]');touchCandidate=button&&e.pointerType!=='mouse'?{id:e.pointerId,fishId:button.dataset.dungeonFish,x:e.clientX,y:e.clientY}:null;};
   scene.onpointercancel=()=>{touchCandidate=null;};
@@ -3175,7 +3175,7 @@ function dungeonWorld(d,phase,overlay=''){
   const orbs=Array.from({length:4},(_,i)=>d.ally?(i===allySlot?dungeonPlacedObject('ally',ally.file,ally.name,i):''):dungeonPlacedObject('orb','ally-orb.webp',`Сфера ${i+1}`,i,'dungeon-orb')).join('');
   const reveal=phase==='weapon'||phase==='weaponLoot'?1:phase==='ally'||phase==='allyLoot'?2:3;
   return `<section class="dungeon-world reveal-${reveal}">
-    <div class="dungeon-level level-three">${reveal>=3?`${dungeonLevelHeading('Третий уровень','Балистьер — могучий страж')}<div class="dungeon-boss-anchor">${dungeonImg('boss-ballistier.webp','Балистьер','is-boss')}<small>3000 здоровья</small></div>${phase==='boss'?'<button type="button" class="primary-btn dungeon-fight-btn" data-dungeon-fight>Начать сражение</button>':''}`:''}</div>
+    <div class="dungeon-level level-three">${reveal>=3?`${dungeonLevelHeading('Третий уровень','Балистьер — могучий страж')}<div class="dungeon-boss-anchor"><small>3000 здоровья</small>${dungeonImg('boss-ballistier.webp','Балистьер','is-boss')}</div>${phase==='boss'?'<button type="button" class="primary-btn dungeon-fight-btn" data-dungeon-fight>Начать сражение</button>':''}`:''}</div>
     <div class="dungeon-level level-two">${reveal>=2?`${dungeonLevelHeading('Второй уровень',d.ally?'Союзник выбран':'Выберите сферу союзника')}<div class="dungeon-level-objects">${orbs}</div>`:''}</div>
     <div class="dungeon-level level-one">${dungeonLevelHeading('Первый уровень',d.weapon?'Оружие получено':'Выберите один из четырёх сундуков')}<div class="dungeon-level-objects">${chests}</div></div>
     ${reveal<3?'<div class="dungeon-fog fog-level-three" aria-hidden="true"></div>':''}${reveal<2?'<div class="dungeon-fog fog-level-two" aria-hidden="true"></div>':''}
@@ -3388,7 +3388,6 @@ function finalFishSnapshot() {
       });
     }
   }
-  if (state.diceFinalMultiplier>1) fish.filter(f=>!f.tradeFish&&!f.islandColossus).forEach(f=>{const before=f.weight;f.weight=round1(f.weight*state.diceFinalMultiplier);const original=state.fish.find(item=>item.id===f.id);if(original)original.diceImpact={before,after:f.weight,factor:state.diceFinalMultiplier};});
   if(state.dungeon?.rewards?.some(item=>item.key==='eye'&&!item.used))fish.forEach(f=>{const before=f.weight;f.weight=round1(f.weight+10);const original=state.fish.find(item=>item.id===f.id);if(original)original.ballistierEyeImpact={before,after:f.weight};});
   if(activeDebuff('Касатка')&&!state.megalodon){
     fish.forEach(f=>{
@@ -3761,9 +3760,12 @@ function finishGame() {
   const claimedCoreRows=new Set();
   const coreBaseWeight=total;if(burningCores.length)total=round1(coreBaseWeight*Math.pow(1.05,burningCores.length));
   burningCores.forEach((core,index)=>{const before=round1(coreBaseWeight*Math.pow(1.05,index)),after=index===burningCores.length-1?total:round1(coreBaseWeight*Math.pow(1.05,index+1)),added=round1(after-before),row=state.history.find(h=>h.id===core.historyRowId)||state.history.find(h=>h.dungeonRewardId===core.id)||state.history.find(h=>h.dungeonReward==='flame'&&!claimedCoreRows.has(h.id));core.finalWeightImpact={before,after,added};if(row){claimedCoreRows.add(row.id);core.historyRowId=row.id;row.dungeonRewardId=core.id;row.detail=`(Итоговый вес: ${kg(before)} → ${kg(after)} • +${kg(added)})`;}});
+  const diceBefore=total,diceFactor=Math.max(1,Number(state.diceFinalMultiplier)||1);
+  if(diceFactor>1)total=round1(diceBefore*diceFactor);
+  const diceImpact=diceFactor>1?{before:diceBefore,after:total,factor:diceFactor}:null;
   const earned=achievements(finalFish,total);
   const ended=new Date();
-  state.finalResult={total,earned,finishedAt:ended.toISOString()};
+  state.finalResult={total,earned,finishedAt:ended.toISOString(),diceImpact};
   renderResultCard();
   if (earned.length) playSound('achievement');
   addHistory('Игровая сессия завершена','event');
@@ -3780,12 +3782,13 @@ function renderResultCard() {
     $('resultCard').innerHTML='';
     return;
   }
-  const {total, earned, finishedAt}=state.finalResult;
+  const {total, earned, finishedAt, diceImpact}=state.finalResult;
   const ended=new Date(finishedAt);
   const achievementsExpanded=$('resultCard').dataset.expanded==='true';
   $('resultCard').innerHTML=`
     <div class="result-bubbles" aria-hidden="true">${Array.from({length:10},(_,i)=>`<span style="--i:${i}"></span>`).join('')}</div>
     <h3>Итоговый вес: <span class="result-total-number" data-total="${total}">${kg(total)}</span></h3>
+    ${diceImpact?`<div class="result-final-multiplier">Гексаэдр пятой грани: ${kg(diceImpact.before)} ×${diceImpact.factor} = <strong>${kg(diceImpact.after)}</strong></div>`:''}
     <div class="result-date">Завершено: ${ended.toLocaleString('ru-RU')}</div>
     ${earned.length
       ? `<button type="button" class="result-achievements-toggle" aria-expanded="${achievementsExpanded}" aria-controls="resultAchievements">🏆 Достижения: ${earned.length}<span aria-hidden="true">${achievementsExpanded?'−':'+'}</span></button>

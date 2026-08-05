@@ -5393,3 +5393,87 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
 .dungeon-modal .dungeon-battle-world .battle-log { top:39%; width:29%; height:36%; max-height:none; }
 .dungeon-modal .dungeon-battle-world .battle-log-player { left:3%; right:auto; }
 .dungeon-modal .dungeon-battle-world .battle-log-boss { right:3%; left:auto; }
+
+/* Screenshot corrections: keep dungeon rewards and picker controls compact and aligned. */
+.inventory .chip.effect-dungeon {
+  flex-direction:row;
+  justify-content:flex-start;
+  gap:8px;
+  min-width:0;
+  width:max-content;
+  max-width:210px;
+  min-height:54px;
+  padding:5px 10px;
+  overflow:hidden;
+}
+.inventory .chip.effect-dungeon .dungeon-icon.is-effect-icon {
+  align-self:center;
+  flex:0 0 38px;
+  width:38px;
+  height:38px;
+}
+.inventory .chip.effect-dungeon .effect-chip-copy {
+  display:flex;
+  flex:0 1 auto;
+  min-width:0;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.05;
+}
+.inventory button.chip.dungeon-reward-use-btn > small {
+  display:none;
+}
+.inventory .chip.dungeon-reward-eye {
+  min-width:0;
+  max-width:210px;
+}
+.inventory .chip.dungeon-reward-eye .effect-chip-copy {
+  flex:0 1 auto;
+  align-self:center;
+}
+.dungeon-modal .dungeon-boss-anchor small {
+  position:relative;
+  z-index:2;
+  order:-1;
+  margin:0 0 -5px;
+  padding:3px 9px;
+  border-radius:999px;
+  background:rgba(3,5,17,.78);
+  font-size:15px;
+  font-weight:800;
+  line-height:1;
+}
+.dungeon-modal .dungeon-picker-actions {
+  display:flex;
+  width:min(76%,390px);
+  flex-direction:column;
+  gap:12px;
+  margin-top:4px;
+}
+.dungeon-modal .dungeon-picker-actions .primary-btn {
+  width:100%;
+  min-height:54px;
+  margin:0;
+  border:0;
+  border-radius:18px;
+  color:#04202d;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 14px 30px rgba(60,218,227,.23);
+  font-size:17px;
+}
+.dungeon-modal .dungeon-fish-grid button[data-dungeon-fish] strong {
+  font-size:20px;
+  line-height:1.1;
+}
+.dungeon-modal .dungeon-fish-grid button[data-dungeon-fish] small {
+  font-size:17px;
+  line-height:1.15;
+}
+.result-final-multiplier {
+  margin:4px auto 7px;
+  color:#ffc868;
+  font-weight:800;
+  text-align:center;
+}
