@@ -3084,6 +3084,10 @@ function advanceDungeonEncounterAfterCast(){const d=state.dungeon?.encounter;if(
 function openDungeonSacrifice(){
   const d=state.dungeon?.encounter;if(!d||d.phase!=='piranhas')return;const fish=dungeonAvailableFish();if(!fish.length){toast('Нет доступной рыбы для жертвы');return;}
   const scene=$('dungeonScene');scene.innerHTML=`<section class="dungeon-picker"><p class="dungeon-kicker">Пираньи вечной тьмы</p><h2>Выберите рыбу-жертву</h2><p>Её чистый вес сохранится для расчёта боя, но не войдёт в итог сессии.</p><div class="dungeon-fish-grid">${fish.map(f=>`<button type="button" data-dungeon-fish="${f.id}">${fishCategoryIcons(f,'is-dungeon-icon')}<strong>${capitalize(f.name)}</strong><small>${kg(f.weight)} • чистый вес ${kg(dungeonFishCleanWeight(f))}</small></button>`).join('')}</div><button type="button" class="secondary-btn" data-dungeon-close>Продолжить рыбалку</button></section>`;
+  let touchCandidate=null;
+  scene.onpointerdown=e=>{const button=e.target.closest('[data-dungeon-fish]');touchCandidate=button&&e.pointerType!=='mouse'?{id:e.pointerId,fishId:button.dataset.dungeonFish,x:e.clientX,y:e.clientY}:null;};
+  scene.onpointercancel=()=>{touchCandidate=null;};
+  scene.onpointerup=e=>{const candidate=touchCandidate;touchCandidate=null;if(!candidate||candidate.id!==e.pointerId||Math.hypot(e.clientX-candidate.x,e.clientY-candidate.y)>12)return;const button=e.target.closest('[data-dungeon-fish]');if(!button||button.dataset.dungeonFish!==candidate.fishId)return;e.preventDefault();sacrificeDungeonFish(candidate.fishId);};
   scene.onclick=e=>{if(e.target.closest('[data-dungeon-close]')){$('dungeonDialog').close();return;}const button=e.target.closest('[data-dungeon-fish]');if(button)sacrificeDungeonFish(button.dataset.dungeonFish);};$('dungeonDialog').showModal();
 }
 function sacrificeDungeonFish(id){
