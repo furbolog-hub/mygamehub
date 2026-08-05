@@ -28,6 +28,15 @@ Rules:
 - A request to change or test a feature applies only to the test versions by default.
 - Publishing to the public versions is a distinct follow-up task that begins only after the user explicitly requests it.
 
+## Mandatory cross-device visual stability
+
+- Stable visuals across desktop and mobile browsers, Chromium, WebKit/Safari, and Telegram WebView are the primary UI requirement for every current and future game.
+- Complex illustrated scenes must use one fixed design coordinate system and uniformly scale the entire scene to fit the available viewport. Do not independently reposition scene elements with browser-, platform-, or device-specific coordinates.
+- Preserve the scene aspect ratio. When the viewport ratio differs, use centered letterboxing instead of stretching, cropping, or changing the relative positions of artwork and UI elements.
+- Safe-area insets, browser chrome, and Telegram viewport differences may affect only the outer available rectangle; they must not alter internal scene geometry.
+- Do not add platform-specific visual overrides unless the shared coordinate system cannot represent a genuine platform capability difference. Document and test every exception.
+- Every material visual change must be checked in both Chromium and WebKit at desktop, phone, and tablet sizes, in portrait and landscape where applicable. A single-browser or single-size visual check is not sufficient.
+
 ## Mandatory public-release protection
 
 - These rules apply to every current and future game without exception.

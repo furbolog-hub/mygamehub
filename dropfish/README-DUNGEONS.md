@@ -67,3 +67,12 @@
 - `На последнем дыхании` — достичь 10-го раунда живым и сохранить не более 50 HP.
 
 Выполненные условия сохраняются в накопительном списке `dungeon.feats`, чтобы повторный поход в той же сессии не отменял уже полученное достижение.
+
+## Stable dungeon scene contract
+
+- The dungeon uses a single 720 x 1280 design coordinate system for entrance, exploration, battle, and result phases.
+- The complete scene is uniformly scaled by `min(availableWidth / 720, availableHeight / 1280, 1)` and centered in the safe viewport rectangle.
+- Internal coordinates are identical in Chromium, WebKit/Safari, Telegram WebView, desktop, phone, and tablet layouts. Platform-specific element offsets are prohibited.
+- Backgrounds use the same 9:16 composition as the scene. Letterboxing is required when the viewport has a different aspect ratio; stretching and cropping the composed scene are prohibited.
+- The required regression suite is `npm run test:dungeon-visuals`. It checks Chromium and WebKit at desktop, phone, and tablet sizes, including portrait and landscape layouts.
+- A dungeon visual change is incomplete until the matrix passes and representative screenshots have been inspected.

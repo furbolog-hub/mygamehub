@@ -166,9 +166,52 @@
     [0, 60, 200, 500, 1000].forEach(function (t) { setTimeout(fitBoard, t); });
   }
 
+  /* Подземелье рисуется в единой виртуальной системе 720x1280. Внешний
+     viewport определяет только общий масштаб и центр сцены; координаты
+     объектов внутри никогда не зависят от браузера или устройства. */
+  function fitDungeonStage() {
+    var modal = document.getElementById('dungeonDialog');
+    var card = document.getElementById('dungeonCard');
+    if (!modal || !card) return;
+    var style = getComputedStyle(modal);
+    var paddingLeft = parseFloat(style.paddingLeft) || 0;
+    var paddingRight = parseFloat(style.paddingRight) || 0;
+    var paddingTop = parseFloat(style.paddingTop) || 0;
+    var paddingBottom = parseFloat(style.paddingBottom) || 0;
+    var availableWidth = Math.max(1, modal.clientWidth - paddingLeft - paddingRight);
+    var availableHeight = Math.max(1, modal.clientHeight - paddingTop - paddingBottom);
+    var scale = Math.min(1, availableWidth / 720, availableHeight / 1280);
+    card.style.setProperty('--dungeon-stage-scale', String(scale));
+    card.style.setProperty('--dungeon-stage-left', (paddingLeft + availableWidth / 2) + 'px');
+    card.style.setProperty('--dungeon-stage-top', (paddingTop + availableHeight / 2) + 'px');
+  }
+
+  function watchDungeonStage() {
+    var modal = document.getElementById('dungeonDialog');
+    if (!modal) return;
+    fitDungeonStage();
+    try {
+      if (typeof ResizeObserver === 'function') {
+        var dungeonResizeObserver = new ResizeObserver(fitDungeonStage);
+        dungeonResizeObserver.observe(modal);
+      }
+      if (typeof MutationObserver === 'function') {
+        var dungeonOpenObserver = new MutationObserver(fitDungeonStage);
+        dungeonOpenObserver.observe(modal, { attributes:true, attributeFilter:['open'] });
+      }
+    } catch (e) {}
+    [0, 60, 200, 500].forEach(function (t) { setTimeout(fitDungeonStage, t); });
+  }
+
+  window.fitDungeonStage = fitDungeonStage;
+
   watchBoard();
+  watchDungeonStage();
   window.addEventListener('resize', fitBoard, { passive: true });
+  window.addEventListener('resize', fitDungeonStage, { passive: true });
   window.addEventListener('orientationchange', function () { setTimeout(fitBoard, 120); });
-  document.addEventListener('DOMContentLoaded', watchBoard);
+  window.addEventListener('orientationchange', function () { setTimeout(fitDungeonStage, 120); });
+  window.visualViewport?.addEventListener('resize', fitDungeonStage, { passive:true });
+  document.addEventListener('DOMContentLoaded', function () { watchBoard(); watchDungeonStage(); });
 
 })();

@@ -3195,6 +3195,7 @@ function renderDungeon(){
   else if(d.phase==='battle')scene.innerHTML=dungeonBattleMarkup(d);
   else if(d.phase==='result')scene.innerHTML=dungeonResultMarkup(d);
   scene.onclick=handleDungeonClick;if(!dialog.open)dialog.showModal();
+  requestAnimationFrame(()=>window.fitDungeonStage?.());
   requestAnimationFrame(()=>scene.querySelectorAll('.battle-log-entries').forEach(log=>{log.scrollTop=log.scrollHeight;}));
 }
 function dungeonLootScene(title,item,description,action){return `<div class="dungeon-loot-backdrop"><section class="dungeon-loot-pop ui-dialog-panel"><p class="dungeon-kicker">Добыча</p><h2>${title}</h2>${dungeonImg(item.file,item.name,'is-loot')}<h3>${item.name}</h3><p>${description}</p><button type="button" class="primary-btn" data-dungeon-${action}>Подтвердить</button></section></div>`;}

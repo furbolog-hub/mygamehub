@@ -1,0 +1,10 @@
+{
+  "name": "mygamehub-visual-tests",
+  "private": true,
+  "scripts": {
+    "test:dungeon-visuals": "node scripts/test-dungeon-visuals.js"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}
