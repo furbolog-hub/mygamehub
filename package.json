@@ -2,7 +2,9 @@
   "name": "mygamehub-visual-tests",
   "private": true,
   "scripts": {
-    "test:dungeon-visuals": "node scripts/test-dungeon-visuals.js"
+    "test": "npm run test:loot-sources && npm run test:dungeon-visuals",
+    "test:loot-sources": "node scripts/test-loot-source-boundaries.js",
+    "test:dungeon-visuals": "node scripts/test-dungeon-visuals.js && node scripts/test-leviaxar-visuals.js"
   },
   "devDependencies": {
     "playwright": "1.62.1"

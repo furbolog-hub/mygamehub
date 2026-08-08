@@ -1235,8 +1235,19 @@ body[data-weather] .lake-card { background:linear-gradient(135deg,rgba(255,255,2
   box-sizing:border-box;
   width:70px;
   min-width:70px;
-  margin-right:8px !important;
+  flex:0 0 70px;
+  margin:0 !important;
   overflow:hidden;
+}
+.history-item.type-rift .embedded-fish-name {
+  display:inline-flex;
+  align-items:center;
+  column-gap:8px;
+  row-gap:1px;
+  flex-wrap:wrap;
+}
+.history-item.type-rift .embedded-fish-name > .embedded-fish-title {
+  min-width:0;
 }
 .history-item.type-rift > .embedded-fish-list {
   margin-top:3px;
@@ -1340,6 +1351,10 @@ body.reduce-motion .history-item.type-rift .rift-relic-icon:not(.is-effect-icon)
   width:28px;
   height:28px;
   vertical-align:middle;
+}
+.rift-relic-icon.is-df1-core {
+  transform:scale(1.7);
+  transform-origin:center;
 }
 .rift-relic-effect-main {
   display:inline-flex;
@@ -5280,7 +5295,17 @@ body.reduce-motion .dungeon-placed-object.is-ally {
 .history-fish-status-stack{display:flex;width:100%;height:30px;min-height:0;flex-direction:column;align-items:center;justify-content:center;gap:2px;overflow:hidden}
 .history-fish-status-stack>.fish-effect-badge{flex:0 1 auto;margin:0!important}
 .history-fish-status-stack.has-multiple>.fish-effect-badge{width:100%!important;height:14px!important;min-width:0;padding:0}
-.history-fish-status-badge .ballistier-wrath-fish-badge{margin:0;border:0;background:transparent;box-shadow:none}
+.history-fish-status-badge .dungeon-wrath-fish-badge{margin:0;border:0;background:transparent;box-shadow:none}
+.history-fish-status-stack:has(.leviaxar-wrath-fish-badge){height:38px;overflow:visible}
+.history-fish-status-stack>.leviaxar-wrath-fish-badge{height:38px;overflow:visible}
+.history-fish-status-stack>.leviaxar-wrath-fish-badge img{width:236px;height:236px}
+.history-item.type-fish:has(.leviaxar-wrath-fish-badge) .history-entity-copy{padding-top:0}
+.history-item.type-fish:has(.leviaxar-wrath-fish-badge) .history-entity-title{line-height:1.08}
+.history-item.type-fish:has(.leviaxar-wrath-fish-badge) .history-entity-detail{margin-top:0!important;line-height:1.08!important}
+.history-item.type-fish:has(.leviaxar-wrath-fish-badge)>.gear-impact{margin-top:3px;padding:4px 7px;gap:6px;align-items:center}
+.history-item.type-fish:has(.leviaxar-wrath-fish-badge)>.gear-impact>span:last-child{line-height:1.08}
+.history-item.type-fish:has(.leviaxar-wrath-fish-badge)>.gear-impact small{margin-top:1px;line-height:1.08}
+.history-item.type-fish:has(:is(.leviaxar-wrath-fish-badge,.ballistier-wrath-fish-badge)){background:linear-gradient(to left,rgba(151,18,28,.28) 0%,rgba(139,15,26,.18) 28%,rgba(112,12,24,.075) 52%,rgba(87,9,20,0) 78%),linear-gradient(110deg,rgba(4,21,35,.68),rgba(7,31,48,.48))}
 .history-item.type-dungeon{position:relative;padding-block:8px;line-height:1.15}
 .history-item.type-dungeon>strong{line-height:1.2}
 .history-item.type-dungeon>.history-detail{margin-top:1px;line-height:1.15}
@@ -5301,6 +5326,10 @@ body.reduce-motion .dungeon-placed-object.is-ally {
 .history-item.type-dungeon .dungeon-icon.is-history-icon img{object-fit:contain}
 .history-item.type-dungeon>strong{position:static!important;display:block;min-height:0;padding-left:47px}
 .history-item.type-dungeon>strong>.dungeon-icon.is-history-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%)}
+.history-item.type-dungeon .dungeon-icon.is-leviaxar-wrath-event-icon{width:112px;height:38px;min-width:112px;overflow:hidden}
+.history-item.type-dungeon .dungeon-icon.is-leviaxar-wrath-event-icon img{position:absolute;left:50%;top:50%;width:220px;height:220px;max-width:none;object-fit:contain;transform:translate(-50%,-50%)}
+.history-item.type-dungeon:has(.is-leviaxar-wrath-event-icon)>strong{padding-left:120px}
+.history-item.type-dungeon:has(.is-leviaxar-wrath-event-icon)>.history-detail{margin-left:120px}
 .history-item.type-dungeon>.history-detail,.history-item.type-dungeon>.dungeon-history-action{margin-left:47px}
 .history-item.type-dungeon .dungeon-history-action button{min-height:0;height:30px;padding:3px 9px;line-height:1;font-size:12px}
 .dungeon-battle-hud{top:1%;gap:6px;padding:3px 6px;border-color:#5d4a9960;background:#0406149c;min-height:0;border-radius:9px}
@@ -5429,6 +5458,23 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
   text-align:center;
   line-height:1.05;
 }
+.inventory .chip.effect-dungeon.leviaxar-wrath-effect {
+  width:fit-content;
+  max-width:142px;
+  height:48px;
+  min-height:48px;
+  gap:3px;
+  padding:3px 7px;
+}
+.inventory .chip.effect-dungeon.leviaxar-wrath-effect .fish-effect-badge {
+  width:128px;
+  height:38px;
+  margin:0;
+}
+.inventory .chip.effect-dungeon.leviaxar-wrath-effect .fish-effect-badge img {
+  width:242px;
+  height:242px;
+}
 .inventory button.chip.dungeon-reward-use-btn > small {
   display:none;
 }
@@ -5487,16 +5533,24 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
 
 /* Active dungeon encounter: icon and copy form one compact visual unit. */
 .inventory .chip.effect-dungeon.dungeon-encounter-effect {
-  gap:2px;
-  padding-inline:7px 9px;
+  width:fit-content;
+  max-width:180px;
+  min-height:46px;
+  gap:4px;
+  padding:4px 7px;
 }
 .inventory .chip.effect-dungeon.dungeon-encounter-effect .dungeon-icon.is-effect-icon {
-  flex-basis:32px;
-  width:32px;
-  height:38px;
+  flex-basis:30px;
+  width:30px;
+  height:34px;
 }
 .inventory .chip.effect-dungeon.dungeon-encounter-effect .effect-chip-copy {
-  margin-left:-10px;
+  max-width:132px;
+  margin-left:0;
+  align-items:flex-start;
+  text-align:left;
+  font-size:11px;
+  line-height:1.08;
 }
 
 /* Battle stage coordinates stay identical on every client through stage scaling. */
@@ -5506,3 +5560,24 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
 .dungeon-modal .battle-health.boss {
   top:31.5%;
 }
+/* Second test-only dungeon uses the same fixed 720x1280 scene geometry. */
+.dungeon-modal[data-dungeon-type="cradle"] .dungeon-splash{background:var(--dungeon-entrance) center/100% 100% no-repeat!important}
+.dungeon-modal .dungeon-world,.dungeon-modal .dungeon-battle-world{background-image:var(--dungeon-interior,url('./assets/dungeons/eternal-darkness-vault/dungeon-interior.webp'))}
+.dungeon-modal[data-dungeon-type="cradle"] .dungeon-result{background-image:linear-gradient(#050511aa,#050511e8),var(--dungeon-interior)!important}
+.dungeon-modal[data-dungeon-type="cradle"] .dungeon-kicker,.dungeon-modal[data-dungeon-type="cradle"] .dungeon-level-heading span{color:#7fffe3}
+.dungeon-modal[data-dungeon-type="cradle"] .dungeon-fight-btn{background:linear-gradient(110deg,#62f0c4,#4ba5da);color:#031b21}
+.dungeon-modal[data-dungeon-type="cradle"] .dungeon-boss-anchor{top:47.5%}
+.dungeon-modal[data-dungeon-type="cradle"] .dungeon-battle-world .boss-actor{top:18.5%}
+.dungeon-modal[data-dungeon-type="cradle"] .dungeon-battle-world .battle-log h3{font-size:12px;font-weight:850;line-height:1.15;text-shadow:0 2px 4px #000}
+.dungeon-modal[data-dungeon-type="cradle"] .dungeon-battle-world .battle-log p{font-size:14px;font-weight:650;line-height:1.25;text-shadow:0 1px 3px #000}
+.toxin-active{color:#8dffd1;text-shadow:0 0 8px #14d991}
+.history-item.type-dungeon.is-dungeon-prompt-expired{filter:grayscale(1);opacity:.62}
+.history-item.type-dungeon.is-dungeon-trail-active{overflow:hidden;isolation:isolate;border-color:#b82328;box-shadow:0 0 0 1px #7b0d17aa,inset 0 0 24px #5d0715aa,0 0 16px #9f101c66;animation:dungeonScarletAlarm 2.4s ease-in-out infinite}
+.history-item.type-dungeon.is-dungeon-trail-active::before,.history-item.type-dungeon.is-dungeon-trail-active::after{content:"";position:absolute;pointer-events:none;z-index:0}
+.history-item.type-dungeon.is-dungeon-trail-active::before{inset:-38% -14%;background:radial-gradient(ellipse at 8% 65%,#df152cc7 0 4%,#930d20a6 8%,transparent 25%),radial-gradient(ellipse at 45% 35%,#b80f25c2 0 5%,#71081799 11%,transparent 29%),radial-gradient(ellipse at 82% 72%,#e12635b8 0 3%,#870b1c99 9%,transparent 25%);filter:blur(5px);transform:translateX(-8%) scale(.92);animation:dungeonScarletSpread 4.8s ease-in-out infinite alternate}
+.history-item.type-dungeon.is-dungeon-trail-active::after{inset:0;background:linear-gradient(105deg,transparent 0 28%,#ff34453d 43%,#5d0013a6 51%,#ef23383d 59%,transparent 74%);transform:translateX(-120%);mix-blend-mode:screen;animation:dungeonScarletCurrent 3.6s ease-in-out infinite}
+.history-item.type-dungeon.is-dungeon-trail-active>*{position:relative;z-index:1}
+@keyframes dungeonScarletSpread{0%{transform:translateX(-10%) scale(.88,.78);opacity:.52}55%{opacity:.9}100%{transform:translateX(9%) scale(1.12,1.3);opacity:.72}}
+@keyframes dungeonScarletCurrent{0%,12%{transform:translateX(-120%);opacity:0}28%{opacity:.8}72%{opacity:.55}88%,100%{transform:translateX(120%);opacity:0}}
+@keyframes dungeonScarletAlarm{0%,100%{box-shadow:0 0 0 1px #7b0d17aa,inset 0 0 18px #5d071588,0 0 10px #9f101c44}50%{box-shadow:0 0 0 1px #e22b35cc,inset 0 0 30px #820a1bbb,0 0 22px #c8172877}}
+@media(prefers-reduced-motion:reduce){.history-item.type-dungeon.is-dungeon-trail-active,.history-item.type-dungeon.is-dungeon-trail-active::before,.history-item.type-dungeon.is-dungeon-trail-active::after{animation:none}}
