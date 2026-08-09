@@ -2,9 +2,10 @@
   "name": "mygamehub-visual-tests",
   "private": true,
   "scripts": {
-    "test": "npm run test:loot-sources && npm run test:dungeon-visuals",
+    "test": "npm run test:loot-sources && npm run test:ethirion && npm run test:dungeon-visuals",
     "test:loot-sources": "node scripts/test-loot-source-boundaries.js",
-    "test:dungeon-visuals": "node scripts/test-dungeon-visuals.js && node scripts/test-leviaxar-visuals.js"
+    "test:dungeon-visuals": "node scripts/test-dungeon-visuals.js && node scripts/test-leviaxar-visuals.js && node scripts/test-ethirion-visuals.js",
+    "test:ethirion": "node scripts/test-ethirion-mechanics.js"
   },
   "devDependencies": {
     "playwright": "1.62.1"

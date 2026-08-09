@@ -5570,6 +5570,24 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
 .dungeon-modal[data-dungeon-type="cradle"] .dungeon-battle-world .boss-actor{top:18.5%}
 .dungeon-modal[data-dungeon-type="cradle"] .dungeon-battle-world .battle-log h3{font-size:12px;font-weight:850;line-height:1.15;text-shadow:0 2px 4px #000}
 .dungeon-modal[data-dungeon-type="cradle"] .dungeon-battle-world .battle-log p{font-size:14px;font-weight:650;line-height:1.25;text-shadow:0 1px 3px #000}
+.dungeon-modal[data-dungeon-type="astral"] .dungeon-boss-anchor{top:102%}
+.dungeon-modal[data-dungeon-type="astral"] .dungeon-fight-btn{bottom:-1%}
+.dungeon-modal[data-dungeon-type="astral"] .dungeon-battle-world .boss-actor{top:40%}
+.dungeon-modal[data-dungeon-type="astral"] .battle-health.boss{top:17%}
+.dungeon-modal[data-dungeon-type="astral"] .dungeon-battle-world .battle-log{top:53%;height:27%}
+.dungeon-modal[data-dungeon-type="astral"] .dungeon-battle-world .dungeon-damage-float.target-boss{top:45%}
+.history-item.is-dark-coal-transform{border-left-color:#77658f;background:linear-gradient(110deg,rgba(57,61,71,.3),rgba(21,44,56,.25))}
+.history-item.is-dark-coal-transform>strong{display:block}
+.dark-coal-transform-line{display:flex;width:100%;flex-direction:column;align-items:flex-start;gap:0;font-weight:800;line-height:1.02}
+.dark-coal-source,.dark-coal-result{display:flex;min-width:0;align-items:center;gap:4px;min-height:27px}
+.dark-coal-source{color:#899198;text-decoration:line-through;filter:grayscale(1);opacity:.72}
+.dark-coal-source-icon{display:grid;place-items:center;flex:0 0 56px;width:56px;height:30px;overflow:visible}
+.dark-coal-source-icon .fish-category-icons{height:30px;overflow:visible;margin:0}
+.dark-coal-source-icon :is(.fish-category-icons,.fish-category-icon,.fish-status-icon){filter:grayscale(1)}
+.dark-coal-arrow{flex:0 0 27px;width:27px;margin-left:14px;color:#7be8d5;font-size:17px;text-align:center;text-shadow:0 0 9px rgba(83,240,211,.35)}
+.dark-coal-result{padding-left:0;color:#f3fbff}
+.dark-coal-result .trade-item-icon{flex:0 0 27px;width:27px;height:27px}
+.dark-coal-note{display:block;margin:0;padding:0 0 0 56px;color:#9da8b3;font-size:10px;font-weight:650;line-height:1}
 .toxin-active{color:#8dffd1;text-shadow:0 0 8px #14d991}
 .history-item.type-dungeon.is-dungeon-prompt-expired{filter:grayscale(1);opacity:.62}
 .history-item.type-dungeon.is-dungeon-trail-active{overflow:hidden;isolation:isolate;border-color:#b82328;box-shadow:0 0 0 1px #7b0d17aa,inset 0 0 24px #5d0715aa,0 0 16px #9f101c66;animation:dungeonScarletAlarm 2.4s ease-in-out infinite}
@@ -5581,3 +5599,22 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
 @keyframes dungeonScarletCurrent{0%,12%{transform:translateX(-120%);opacity:0}28%{opacity:.8}72%{opacity:.55}88%,100%{transform:translateX(120%);opacity:0}}
 @keyframes dungeonScarletAlarm{0%,100%{box-shadow:0 0 0 1px #7b0d17aa,inset 0 0 18px #5d071588,0 0 10px #9f101c44}50%{box-shadow:0 0 0 1px #e22b35cc,inset 0 0 30px #820a1bbb,0 0 22px #c8172877}}
 @media(prefers-reduced-motion:reduce){.history-item.type-dungeon.is-dungeon-trail-active,.history-item.type-dungeon.is-dungeon-trail-active::before,.history-item.type-dungeon.is-dungeon-trail-active::after{animation:none}}
+
+/* Abyss of the Astral Whisper reuses the fixed 720x1280 dungeon stage. */
+.dungeon-modal[data-dungeon-type="astral"] .dungeon-splash{background:var(--dungeon-entrance) center/100% 100% no-repeat!important}
+.dungeon-modal[data-dungeon-type="astral"] .dungeon-result{background-image:linear-gradient(#030414b8,#09051bed),var(--dungeon-interior)!important}
+.dungeon-modal[data-dungeon-type="astral"] .dungeon-kicker,.dungeon-modal[data-dungeon-type="astral"] .dungeon-level-heading span{color:#c6a6ff}
+.dungeon-modal[data-dungeon-type="astral"] .dungeon-fight-btn{background:linear-gradient(110deg,#bb8cff,#557ee8);color:#08051b}
+.shadow-whisper-active{color:#d9b9ff;text-shadow:0 0 9px #8753ff}
+.battle-actor.ally-actor.is-vanished{opacity:.58;filter:grayscale(.45)}
+.dungeon-ally-vanished{display:grid;place-items:center;width:72px;height:72px;color:#b795ff;font-size:46px;text-shadow:0 0 18px #7a50ff;animation:dungeonAstralFade 1.8s ease-in-out infinite alternate}
+@keyframes dungeonAstralFade{from{opacity:.34;transform:scale(.82) rotate(-8deg)}to{opacity:.9;transform:scale(1.08) rotate(8deg)}}
+.dark-ether-history-action{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px;padding-top:5px;border-top:1px solid rgba(159,126,255,.25)}
+.dark-ether-history-action button{min-height:32px;padding:5px 9px;border:1px solid #a888ff;border-radius:9px;background:linear-gradient(135deg,#4f3688,#211c55);color:#f1eaff;font-weight:800}
+.dark-ether-history-action small{color:#c8b8eb;font-size:10px;line-height:1.15}
+.history-item.is-dark-ether-removed{filter:grayscale(1);opacity:.58;border-color:#777;background:#25272c;color:#aeb0b5}
+.history-item.is-dark-ether-removed img,.history-item.is-dark-ether-removed .dungeon-icon{filter:grayscale(1)}
+.history-item.is-ethirion-transform{border-color:#7958b8;background:linear-gradient(135deg,rgba(45,31,75,.72),rgba(30,31,39,.8))}
+.ethirion-transform-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px;line-height:1.08}
+.ethirion-transform-line>span{display:inline-flex;align-items:center;gap:4px}.ethirion-transform-line>b{color:#c7a6ff}.ethirion-transform-line>em{padding:2px 6px;border:1px solid #8d67cf;border-radius:999px;color:#d8c2ff;font-size:9px;font-style:normal;text-transform:uppercase;letter-spacing:.06em}
+body.reduce-motion .dungeon-ally-vanished{animation:none}
