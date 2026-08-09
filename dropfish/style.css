@@ -757,6 +757,9 @@ body.reduce-motion .rift-fish-gradient-name {
 .inventory .chip.effect-mythic.is-exhausted::after { display:none; }
 .inventory.glow-mythic { border-color:rgba(35,223,201,.5); box-shadow:var(--shadow),inset 0 0 24px rgba(14,151,159,.22); }
 .guide-content h3.guide-mythic { color:#62f4df; text-shadow:0 1px 0 #052b4d; }
+.guide-content h3.guide-dungeon .dungeon-icon.is-guide-icon{display:inline-grid;place-items:center;width:40px;height:40px;min-width:40px;margin-right:4px;vertical-align:middle;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+.guide-content h3.guide-dungeon .dungeon-icon.is-guide-icon img{width:100%;height:100%;object-fit:contain}
+.guide-content h3.guide-rift .rift-relic-icon.is-guide-icon{display:inline-block;width:40px;height:40px;min-width:40px;margin-right:4px;vertical-align:middle;object-fit:contain}
 .spark-chaos-change { display:inline-flex; align-items:baseline; gap:.3em; white-space:nowrap; font-weight:850; -webkit-text-stroke:0; }
 .spark-chaos-source { display:inline-flex; align-items:center; padding:1px 5px; border:1px solid rgba(62,196,211,.42); border-radius:999px; color:#8eeaf1; background:rgba(8,70,100,.38); font-size:.66em; font-weight:900; letter-spacing:.025em; white-space:nowrap; -webkit-text-stroke:0; text-shadow:0 1px 2px rgba(0,17,37,.8); }
 .spark-weight-before { color:#d8e6ea; }
@@ -5533,8 +5536,8 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
 
 /* Active dungeon encounter: icon and copy form one compact visual unit. */
 .inventory .chip.effect-dungeon.dungeon-encounter-effect {
-  width:fit-content;
-  max-width:180px;
+  width:142px;
+  max-width:142px;
   min-height:46px;
   gap:4px;
   padding:4px 7px;
@@ -5545,7 +5548,8 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
   height:34px;
 }
 .inventory .chip.effect-dungeon.dungeon-encounter-effect .effect-chip-copy {
-  max-width:132px;
+  min-width:0;
+  max-width:96px;
   margin-left:0;
   align-items:flex-start;
   text-align:left;
@@ -5614,6 +5618,33 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
 .dark-ether-history-action small{color:#c8b8eb;font-size:10px;line-height:1.15}
 .history-item.is-dark-ether-removed{filter:grayscale(1);opacity:.58;border-color:#777;background:#25272c;color:#aeb0b5}
 .history-item.is-dark-ether-removed img,.history-item.is-dark-ether-removed .dungeon-icon{filter:grayscale(1)}
+
+/* Свод Забытых Эпох: вся сцена остаётся в общей системе координат 208×256. */
+.dungeon-modal[data-dungeon-type="forgotten"] .dungeon-splash{background:var(--dungeon-entrance) center/100% 100% no-repeat!important}
+.dungeon-modal[data-dungeon-type="forgotten"] .dungeon-result{background-image:linear-gradient(#100c06b8,#080604ed),var(--dungeon-interior)!important}
+.dungeon-modal[data-dungeon-type="forgotten"] .dungeon-kicker,.dungeon-modal[data-dungeon-type="forgotten"] .dungeon-level-heading span{color:#ffd975}
+.dungeon-modal[data-dungeon-type="forgotten"] .dungeon-fight-btn{background:linear-gradient(110deg,#ffe393,#c7892f);color:#261302}
+.dungeon-modal[data-dungeon-type="forgotten"] .dungeon-boss-anchor{top:65.5%}
+.dungeon-modal[data-dungeon-type="forgotten"] .dungeon-battle-world .boss-actor{top:27%}
+.dungeon-battle-world.is-chrono-paused>:not(.chrono-rift-overlay),.dungeon-battle-world.is-chrono-paused>:not(.chrono-rift-overlay) *{animation-play-state:paused!important;transition:none!important}
+.chrono-rift-overlay{position:absolute;z-index:60;inset:0;display:grid;place-items:center;padding:5%;background:#010207d9;backdrop-filter:blur(5px);box-sizing:border-box}
+.chrono-rift-overlay .dungeon-loot-backdrop{position:static;width:100%;height:100%;padding:0;background:transparent;backdrop-filter:none}
+.chrono-rift-picker{width:min(86%,430px);padding:clamp(14px,4%,26px);border:1px solid #e9b64c;border-radius:20px;background:radial-gradient(circle at 50% 15%,#493317f2,#090a13f5 70%);box-shadow:0 0 35px #e5aa3c55;text-align:center}
+.chrono-rift-picker h2,.chrono-rift-picker p{margin:8px 0}.chrono-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,2vw,15px);margin-top:18px}
+.chrono-choice-grid button{min-width:0;padding:8px;border:1px solid #d9a74488;border-radius:14px;background:#17120dcc;color:#fff;cursor:pointer}.chrono-choice-grid .dungeon-icon{width:min(100%,90px);height:auto;aspect-ratio:1}.chrono-choice-grid .dungeon-object-label{position:static;display:block;transform:none;width:auto;margin-top:4px;font-size:clamp(8px,1.5vw,12px)}
+.history-item.is-chrono-rolled-back,.history-item.golden-alternative.is-golden-rejected{filter:grayscale(1);opacity:.64;border-color:#777;background:#25272c;color:#b8bbc0}.history-item.is-chrono-rolled-back img{filter:grayscale(1)}
+.history-item.golden-alternative.is-golden-kept{border-color:#65d694;background:linear-gradient(110deg,rgba(26,92,58,.7),rgba(18,51,42,.72));color:#d9ffea}
+.chrono-history-action,.golden-gear-history-action{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:4px}.chrono-history-action button,.golden-gear-history-action button{min-height:0;height:28px;padding:3px 9px;border:1px solid #e1b24e;border-radius:8px;background:#39270d;color:#ffeab7;font-size:12px;line-height:1;font-weight:800;cursor:pointer}.chrono-history-action small{font-size:11px;line-height:1.1}
+
+/* Final compactness guard: specialized item styles must not stretch active-effect backplates. */
+.inventory .chips>.chip{max-width:132px}
+.inventory .chips>.chip.effect-dungeon{max-width:132px}
+.history-item :is(.chrono-history-action,.dark-ether-history-action,.golden-gear-history-action) button{min-height:0;height:28px;padding-block:3px;line-height:1}
+.golden-gear-history-action button.is-selected{border-color:#fff4b3;box-shadow:0 0 0 1px currentColor,0 0 10px rgba(225,178,78,.28)}
+.golden-gear-history-action button[data-golden-decision="keep"].is-selected{border-color:#72e5a1;background:#174f35;color:#e0ffec}
+.golden-gear-history-action button[data-golden-decision="reject"].is-selected{border-color:#a9afb5;background:#3b3e42;color:#f0f1f2}
+.vexinon-wrath-main-badge{display:flex;align-items:center;gap:6px;margin-bottom:5px;color:#ffb0a4;font-size:11px}.vexinon-wrath-main-badge .dungeon-icon{width:22px;height:22px;border-radius:6px}.has-vexinon-wrath .lake-stat-casts{border-color:#ff4d3f!important;background:linear-gradient(135deg,#4a0c0ccc,#1b090dcc)!important}.has-vexinon-wrath .lake-stat-casts>strong{color:#ff5147!important}.history-item.type-tradeShip.is-vexinon-time-shift{border-color:#ff4d3f;background:linear-gradient(135deg,#4a0c0caa,#180a0ccc);color:#ffc0b8}
+@media (max-width:520px){.chrono-rift-picker{width:92%;padding:12px}.chrono-choice-grid{gap:6px}.chrono-choice-grid button{padding:5px}.chrono-rift-picker p{font-size:12px}}
 .history-item.is-ethirion-transform{border-color:#7958b8;background:linear-gradient(135deg,rgba(45,31,75,.72),rgba(30,31,39,.8))}
 .ethirion-transform-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px;line-height:1.08}
 .ethirion-transform-line>span{display:inline-flex;align-items:center;gap:4px}.ethirion-transform-line>b{color:#c7a6ff}.ethirion-transform-line>em{padding:2px 6px;border:1px solid #8d67cf;border-radius:999px;color:#d8c2ff;font-size:9px;font-style:normal;text-transform:uppercase;letter-spacing:.06em}
