@@ -2921,11 +2921,12 @@ body.reduce-motion .scuba-bonus-status.applied::after { animation:none; opacity:
 }
 .trade-item-icon.is-compact-icon img { width:50px; height:50px; }
 .inventory .chip .trade-item-icon.is-effect-icon {
-  width:32px;
-  height:32px;
-  flex-basis:32px;
+  width:36px;
+  height:40px;
+  flex-basis:36px;
+  overflow:visible;
 }
-.inventory .chip .trade-item-icon.is-effect-icon img { width:56px; height:56px; }
+.inventory .chip .trade-item-icon.is-effect-icon img { width:46px; height:46px; }
 .trade-offer-icon .trade-item-icon {
   width:44px;
   height:44px;
@@ -4585,7 +4586,7 @@ body.reduce-motion .history-item.type-rift .history-detail {
 .island-card.is-forgotten-currents{background-image:url('./assets/islands/forgotten-currents.jpg');background-color:#08252b}
 .island-card.is-forgotten-currents .island-kicker{color:#a8ffe5}.island-card.is-forgotten-currents .island-header{border-color:rgba(145,255,222,.34);background:rgba(4,40,43,.28)}.island-card.is-forgotten-currents .island-locations button{border-color:rgba(122,242,213,.3);background:linear-gradient(135deg,rgba(16,111,111,.18),rgba(12,63,78,.26))}.island-card.is-forgotten-currents .island-loot-panel h3{color:#a8ffe5}
 .first-water-impact,.moon-shell-impact{border-color:rgba(112,244,207,.4);background:linear-gradient(100deg,rgba(24,126,112,.2),rgba(32,78,104,.11))}.first-water-impact strong,.moon-shell-impact strong{color:#a8ffe5}
-.island-item-use-btn{cursor:pointer;border-color:rgba(112,244,207,.4)!important}.island-item-use-btn small{display:block;color:#a8ffe5;font-size:.62rem}
+.island-item-use-btn{cursor:pointer;border-color:rgba(112,244,207,.4)!important}.inventory button.chip.island-item-use-btn{flex-direction:row}.island-item-use-btn small{display:block;color:#a8ffe5;font-size:.62rem}
 .island-card.is-stone-guardians .island-kicker{color:#e0c98d}.island-card.is-stone-guardians .island-header{border-color:rgba(218,191,122,.34);background:rgba(24,22,16,.28)}.island-card.is-stone-guardians .island-locations button{border-color:rgba(216,188,119,.3);background:linear-gradient(135deg,rgba(91,76,42,.17),rgba(43,47,39,.25))}.island-card.is-stone-guardians .island-loot-panel h3{color:#e6d18e}
 .island-card.is-leaden-fog .island-kicker{color:#cbd8e2}.island-card.is-leaden-fog .island-header{border-color:rgba(190,205,218,.3);background:rgba(9,17,25,.28)}
 .island-location-preview{border-color:rgba(195,179,255,.5)!important;box-shadow:inset 0 0 16px rgba(132,102,211,.18)}
@@ -5014,6 +5015,14 @@ body.reduce-motion .history-item.type-rift .rift-relic-name-shine {
   max-width:28px;
   max-height:28px;
 }
+.island-card .island-message :is(.is-loot-icon,.trade-item-icon),
+.island-card .island-message :is(.is-loot-icon,.trade-item-icon) img {
+  width:30px;
+  height:30px;
+  max-width:30px;
+  max-height:30px;
+  vertical-align:middle;
+}
 .island-card .island-loot-item {
   display:flex;
   align-items:center;
@@ -5060,7 +5069,7 @@ body.reduce-motion .history-item.type-rift .rift-relic-name-shine {
 .history-item.type-island .embedded-fish-name {
   min-width:0;
   line-height:1.02;
-  text-align:center;
+  text-align:left;
   overflow-wrap:normal;
   word-break:normal;
   hyphens:none;
@@ -5071,6 +5080,12 @@ body.reduce-motion .history-item.type-rift .rift-relic-name-shine {
 }
 .history-item.type-island .embedded-fish-status {
   align-self:center;
+}
+.history-item.type-island .embedded-fish-status:has(.island-row-origin) {
+  margin-left:auto;
+  padding:0;
+  border-radius:0;
+  background:transparent;
 }
 .history-item.type-island .embedded-fish-item {
   padding:4px 7px;
