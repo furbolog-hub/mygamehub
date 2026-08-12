@@ -4073,6 +4073,18 @@ body.reduce-motion .history-item.type-abyssal::before{animation:none!important}
   text-shadow:none;
 }
 .rift-actions .primary-btn,.rift-actions .secondary-btn { min-height:40px; padding:7px 11px; border-radius:13px; font-size:.8rem; line-height:1.2; box-shadow:0 7px 17px rgba(0,0,0,.16); }
+.rift-actions .primary-btn,.rift-actions .secondary-btn {
+  color:#eefbff;
+  border:1px solid color-mix(in srgb,var(--rift-b) 42%,rgba(255,255,255,.18));
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+.rift-actions .primary-btn {
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 38%,transparent),color-mix(in srgb,var(--accent-2) 34%,transparent));
+}
+.rift-actions .secondary-btn {
+  background:linear-gradient(135deg,rgba(14,35,56,.58),color-mix(in srgb,var(--rift-a) 18%,rgba(5,22,38,.54)));
+}
 
 .history-item.type-rift {
   isolation:isolate;
@@ -4861,6 +4873,14 @@ html body[class] .merged-weather-card .lake-stat-strip{
   width:44px;
   min-width:44px;
 }
+.history-item.type-rift .embedded-fish-item:not(.has-rift-fish-icon) .embedded-fish-main {
+  grid-template-columns:64px minmax(0,1fr) auto;
+  gap:8px;
+}
+.history-item.type-rift .embedded-fish-item:not(.has-rift-fish-icon) .embedded-fish-icon {
+  width:64px;
+  min-width:64px;
+}
 .history-item.type-rift .embedded-fish-name {
   min-width:0;
   line-height:1.02;
@@ -5570,6 +5590,29 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
   text-align:left;
   font-size:11px;
   line-height:1.08;
+}
+
+.fish-crystal-replaced-main-icon {
+  display:grid;
+  place-items:center;
+}
+.crystal-replaced-status {
+  display:inline-flex;
+  align-items:center;
+  min-height:20px;
+  padding:2px 7px;
+  border:1px solid rgba(173,105,255,.58);
+  border-radius:999px;
+  color:#eadcff;
+  background:rgba(82,38,126,.48);
+  font-size:.64rem;
+  font-weight:900;
+  line-height:1;
+  white-space:nowrap;
+}
+.history-item.type-fish.is-crystal-replaced .history-fish-catch-text {
+  opacity:.62;
+  text-decoration:line-through;
 }
 
 /* Battle stage coordinates stay identical on every client through stage scaling. */
