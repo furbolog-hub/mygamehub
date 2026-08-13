@@ -1315,9 +1315,11 @@ function fishInlineStatusIcon(h,fish){
   if(dedicatedRiftFish||islandFishKind(fish))return '';
   const source=h.fishSource||fish.source;
   const arcade=h.arcade||fish.arcadeCatch||source==='Аркадный улов';
+  const ordinaryCast=source==='Заброс';
+  if(!arcade&&!ordinaryCast)return '';
   const castCategoryStatus={normal:{file:'cast-catch',label:'Обычная рыба обычного заброса'},heavy:{file:'heavyweight',label:'Тяжеловес обычного заброса'},giant:{file:'giant',label:'Рыба-гигант обычного заброса'}};
   const castStatus=castCategoryStatus[fish.category]||castCategoryStatus.normal;
-  const status=arcade?{file:'arcade-catch',label:'Аркадная рыба',kind:'arcade'}:source==='Бездонный ларь'?{file:'cast-catch',label:'Рыба из Бездонного ларя',kind:'cast'}:{...castStatus,kind:'cast'};
+  const status=arcade?{file:'arcade-catch',label:'Аркадная рыба',kind:'arcade'}:{...castStatus,kind:'cast'};
   if(!status)return '';
   return `<span class="fish-inline-status status-${status.kind}" title="${status.label}" aria-label="${status.label}">${fishStatusIcon(status.file,status.label)}</span>`;
 }

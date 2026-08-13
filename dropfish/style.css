@@ -5402,6 +5402,9 @@ body.reduce-motion .dungeon-placed-object.is-ally {
 .history-item .dungeon-icon.is-history-icon{border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
 .history-item .dungeon-icon.is-history-icon img{object-fit:contain}
 .history-item.is-dungeon-ally-catch{position:relative;isolation:isolate;overflow:hidden;border-color:rgba(174,207,226,.52);background:linear-gradient(110deg,rgba(74,105,122,.28),rgba(111,91,139,.22),rgba(70,119,119,.25))}
+.history-item.is-dungeon-ally-catch .history-entity-copy{padding-top:0}
+.history-item.is-dungeon-ally-catch .history-entity-title{line-height:1.08}
+.history-item.is-dungeon-ally-catch .history-entity-detail{margin-top:0!important;line-height:1.08!important}
 .history-item.is-dungeon-ally-catch::before{content:"";position:absolute;z-index:0;inset:-25% -45%;pointer-events:none;background:linear-gradient(105deg,transparent 28%,rgba(190,224,225,.08) 38%,rgba(210,191,229,.28) 50%,rgba(176,222,212,.12) 62%,transparent 72%);transform:translateX(-52%);animation:dungeonAllyPastelPulse 5.2s ease-in-out infinite alternate}
 .history-item.is-dungeon-ally-catch>*{position:relative;z-index:1}
 @keyframes dungeonAllyPastelPulse{from{transform:translateX(-52%);opacity:.52}to{transform:translateX(52%);opacity:.9}}
