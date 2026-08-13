@@ -1780,9 +1780,29 @@ function renderRiftLootResults(row) {
 }
 function renderIslandLootResults(row){
   if(row.type!=='island'||!Array.isArray(row.islandLootResults)||!row.islandLootResults.length)return '';
-  const items=row.islandLootResults.map(item=>`<li class="island-history-loot-item type-${item.kind||'item'}"><span class="island-history-loot-copy">${islandLootHistoryPurposeLabel(item)}</span></li>`).join('');
+  const items=row.islandLootResults.map(item=>{
+    if(item.kind!=='cache')return `<li class="island-history-loot-item type-${item.kind||'item'}"><span class="island-history-loot-copy">${islandLootHistoryPurposeLabel(item)}</span></li>`;
+    const revealed=item.opened?`<ul class="island-cache-contents">${item.items.map(entry=>`<li>${tradeItemIconMarkup(entry,'is-compact-icon')}<span><strong>${entry.name}</strong><small>Предмет обмена</small></span></li>`).join('')}</ul>`:'';
+    const action=item.opened?'<span class="island-cache-opened">открыт</span>':`<button type="button" class="island-cache-open-btn" data-island-cache="${item.id}" data-island-cache-row="${row.id}">Открыть</button>`;
+    return `<li class="island-history-loot-item type-cache${item.opened?' is-opened':''}"><span class="island-history-loot-copy">${islandLootPurposeMarkup(islandLootIconMarkup(item),'Тайник',item.opened?'Содержимое получено':'Закрытый островной тайник')}</span>${action}${revealed}</li>`;
+  }).join('');
   return `<ul class="island-history-loot-results">${items}</ul>`;
 }
+function openIslandCache(rowId,cacheId){
+  const row=state.history.find(entry=>entry.id===rowId),cache=row?.islandLootResults?.find(item=>item.kind==='cache'&&item.id===cacheId);
+  if(!cache||cache.opened)return;
+  cache.opened=true;
+  cache.items.forEach(entry=>{
+    const legacy=state.tradeItems.find(item=>item.islandCache&&!item.islandCacheId&&item.key===entry.key);
+    if(legacy){legacy.islandCacheId=cache.id;legacy.historyRowId=row.id;return;}
+    state.tradeItems.push({id:uid(),key:entry.key,name:entry.name,icon:entry.icon,exchanged:false,islandTrade:true,islandCache:true,islandCacheId:cache.id,historyRowId:row.id});
+  });
+  playSound('bonus');
+  toast(`Тайник открыт: предметов ${cache.items.length}`);
+  commitState();
+  if(state.castsLeft<=0)setTimeout(maybeFinalizeSession,0);
+}
+function hasUnopenedIslandCaches(){return state.history.some(row=>row.islandLootResults?.some(item=>item.kind==='cache'&&!item.opened));}
 function setFishHistoryEaten(fish, eaten=true) {
   state.history.forEach(row=>{ if (row.type==='fish' && row.fishId===fish.id) row.eaten=eaten; });
 }
@@ -3095,7 +3115,7 @@ function commitIslandLoot(a,parentHistoryId=null){
   a.loot.filter(x=>x.kind==='moonShell').forEach(()=>state.tradeItems.push({id:uid(),key:'moonTideShell',name:'Раковина лунного прилива',icon:'🐚',exchanged:false,islandTrade:true}));
   a.loot.filter(x=>x.kind==='firstWaterFlask').forEach(()=>state.tradeItems.push({id:uid(),key:'firstWaterFlask',name:'Флакон Первой Воды',icon:'🧪',exchanged:false,islandTrade:true}));
   const fadedFragments=a.loot.filter(x=>x.kind==='fadedFragment');state.islands.fadedRelicFragments=(state.islands.fadedRelicFragments||0)+fadedFragments.length;fadedFragments.forEach(()=>state.tradeItems.push({id:uid(),key:'fadedRelicFragment',name:'Фрагмент угасшей реликвии',icon:'🔸',exchanged:false,islandTrade:true}));
-  a.loot.filter(x=>x.kind==='cache').forEach(cache=>cache.items.forEach(x=>state.tradeItems.push({id:uid(),key:x.key,name:x.name,icon:x.icon,exchanged:false,islandTrade:true,islandCache:true})));
+  a.loot.filter(x=>x.kind==='cache').forEach(cache=>{cache.opened=Boolean(cache.opened);});
   const foundFlares=a.loot.filter(x=>x.kind==='flare').length;state.islands.flares+=foundFlares;if(a.island==='destructiveTides')state.islands.destructiveFlares=(state.islands.destructiveFlares||0)+foundFlares;if(foundFlares)state.islands.flareFinishResolved=false;if(a.loot.some(x=>x.kind==='rod'))state.islands.sharpFinRod=true;a.loot.filter(x=>x.kind==='navigator').forEach(x=>state.islands.navigators.push({id:x.id,islandUsed:x.islandUsed,mainlandUsed:false,historyRowId:parentHistoryId}));state.fish.slice(leviWrathFishStart).forEach(applyLeviathanScale);state.fish.slice(leviWrathFishStart).forEach(applySingulaFishBonus);applyLeviaxarWrathToNewFish(leviWrathFishStart);
 }
 function finishIslandExpedition(early=false){
@@ -4065,6 +4085,7 @@ function beginTradeShip(source='natural') {
 }
 function maybeFinalizeSession() {
   if (state.finished || state.castsLeft>0 || $('choiceDialog')?.open || state.rifts?.active || state.islands?.active || state.dungeon?.encounter || hasPendingAbyssalDecision()) return;
+  if(hasUnopenedIslandCaches())return;
   if(activeChronocrystal()&&state.dungeon?.chronoSnapshot&&state.dungeon?.chronoCurrentRowId)return;
   if(darkEtherReward()&&state.history.some(row=>darkEtherEligibleRow(row)))return;
   if(promptUnusedMessage())return;
@@ -4877,6 +4898,7 @@ buildDropfishDebugPanel();
 /* PUBLIC_STRIP_DEBUG_END */
 $('castBtn').addEventListener('click',castLine);
 $('historyList').addEventListener('click',event=>{
+  const islandCache=event.target.closest('[data-island-cache]');if(islandCache){openIslandCache(islandCache.dataset.islandCacheRow,islandCache.dataset.islandCache);return;}
   const goldenDecision=event.target.closest('[data-golden-decision]');if(goldenDecision){resolveGoldenGear(goldenDecision.dataset.goldenDecision,goldenDecision.dataset.goldenId);return;}
   const chrono=event.target.closest('[data-chrono-row]');if(chrono){useChronocrystal(chrono.dataset.chronoRow);if(state.castsLeft<=0)maybeFinalizeSession();return;}
   const chronoKeep=event.target.closest('[data-chrono-keep]');if(chronoKeep){keepChronocrystalResult(chronoKeep.dataset.chronoKeep);return;}
