@@ -58,4 +58,12 @@ assert(/effect-chip-copy">\$\{config\.piranhas\}<\/span>/.test(source),'Piranha 
 assert(!/категории «\$\{castFish\.category\}»/.test(source),'Echo-ray history leaks an internal category key');
 assert(/\.rift-actions \.primary-btn,\.rift-actions \.secondary-btn \{[\s\S]*?backdrop-filter:blur\(4px\)/.test(style),'Rift action buttons do not share the translucent treatment');
 
+const abyssWeight=between('function changeAbyssFishWeight','function transformAbyssFish');
+assert(/ensureChanged&&after===before/.test(abyssWeight),'Abyssal weight changes can still round back to their original value');
+assert(/changeAbyssFishWeight\(f,rand\(\.6,1\.4\),'Метаморф',true\)/.test(source),'Metamorph does not require a visible weight change');
+const expeditionDecode=between('function decodeExpeditionItem','function islandLootPurposeMarkup');
+assert(/if\(state\.castsLeft<=0\)maybeFinalizeSession\(\)/.test(expeditionDecode),'A failed final-cast expedition study does not resume session finalization');
+const finalization=between('function maybeFinalizeSession','function finishGame');
+assert(/if\(hasPendingExpeditionStudy\(\)\)return/.test(finalization),'Session finalization does not wait for pending expedition-item study');
+
 process.stdout.write('PASS: requested gameplay and compact-history regressions are guarded\n');

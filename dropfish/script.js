@@ -1022,10 +1022,12 @@ function setFishAbyssLost(fish,label){
 function damageProtectedAbyssColossus(fish,source){
   const before=fish.weight,factor=rand(.5,.7);changeAbyssFishWeight(fish,factor,source);return `${fish.name} невозможно уничтожить: ${kg(before)} → ${kg(fish.weight)} (−${abyssPercent(1-factor)}%) • «Нестабильное присутствие» сохраняется`;
 }
-function changeAbyssFishWeight(fish,factor,source){
-  const before=fish.weight;fish.weight=Math.max(.1,round1(before*factor));fish.tags.push(`${source}: ${factor>=1?'+':'−'}${Math.abs(abyssPercent(factor-1))}%`);
+function changeAbyssFishWeight(fish,factor,source,ensureChanged=false){
+  const before=fish.weight;let after=Math.max(.1,round1(before*factor));
+  if(ensureChanged&&after===before)after=factor<1&&before>.1?round1(before-.1):round1(before+.1);
+  fish.weight=after;const appliedFactor=before>0?after/before:factor;fish.tags.push(`${source}: ${appliedFactor>=1?'+':'−'}${Math.abs(abyssPercent(appliedFactor-1))}%`);
   if(!Array.isArray(fish.abyssImpacts))fish.abyssImpacts=[];
-  fish.abyssImpacts.push({source,type:'weight',before,after:fish.weight,factor});
+  fish.abyssImpacts.push({source,type:'weight',before,after:fish.weight,factor:appliedFactor});
   return `${capitalize(fish.name)}: ${kg(before)} → ${kg(fish.weight)}`;
 }
 function transformAbyssFish(fish,category,source){
@@ -1124,7 +1126,7 @@ function metamorphBaseActions(){
     {key:'normal-heavy',available:()=>availableAbyssFish().some(f=>f.category==='normal'),run:()=>[transformAbyssFish(pick(availableAbyssFish().filter(f=>f.category==='normal')),'heavy','Метаморф')]},
     {key:'heavy-giant',available:()=>availableAbyssFish().some(f=>f.category==='heavy'),run:()=>[transformAbyssFish(pick(availableAbyssFish().filter(f=>f.category==='heavy')),'giant','Метаморф')]},
     {key:'to-normal',available:()=>availableAbyssFish().some(f=>['heavy','giant'].includes(f.category)),run:()=>[transformAbyssFish(pick(availableAbyssFish().filter(f=>['heavy','giant'].includes(f.category))),'normal','Метаморф')]},
-    {key:'weight',available:()=>availableAbyssFish().length,run:()=>abyssSample(availableAbyssFish(),2,4).map(f=>changeAbyssFishWeight(f,rand(.6,1.4),'Метаморф'))},
+    {key:'weight',available:()=>availableAbyssFish().length,run:()=>abyssSample(availableAbyssFish(),2,4).map(f=>changeAbyssFishWeight(f,rand(.6,1.4),'Метаморф',true))},
     {key:'trash-out',available:()=>availableAbyssTrash().length,run:()=>{const t=pick(availableAbyssTrash());t.converted=true;if(chance(.5)){const item=createAbyssTradeItem('Метаморф',null,t.historyRowId);t.abyssChange={kind:'transform',source:'Метаморф',toName:item.name,toIcon:item.icon,toType:'trade'};return [`${capitalize(t.name)} мутировал в предмет «${item.name}»`];}const coin=createAbyssCoin('Метаморф',t.historyRowId);t.abyssChange={kind:'transform',source:'Метаморф',toName:coin.name,toIcon:'🪙',toType:'coin',toCoinType:coin.type};return [`${capitalize(t.name)} мутировал в монету «${coin.name}»`];}},
     {key:'resource-trash',available:()=>availableTradeItems().length||unusedCoins().length,run:()=>{const useItem=availableTradeItems().length&&(!unusedCoins().length||chance(.5));let label,sourceObject,parentId;if(useItem){sourceObject=pick(availableTradeItems());sourceObject.exchanged=true;sourceObject.abyssConsumed=true;label=`предмет «${sourceObject.name}»`;parentId=sourceObject.historyRowId;}else{sourceObject=pick(unusedCoins());sourceObject.expired=true;sourceObject.abyssConsumed=true;label=`монета «${sourceObject.name}»`;parentId=sourceObject.historyRowId;}const t=createAbyssTrash('Метаморф',parentId);sourceObject.abyssChange={kind:'transform',source:'Метаморф',toName:t.name,toIcon:'🔘',toType:'trash'};return [`${label} мутировал в ${t.name}`];}}
   ];
@@ -2959,6 +2961,7 @@ function refreshUnstablePresence(){ensureIslands();const active=state.fish.some(
 function useMoonTideShell(){ensureIslands();if(state.islands.moonShellActiveId){toast('Одна Раковина лунного прилива уже активна');return;}const item=state.tradeItems.find(x=>x.key==='moonTideShell'&&!x.exchanged);if(!item)return;const targets=state.fish.filter(f=>f.islandDistorted&&!f.islandSkeleton&&!f.removed);if(!targets.length){toast('Нет доступной рыбы с эффектом «Нестабильное присутствие»');return;}chooseOwnedFish('Раковина лунного прилива',f=>targets.some(x=>x.id===f.id),f=>{const before=f.weight,restored=round1(f.islandOriginalWeight);f.weight=restored;f.originalWeight=restored;f.islandDistorted=false;f.islandDistortedWeight=null;f.moonShellProtected=true;f.moonShellRestoreImpact={before,after:restored};f.tags.push('защищена Раковиной лунного прилива до конца сессии');item.moonShellUsed=true;state.islands.moonShellActiveId=item.id;state.islands.moonShellProtected=true;state.islands.moonShellDoubles=0;if(f.category==='normal'){f.moonShellImpact={before:f.weight,after:round1(f.weight*2)};f.weight=f.moonShellImpact.after;f.originalWeight=f.weight;state.islands.moonShellDoubles=1;}addHistory('Раковина лунного прилива активирована','island',`(${capitalize(f.name)}: ${kg(before)} → ${kg(restored)}${f.category==='normal'?` → ${kg(f.weight)} (×2)`:''} • защита до конца сессии)`,{numbered:false});commitState();},{allowCancel:true,cancelToast:'Раковина сохранена'});}
 function useFirstWaterFlask(){ensureIslands();const item=state.tradeItems.find(x=>x.key==='firstWaterFlask'&&!x.exchanged);if(!item){toast('Флакон Первой Воды уже использован или отсутствует');return;}const unstablePresenceActive=refreshUnstablePresence();if(!unstablePresenceActive){item.exchanged=true;item.exchangeReason='used';addHistory('Флакон Первой Воды пробудил Плавник мегалодона','island','(Нестабильного присутствия нет • призван и активирован Плавник мегалодона)',{numbered:false});processLegendary('Плавник мегалодона');commitState();toast('Флакон призвал Плавник мегалодона');return;}state.islands.firstWaterWeakening=true;let restored=0;state.fish.filter(f=>f.islandDistorted&&!f.islandSkeleton&&!f.removed).forEach(f=>{const before=f.weight,after=round1(before+(f.islandOriginalWeight-before)*.5);f.weight=after;f.originalWeight=after;f.islandDistortedWeight=after;f.firstWaterImpact={before:f.islandOriginalWeight,distorted:before,after};restored++;});item.exchanged=true;item.exchangeReason='used';addHistory('Флакон Первой Воды ослабил Нестабильное присутствие','island',`(Восстановлено 50% потерянного веса у рыб: ${restored} • будущие искажения ослаблены до конца сессии • скелеты не восстановлены)`,{numbered:false});commitState();toast('Флакон ослабил Нестабильное присутствие');}
 function availableExpeditions(){ensureIslands();return state.islands.expeditions.filter(x=>x.status==='available');}
+function hasPendingExpeditionStudy(){ensureIslands();return state.islands.items.some(item=>item.status==='active');}
 function hasCompass(){return state.artifacts.some(a=>a.name==='Компас потерянных глубин'&&!a.traded);}
 function maybeFindExpeditionItem(source='Заброс',forced=false,forcedName=null){
   ensureIslands();if(!forced&&!chance(BALANCE.islands.itemChance))return null;
@@ -2970,7 +2973,7 @@ function maybeFindExpeditionItem(source='Заброс',forced=false,forcedName=n
 function decodeExpeditionItem(id,forceSuccess=false){
   ensureIslands();const item=state.islands.items.find(x=>x.id===id&&x.status==='active');if(!item||state.finished)return;
   const success=forceSuccess||chance(BALANCE.islands.decodeChance),row=state.history.find(h=>h.id===item.historyRowId);
-  if(!success){item.status='failed';if(row)row.detail='(Расшифровка не удалась • записи слишком повреждены)';toast('Определить координаты не удалось');commitState();return;}
+  if(!success){item.status='failed';if(row)row.detail='(Расшифровка не удалась • записи слишком повреждены)';toast('Определить координаты не удалось');commitState();if(state.castsLeft<=0)maybeFinalizeSession();return;}
   const island=pick(Object.keys(ISLANDS)),expedition={id:uid(),island,status:'available',itemId:item.id};state.islands.expeditions.push(expedition);item.status='decoded';item.expeditionId=expedition.id;
   playSound('islandDiscovered');
   if(row)row.detail=`(Координаты обнаружены: ${ISLANDS[island].name})`;
@@ -4086,6 +4089,7 @@ function beginTradeShip(source='natural') {
 function maybeFinalizeSession() {
   if (state.finished || state.castsLeft>0 || $('choiceDialog')?.open || state.rifts?.active || state.islands?.active || state.dungeon?.encounter || hasPendingAbyssalDecision()) return;
   if(hasUnopenedIslandCaches())return;
+  if(hasPendingExpeditionStudy())return;
   if(activeChronocrystal()&&state.dungeon?.chronoSnapshot&&state.dungeon?.chronoCurrentRowId)return;
   if(darkEtherReward()&&state.history.some(row=>darkEtherEligibleRow(row)))return;
   if(promptUnusedMessage())return;
