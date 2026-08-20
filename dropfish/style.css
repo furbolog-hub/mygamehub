@@ -5711,6 +5711,28 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
 .inventory .chips>.chip{max-width:132px}
 .inventory .chips>.chip.effect-dungeon{max-width:132px}
 .history-item :is(.chrono-history-action,.dark-ether-history-action,.golden-gear-history-action) button{min-height:0;height:28px;padding-block:3px;line-height:1}
+
+/* Final icon guards for compact active effects and clean chronology artwork. */
+.inventory .chip.island-flare-btn .island-loot-icon.is-effect-icon {
+  flex:0 0 32px;
+  width:32px;
+  height:32px;
+  overflow:hidden;
+}
+.inventory .chip.island-flare-btn .island-loot-icon.is-effect-icon img {
+  width:32px;
+  height:32px;
+  object-fit:contain;
+  transform:translate(-50%,-50%);
+}
+.singula-weight-impact .gear-icon,
+.singula-weight-impact .dungeon-icon {
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  overflow:visible;
+}
 .golden-gear-history-action button.is-selected{border-color:#fff4b3;box-shadow:0 0 0 1px currentColor,0 0 10px rgba(225,178,78,.28)}
 .golden-gear-history-action button[data-golden-decision="keep"].is-selected{border-color:#72e5a1;background:#174f35;color:#e0ffec}
 .golden-gear-history-action button[data-golden-decision="reject"].is-selected{border-color:#a9afb5;background:#3b3e42;color:#f0f1f2}
