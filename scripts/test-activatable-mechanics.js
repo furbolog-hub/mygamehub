@@ -104,6 +104,9 @@ const assert=(value,message)=>{if(!value)throw new Error(message);};
       const stackedSingulas={count:singulaCount,weight:singulaFish.weight,impactCount:singulaFish.singulaImpact?.count,factor:singulaFish.singulaImpact?.factor};
 
       fresh();
+      const pendingSingula={id:uid(),key:'singula',name:'Пульсирующая сингула',used:false,activated:false};state.dungeon.rewards.push(pendingSingula);state.castsLeft=0;state.tradeShipChecked=true;state.tradeShipCompleted=true;maybeFinalizeSession();const heldOpen=!state.finished;processTrash();processTrash();processTrash();usePulsatingSingula(pendingSingula.id);document.querySelector('#choiceButtons button:last-child')?.click();render();const threadTrashRows=[...document.querySelectorAll('.history-item.type-trash.is-thread-removed')];const singulaThreadResume={heldOpen,finished:state.finished,castsLeft:state.castsLeft,castDisabled:document.querySelector('#castBtn')?.disabled,rows:threadTrashRows.length,greenReturns:threadTrashRows.filter(row=>row.querySelector('.thread-returned-cast')).length,grayIcons:threadTrashRows.map(row=>getComputedStyle(row.querySelector('.trash-entity-icon img')).filter)};
+
+      fresh();
       const pearlA={id:uid(),key:'pearl',name:'Жемчужина',used:false,bonusArtifacts:0,bonusAngus:0},pearlB={id:uid(),key:'pearl',name:'Жемчужина',used:false,bonusArtifacts:0,bonusAngus:0};state.dungeon.rewards.push(pearlA,pearlB);
       const pearlRow=addHistory('Проверка жемчужин','fish','',{numbered:true}),pearlItemsBefore=state.tradeItems.length,pearlArtifactsBefore=state.artifacts.length,pearlRandom=Math.random;Math.random=()=>.1;grantPearlTradeItems(pearlRow);rollPearlArtifact();Math.random=pearlRandom;
       const stackedPearls={items:state.tradeItems.length-pearlItemsBefore,artifacts:state.artifacts.length-pearlArtifactsBefore,counters:[pearlA.bonusArtifacts,pearlB.bonusArtifacts]};
@@ -118,7 +121,7 @@ const assert=(value,message)=>{if(!value)throw new Error(message);};
       render();
       const dungeonButtons=[...document.querySelectorAll('[data-dungeon-reward]')].map(button=>state.dungeon.rewards.find(item=>item.id===button.dataset.dungeonReward)?.key).filter(Boolean);
 
-      return {direct,stale,active,multiple,eligibility,bloodChoices,shellState,temporalTrade,staleObsidian,validObsidian,finalChrono,finalEtherState,stackedEyes,stackedSingulas,stackedPearls,stackedCarapaces,dungeonButtons};
+      return {direct,stale,active,multiple,eligibility,bloodChoices,shellState,temporalTrade,staleObsidian,validObsidian,finalChrono,finalEtherState,stackedEyes,stackedSingulas,singulaThreadResume,stackedPearls,stackedCarapaces,dungeonButtons};
     });
 
     assert(result.direct.button&&result.direct.consumed&&result.direct.megalodon&&result.direct.artifact&&result.direct.persisted,`Flask direct path failed: ${JSON.stringify(result.direct)}`);
@@ -135,6 +138,8 @@ const assert=(value,message)=>{if(!value)throw new Error(message);};
     assert(result.finalEtherState.paused&&result.finalEtherState.finished&&!result.finalEtherState.armed,`Armed Dark Ether must pause finalization and resume after cancellation: ${JSON.stringify(result.finalEtherState)}`);
     assert(result.stackedEyes.used&&result.stackedEyes.remaining===0&&result.stackedEyes.fish===6&&!result.stackedEyes.hiddenWeightBonus&&result.stackedEyes.categories.filter(x=>x==='normal').length===2&&result.stackedEyes.categories.filter(x=>x==='heavy').length===2&&result.stackedEyes.categories.filter(x=>x==='giant').length===2,`Stacked Ballistier Eyes must resolve independently without an undocumented weight bonus: ${JSON.stringify(result.stackedEyes)}`);
     assert(result.stackedSingulas.count===2&&result.stackedSingulas.weight===16.9&&result.stackedSingulas.impactCount===2&&Math.abs(result.stackedSingulas.factor-1.69)<1e-9,`Stacked Pulsating Singulas must resolve independently: ${JSON.stringify(result.stackedSingulas)}`);
+    assert(result.singulaThreadResume.heldOpen&&!result.singulaThreadResume.finished&&result.singulaThreadResume.castsLeft===3&&!result.singulaThreadResume.castDisabled,`Singula must keep the session open and make Thread-returned casts usable: ${JSON.stringify(result.singulaThreadResume)}`);
+    assert(result.singulaThreadResume.rows===3&&result.singulaThreadResume.greenReturns===3&&result.singulaThreadResume.grayIcons.every(value=>value.includes('grayscale(1)')),`Thread-removed trash must use gray icons and green returned-cast text: ${JSON.stringify(result.singulaThreadResume)}`);
     assert(result.stackedPearls.items===2&&result.stackedPearls.artifacts===2&&result.stackedPearls.counters.every(value=>value===1),`Stacked Corrupted Pearls must resolve independently: ${JSON.stringify(result.stackedPearls)}`);
     assert(result.stackedCarapaces.weights.every(value=>value===40)&&result.stackedCarapaces.maxFishWeight===40,`Stacked Carapace Scales must share the same pre-effect clean weight: ${JSON.stringify(result.stackedCarapaces)}`);
     assert(['abyss','blood','darkCoal','singula','darkEther'].every(key=>result.dungeonButtons.includes(key)),`Dungeon reward UI coverage failed: ${JSON.stringify(result.dungeonButtons)}`);

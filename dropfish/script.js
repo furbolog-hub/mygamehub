@@ -3506,6 +3506,7 @@ function applySingulaFishBonus(fish){
   if(!eligible)return fish;const factor=Math.pow(1.3,count),before=fish.weight,originalBefore=fish.originalWeight;fish.weight=round1(fish.weight*factor);fish.originalWeight=round1(fish.originalWeight*factor);if(fish.weight===before)fish.weight=round1(before+.1);if(fish.originalWeight===originalBefore)fish.originalWeight=round1(originalBefore+.1);if(Number.isFinite(fish.unrestrictedWeight)){const unrestrictedBefore=fish.unrestrictedWeight;fish.unrestrictedWeight=round1(unrestrictedBefore*factor);if(fish.unrestrictedWeight===unrestrictedBefore)fish.unrestrictedWeight=round1(unrestrictedBefore+.1);}fish.singulaImpact={before,after:fish.weight,originalBefore,originalAfter:fish.originalWeight,count,factor};fish.tags=[...(fish.tags||[]),`Пульсирующая сингула: +30% к изначальному весу${count>1?` ×${count}`:''}`];fish.category=categoryForWeight(fish.weight);return fish;
 }
 function usePulsatingSingula(id){const reward=(state.dungeon?.rewards||[]).find(item=>item.id===id&&item.key==='singula'&&!item.used);if(!reward||reward.activated)return;showChoice('Пульсирующая сингула','Выберите призываемый мифический артефакт',['Люминар Удильщика','Нить Сифонофоры'],name=>{reward.activated=true;reward.summoned=name;state.dungeon.singulaFinalBonus=true;processMythic(name,'Пульсирующая сингула');const row=state.history.find(h=>h.id===reward.historyRowId);if(row)row.detail=`(Призван «${name}» • будущая рыба +30% к изначальному весу • итоговый улов +5%)`;commitState();});}
+function hasPendingPulsatingSingula(){return (state.dungeon?.rewards||[]).some(item=>item.key==='singula'&&!item.used&&!item.activated);}
 function useDarkCoal(id){const reward=(state.dungeon?.rewards||[]).find(item=>item.id===id&&item.key==='darkCoal'&&!item.used);if(!reward)return;if(state.tradeShipChecked||state.tradeShipArrived){toast('Проверка прибытия судна уже началась — Уголь тьмы неактивен');return;}const fish=state.fish.filter(f=>f.category==='normal'&&!f.removed&&!f.darkCoalConverted&&((f.source==='Заброс'&&f.direct)||f.source==='Аркадный улов'||f.arcadeCatch));if(!fish.length){toast('Нет обычных рыб заброса или аркады для преобразования');return;}state.dungeon.darkCoalConvertedCount=Math.max(state.dungeon.darkCoalConvertedCount||0,fish.length);fish.forEach(f=>{const def=pick(TRADE_ITEMS);f.removed=true;f.darkCoalConverted=true;const item={id:uid(),key:def.key,name:def.name,icon:def.icon,fishId:f.id,historyRowId:null,exchanged:false,darkCoal:true};state.tradeItems.push(item);const row=state.history.find(h=>h.fishId===f.id);if(row){item.historyRowId=row.id;row.darkCoalTransform={fishName:f.name,itemName:def.name,itemKey:def.key,itemIcon:def.icon};row.detail='';}});reward.used=true;const row=state.history.find(h=>h.id===reward.historyRowId);if(row)appendHistoryDetailById(row.id,`Преобразовано обычных рыб: ${fish.length}`);recalculateRemovableOutcomeStats();commitState();}
 function darkEtherReward(){const id=state.dungeon?.darkEtherArmedId;return (state.dungeon?.rewards||[]).find(item=>item.id===id&&item.key==='darkEther'&&!item.used&&(item.charges||0)>0);}
 function darkEtherEligibleRow(row){
@@ -4089,6 +4090,7 @@ function beginTradeShip(source='natural') {
 }
 function maybeFinalizeSession() {
   if (state.finished || state.castsLeft>0 || $('choiceDialog')?.open || state.rifts?.active || state.islands?.active || state.dungeon?.encounter || hasPendingAbyssalDecision()) return;
+  if(hasPendingPulsatingSingula())return;
   if(hasUnopenedIslandCaches())return;
   if(hasPendingExpeditionStudy())return;
   if(activeChronocrystal()&&state.dungeon?.chronoSnapshot&&state.dungeon?.chronoCurrentRowId)return;
@@ -4425,6 +4427,7 @@ function renderHistory() {
     if(h.type==='rift'&&/^\(?Вынесена добыча:/i.test(historyDetailText.trim()))historyDetailText='';
     if(islandCompletion&&/Получен исполин|Нестабильное присутствие/i.test(historyDetailText))historyDetailText='';
     if(fish?.goldenHourImpact)historyDetailText=historyDetailText.replace(/\s*•?\s*<span class="gold-add">[^<]*<\/span>\s*•?\s*/g,' • ').replace(/^\s*•\s*|\s*•\s*$/g,'').trim();
+    if(h.threadRemoved)historyDetailText=historyDetailText.replace(/возвращён 1 заброс/gi,'<span class="thread-returned-cast">возвращён 1 заброс</span>');
     const hasUnstableBadge=fish?.islandColossus&&/Нестабильное присутствие/i.test(historyDetailText);
     if(hasUnstableBadge)historyDetailText=historyDetailText.replace(/<span class="island-negative-hint">\s*Нестабильное присутствие\s*<\/span>\s*(?:•\s*)?/i,'').trim();
     const negativeHistoryDetail=/Нестабильное присутствие|вытеснен/i.test(historyDetailText)&&!historyDetailText.includes('island-negative-hint');

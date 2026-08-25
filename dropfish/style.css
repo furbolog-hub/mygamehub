@@ -777,7 +777,10 @@ body.reduce-motion .rift-fish-gradient-name {
 .history-item.is-chaos-skeleton .history-impact-note { color:#55cbd8; }
 .history-item.type-trash.is-thread-removed { border-left-color:#25c9bd; background:linear-gradient(90deg,rgba(10,91,99,.2),rgba(3,18,32,.26)); }
 .history-item.type-trash.is-thread-removed > strong { color:#6f9da1; }
-.history-item.type-trash.is-thread-removed > .history-detail { color:#6ce2d7 !important; font-weight:750; }
+.history-item.type-trash.is-thread-removed .trash-entity-icon img { filter:grayscale(1); opacity:.62; }
+.history-item.type-trash.is-thread-removed .history-entity-title { color:#8c989c; }
+.history-item.type-trash.is-thread-removed .history-detail { color:#79aeb0 !important; font-weight:750; }
+.history-item.type-trash.is-thread-removed .thread-returned-cast { color:#6ff09b; text-shadow:0 0 7px rgba(71,226,132,.24); }
 @keyframes mythicPlateShine { 0%,35%{transform:translateX(-68%)} 72%,100%{transform:translateX(68%)} }
 @keyframes mythicChipShine { 0%,45%{transform:translateX(-75%)} 75%,100%{transform:translateX(75%)} }
 .type-debuff { color:#ff6d6d; text-shadow:0 1px 0 #000; border-left-color:#ff4d4d; }
