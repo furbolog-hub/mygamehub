@@ -39,6 +39,21 @@ const BALANCE = Object.freeze({
   beetleLossMaximum: 60
 });
 
+const LOCATION_RULES = Object.freeze({
+  'endless-plain': {bombs:2,moles:2,weeds:0,chests:2},
+  'windy-ridge': {bombs:2,moles:0,weeds:2,chests:1},
+  'stormy-glade': {bombs:0,moles:2,weeds:2,chests:1,rabbitDisabled:true,moleWheatLimit:5},
+  'golden-valley': {bombs:2,moles:2,weeds:2,chests:1,chestTimer:1,bombFizzleChance:.5},
+  'rocky-wasteland': {bombs:2,moles:2,weeds:2,chests:1,weedBlockLimit:4},
+  'copper-ledge': {bombs:1,moles:1,weeds:1,chests:1},
+  'dry-rift': {bombs:2,moles:2,weeds:2,chests:1,hiddenBonuses:{scarecrow:2}},
+  'shadow-cliff': {bombs:2,moles:2,weeds:2,chests:1,hiddenBonuses:{digitalMagnifier:2}},
+  'misty-realm': {bombs:2,moles:2,weeds:2,chests:1,moleBombStealChance:.7,weedWitherChance:.5},
+  'black-furrow': {bombs:0,moles:3,weeds:0,chests:1},
+  'southern-steppe': {bombs:1,moles:0,weeds:4,chests:1},
+  'amber-slope': {bombs:2,moles:2,weeds:2,chests:1,wheatMin:10,wheatMax:20}
+});
+
 const LOCATIONS = [
   {name:'Бескрайняя равнина',background:'./assets/backgrounds/endless-plain.png'},
   {name:'Ветреный хребет',background:'./assets/backgrounds/windy-ridge.png'},
@@ -104,6 +119,11 @@ function locationData(value){
   }
   return {name:String(name||'Локация'),background:''};
 }
+function locationRule(value=state?.locations?.[state.locationIndex]){
+  const background=locationData(value).background||'';
+  const key=background.split('/').pop()?.replace(/\.png$/i,'')||'';
+  return LOCATION_RULES[key]||{bombs:2,moles:2,weeds:2,chests:1};
+}
 
 const SOUND_ENABLED_KEY = 'agroClickSoundsEnabled';
 const SOUND_PATHS = Object.freeze({
@@ -158,20 +178,27 @@ function shuffle(items){
   return a;
 }
 
-function createBoard(){
-  const types=['bomb','bomb','mole','mole','weed','weed','chest'];
+function createBoard(location){
+  const rule=locationRule(location);
+  const types=[];
+  for(const [type,count] of [['bomb',rule.bombs],['mole',rule.moles],['weed',rule.weeds],['chest',rule.chests]]){
+    for(let i=0;i<(count||0);i++) types.push(type);
+  }
   while(types.length<TOTAL_CELLS) types.push('wheat');
-  return shuffle(types).map((type,index)=>({
+  const board=shuffle(types).map((type,index)=>({
     id:index, type, opened:false, blocked:false, blockedBy:[], destroyed:false,
-    amount:type==='wheat'?randInt(1,20):0, originalAmount:null, characterBoost:0, characterEffects:[], stolen:false, stolenAmount:0, fertilized:false,
-    timer:null, revealed:false, chestResolved:false, resolvedBonus:null, summoned:false, summonedByMole:false, summonedBeetle:false, justActivated:false, exploded:false, neutralized:false, bombLoss:0, burned:false
+    amount:type==='wheat'?randInt(rule.wheatMin||1,rule.wheatMax||20):0, originalAmount:null, characterBoost:0, characterEffects:[], stolen:false, stolenAmount:0, fertilized:false,
+    timer:null, witherTimer:null, withered:false, revealed:false, chestResolved:false, resolvedBonus:null, summoned:false, summonedByMole:false, summonedBeetle:false, justActivated:false, exploded:false, fizzled:false, neutralized:false, bombLoss:0, burned:false, hiddenBonus:null, hiddenBonusCollected:false
   })).map(cell=>{ if(cell.type==='wheat') cell.originalAmount=cell.amount; return cell; });
+  const hidden=Object.entries(rule.hiddenBonuses||{}).flatMap(([type,count])=>Array(count).fill(type));
+  shuffle(board.filter(cell=>cell.type==='wheat')).slice(0,hidden.length).forEach((cell,index)=>{cell.hiddenBonus=hidden[index];});
+  return board;
 }
 
 function createState(){
   const locations=shuffle(LOCATIONS).slice(0,3);
   return {
-    version:1, locations, locationIndex:0, board:createBoard(), movesLeft:OPENS_PER_LOCATION,
+    version:2, locations, locationIndex:0, board:createBoard(locations[0]), movesLeft:OPENS_PER_LOCATION,
     locationHarvest:0, completedHarvest:0, baseHarvest:0, grossHarvest:0, bombLossTotal:0, keys:0, beetles:0, inventory:[], character:null,
     moleStolenTotal:0, moleStolenByLocation:[0,0,0],
     rabbitSpawns:0, characterSpawns:0, activeRabbitCell:null, status:'Откройте первую грядку.',
@@ -188,6 +215,11 @@ let state=loadState();
 if(!Array.isArray(state.sessionLog)||!state.sessionLog.length) state.sessionLog=[{id:uid(),text:state.status||'Откройте первую грядку.',icon:'🌱',location:state.locationIndex+1}];
 state.board.forEach(c=>{
   if(c.neutralized==null)c.neutralized=false;
+  if(c.fizzled==null)c.fizzled=false;
+  if(c.witherTimer==null)c.witherTimer=null;
+  if(c.withered==null)c.withered=false;
+  if(c.hiddenBonus==null)c.hiddenBonus=null;
+  if(c.hiddenBonusCollected==null)c.hiddenBonusCollected=false;
   if(c.summonedByMole==null)c.summonedByMole=Boolean(c.summoned);
   if(c.summonedBeetle==null)c.summonedBeetle=false;
   if(c.type==='wheat'){
@@ -273,11 +305,11 @@ function toast(text,iconKey=null){ const el=$('toast'); el.innerHTML=iconKey?`<s
 function highlightCell(id){ const el=document.querySelector(`[data-cell-id="${id}"]`); el?.classList.remove('highlight'); void el?.offsetWidth; el?.classList.add('highlight'); }
 
 function inventoryCount(type){ return state.inventory.filter(x=>x.type===type).reduce((s,x)=>s+(x.count||1),0); }
-function addInventory(type,count=1,timer=null){
+function addInventory(type,count=1,timer=null,meta={}){
   const stackable=['digitalMagnifier','mineralFertilizer','portableNeutralizer','goldenHoe'];
   const existing=stackable.includes(type)?state.inventory.find(x=>x.type===type&&x.timer==null):null;
   if(existing) existing.count=(existing.count||1)+count;
-  else state.inventory.push({id:uid(),type,count,timer,justActivated:true});
+  else state.inventory.push({id:uid(),type,count,timer,justActivated:true,...meta});
 }
 function consumeInventory(type){
   const item=state.inventory.find(x=>x.type===type);
@@ -299,7 +331,7 @@ function openCell(id,source='normal'){
 
   // Запоминаем только те таймеры, которые уже действовали ДО этого открытия.
   // Новая бомба/ящик/предмет/персонаж не теряют ход в момент появления.
-  const existingBoardTimerIds=new Set(state.board.filter(c=>c.opened&&c.timer!=null&&c.timer>0).map(c=>c.id));
+  const existingBoardTimerIds=new Set(state.board.filter(c=>c.opened&&(c.timer!=null&&c.timer>0||c.witherTimer!=null&&c.witherTimer>0)).map(c=>c.id));
   const existingInventoryTimerIds=new Set(state.inventory.filter(i=>i.timer!=null&&i.timer>0).map(i=>i.id));
   const existingCharacterToken=state.character ? state.character.token : null;
 
@@ -355,6 +387,15 @@ function processCell(cell){
   if(cell.type==='mole') processMole(cell);
   if(cell.type==='weed') processWeed(cell);
   if(cell.type==='chest') activateChest(cell);
+  collectHiddenBonus(cell);
+}
+
+function collectHiddenBonus(cell){
+  if(!cell?.hiddenBonus||cell.hiddenBonusCollected) return;
+  cell.hiddenBonusCollected=true;
+  if(cell.hiddenBonus==='scarecrow') addInventory('scarecrow',1,3,{origin:'location'});
+  else if(cell.hiddenBonus==='digitalMagnifier') addInventory('digitalMagnifier',2,null,{origin:'location'});
+  setStatus(`В грядке ${cell.id+1} найдено: ${markLogValue(BONUS_NAMES[cell.hiddenBonus])}. Предмет добавлен в активы.`,ICONS[cell.hiddenBonus]||'🎁','bonus',`hidden:${cell.id}`);
 }
 
 function activeBombsForDefender(){
@@ -431,13 +472,23 @@ function flashBoardExplosion(){
 function processMole(cell){
   playSound('moleAppears'); highlightCell(cell.id);
   const groupKey=`mole:${cell.id}`;
+  const rule=locationRule();
   if(activeItem('scarecrow')){ setStatus('Пугало отпугнуло крота.','🐹','debuff',groupKey); return; }
   const chest=state.board.find(c=>c.type==='chest'&&c.opened&&!c.chestResolved&&c.timer>0);
   if(chest&&chance(BALANCE.moleChestStealChance)){
     chest.chestResolved=true; chest.timer=null; chest.destroyed=true;
     setStatus(`Крот украл Загадочный ящик из грядки ${chest.id+1} до его открытия.`,'🐹','debuff',groupKey); highlightCell(chest.id); return;
   }
-  const wheat=shuffle(state.board.filter(c=>c.type==='wheat'&&c.opened&&!c.stolen&&!c.burned&&!c.destroyed&&c.amount>0)).slice(0,3);
+  const activeBombs=state.board.filter(c=>c.type==='bomb'&&c.opened&&c.timer>0&&!c.destroyed&&!c.exploded&&!c.neutralized&&!c.fizzled);
+  if(activeBombs.length&&rule.moleBombStealChance&&chance(rule.moleBombStealChance)){
+    const bomb=pick(activeBombs);
+    bomb.timer=null; bomb.destroyed=true; bomb.stolenByMole=true;
+    setStatus(`Крот предпочёл урожаю активную бомбу и утащил её из грядки ${bomb.id+1}.`,'🐹','bonus',groupKey);
+    highlightCell(bomb.id);
+    return;
+  }
+  const wheatLimit=rule.moleWheatLimit||3;
+  const wheat=shuffle(state.board.filter(c=>c.type==='wheat'&&c.opened&&!c.stolen&&!c.burned&&!c.destroyed&&c.amount>0)).slice(0,wheatLimit);
   const stolenDetails=[];
   let stolenTotal=0;
   wheat.forEach(w=>{
@@ -483,8 +534,10 @@ function appendMoleSummons(groupKey,summoned){
 }
 
 function summonMoleHazards(types){
+  const rule=locationRule();
+  const allowedTypes=types.filter(type=>type!=='bomb'||rule.bombs>0).filter(type=>type!=='weed'||rule.weeds>0);
   const summoned=[];
-  for(const type of types){
+  for(const type of allowedTypes){
     const candidates=state.board.filter(c=>!c.opened&&!c.blocked&&!c.destroyed);
     if(!candidates.length) break;
     const target=pick(candidates);
@@ -523,9 +576,10 @@ function neighborsOf(cell){
 }
 function processWeed(cell,{silent=false}={}){
   playSound('weedBlocks'); highlightCell(cell.id);
+  const rule=locationRule();
   // Только восемь непосредственных соседей: горизонталь, вертикаль и диагональ.
   const available=neighborsOf(cell).filter(c=>!c.opened&&!c.blocked&&!c.destroyed);
-  const targets=shuffle(available).slice(0,2);
+  const targets=shuffle(available).slice(0,rule.weedBlockLimit||2);
   targets.forEach(t=>{
     t.blocked=true;
     t.blockedBy=[...(t.blockedBy||[]),cell.id];
@@ -550,10 +604,28 @@ function processWeed(cell,{silent=false}={}){
     const beetleText=summonedBeetle?` и призвал жука 🪲 (всего жуков: ${state.beetles})`:'';
     setStatus(`${origin} в грядке ${cell.id+1}: ${blockedText}${beetleText}.`,'🌿','debuff',`weed:${cell.id}`);
   }
+  if(rule.weedWitherChance){ cell.witherTimer=1; cell.withered=false; }
   return {blockedCellIds:targets.map(t=>t.id),summonedBeetle,beetleChance};
 }
 
-function activateChest(cell){ cell.timer=3; cell.justActivated=true; playSound('chestFound'); setStatus(`Загадочный ящик в грядке ${cell.id+1} откроется через 3 хода.`,'🎁','bonus',`chest:${cell.id}`); highlightCell(cell.id); }
+function resolveWeedWither(cell){
+  cell.witherTimer=null;
+  if(!chance(locationRule().weedWitherChance||0)){
+    setStatus(`Сорняк в грядке ${cell.id+1} не засох и продолжает блокировать соседние грядки.`,'🌿','debuff',`weed:${cell.id}`,{append:true});
+    return;
+  }
+  cell.withered=true;
+  const released=[];
+  state.board.forEach(target=>{
+    if(!Array.isArray(target.blockedBy)||!target.blockedBy.includes(cell.id)) return;
+    target.blockedBy=target.blockedBy.filter(id=>id!==cell.id);
+    if(!target.blockedBy.length){ target.blocked=false; released.push(target.id+1); }
+    highlightCell(target.id);
+  });
+  setStatus(`Сорняк в грядке ${cell.id+1} засох${released.length?` и освободил грядки ${released.join(', ')}`:'; его грядки остаются заблокированы другими сорняками'}.`,'🌿','bonus',`weed:${cell.id}`,{append:true});
+}
+
+function activateChest(cell){ const timer=locationRule().chestTimer||3; cell.timer=timer; cell.justActivated=true; playSound('chestFound'); setStatus(`Загадочный ящик в грядке ${cell.id+1} откроется через ${timer} ${timer===1?'ход':'хода'}.`,'🎁','bonus',`chest:${cell.id}`); highlightCell(cell.id); }
 function resolveChest(cell,byKey=false){
   if(!cell||cell.chestResolved||cell.destroyed) return;
   cell.chestResolved=true; cell.timer=null; playSound('chestBonus');
@@ -571,22 +643,29 @@ function grantBonus(type){
   }
   if(type==='agroRushX2'){ multiplyHarvest(2); toast('Агро-рывок ×2','agroRushX2'); return {detail:'Умножил урожай локации ×2.'}; }
   if(type==='agroRushX3'){ multiplyHarvest(3); toast('Агро-рывок ×3','agroRushX3'); return {detail:'Умножил урожай локации ×3.'}; }
-  if(type==='bombShield') addInventory(type,1,5);
-  else if(type==='scarecrow') addInventory(type,1,3);
-  else if(type==='digitalMagnifier') addInventory(type,2,null);
-  else addInventory(type,1,null);
+  if(type==='bombShield') addInventory(type,1,5,{origin:'chest'});
+  else if(type==='scarecrow') addInventory(type,1,3,{origin:'chest'});
+  else if(type==='digitalMagnifier') addInventory(type,2,null,{origin:'chest'});
+  else addInventory(type,1,null,{origin:'chest'});
   return {detail:BONUS_DESCRIPTIONS[type]};
 }
 
 function tickExistingEffects(boardTimerIds,inventoryTimerIds,characterToken){
   state.board.forEach(cell=>{
     if(!boardTimerIds.has(cell.id)) return;
-    if(!cell.opened||cell.timer==null||cell.timer<=0) return;
-    cell.timer--;
-    if(cell.timer===0){
-      if(cell.type==='bomb') explodeBomb(cell);
-      else if(cell.type==='chest') resolveChest(cell);
+    if(!cell.opened) return;
+    if(cell.timer!=null&&cell.timer>0){
+      cell.timer--;
+      if(cell.timer===0){
+        if(cell.type==='bomb'&&locationRule().bombFizzleChance&&chance(locationRule().bombFizzleChance)){
+          cell.timer=null; cell.fizzled=true;
+          setStatus(`Бомба в грядке ${cell.id+1} не взорвалась после истечения таймера.`,'💣','bonus',`bomb:${cell.id}`,{append:true});
+          highlightCell(cell.id);
+        } else if(cell.type==='bomb') explodeBomb(cell);
+        else if(cell.type==='chest') resolveChest(cell);
+      }
     }
+    if(cell.witherTimer!=null&&cell.witherTimer>0){ cell.witherTimer--; if(cell.witherTimer===0) resolveWeedWither(cell); }
   });
 
   state.inventory.forEach(item=>{
@@ -694,10 +773,10 @@ function chooseMageSpell(spell){
     if(Array.isArray(state.moleStolenByLocation)) state.moleStolenByLocation[state.locationIndex]=Math.max(0,(state.moleStolenByLocation[state.locationIndex]||0)-restored);
     setStatus(`Кот-маг вернул украденный кротом урожай: ${markLogValue('+'+restored+' ед.')}.`,'↩️','character',`character:${mage.token}`,{append:true});
   } else if(spell==='scarecrow'){
-    addInventory('scarecrow',1,3);
+    addInventory('scarecrow',1,3,{origin:'character'});
     setStatus('Кот-маг призвал Пугало на 3 хода: +5 урожая за ход и защита от крота.','🧍','character',`character:${mage.token}`,{append:true});
   } else if(spell==='fertilizer'){
-    addInventory('mineralFertilizer',1,null);
+    addInventory('mineralFertilizer',1,null,{origin:'character'});
     setStatus('Кот-маг создал Минеральное удобрение. Оно добавлено в активы.','🧪','character',`character:${mage.token}`,{append:true});
     } else return;
     mage.spellChosen=true; mage.chosenSpell=spell;
@@ -709,6 +788,7 @@ function chooseMageSpell(spell){
 }
 
 function maybeRabbit(){
+  if(locationRule().rabbitDisabled) return;
   if(state.activeRabbitCell!=null||state.rabbitSpawns>=BALANCE.rabbitMaxPerLocation||state.movesLeft<=0) return;
   if(!chance(BALANCE.rabbitChance)) return;
   const cells=state.board.filter(c=>!c.opened&&!c.blocked&&!c.destroyed);
@@ -809,6 +889,7 @@ function openBlockedCellWithKey(viewIndex,cellId){
       setStatus(`Ключом открыта заблокированная грядка ${cell.id+1}: обнаружен сорняк.`,'🔑','debuff',groupKey);
       processWeed(cell);
     }
+    collectHiddenBonus(cell);
     highlightCell(cell.id);
   });
   clearInlineAction(); render(); save();
@@ -970,10 +1051,34 @@ function useHoe(viewIndex=state.viewLocationIndex){
 
 function typeLabel(type){ return ({bomb:'Бомба',mole:'Крот',weed:'Сорняк',chest:'Загадочный ящик',wheat:'Пшеница'})[type]||type; }
 
-function goNext(){
+function pendingLocationActions(){
+  const view=currentView();
+  const usable=(view.inventory||[]).filter(item=>inventoryBonusApplicable(item.type,view));
+  const chest=view.board.find(c=>c.type==='chest'&&c.opened&&!c.chestResolved&&!c.destroyed&&c.timer>0);
+  const labels=usable.map(item=>BONUS_NAMES[item.type]||item.type);
+  if(chest) labels.push(`Загадочный ящик в грядке ${chest.id+1}`);
+  if(state.keys>0) labels.push(`${state.keys} ${state.keys===1?'ключ':'ключа/ключей'}`);
+  return [...new Set(labels)];
+}
+
+function confirmLocationExit(){
+  const pending=pendingLocationActions();
+  if(!pending.length) return false;
+  openInlineAction('Перед переходом','На локации ещё доступны действия: '+pending.join(', ')+'. Неиспользованные активы перейдут дальше, но ключом ещё можно открыть ящик или заблокированную грядку.',[
+    {value:'stay',label:'↩️ Вернуться к локации'},
+    {value:'continue',label:state.locationIndex===2?'Завершить всё равно':'Продолжить и перенести активы'}
+  ],choice=>{
+    clearInlineAction();
+    if(choice==='continue') goNext(true);
+  });
+  return true;
+}
+
+function goNext(confirmed=false){
   if(state.viewLocationIndex < state.locationIndex){ state.viewLocationIndex++; playSound('locationChange'); render(); save(); return; }
   if(state.finished) return;
   if(!state.locationLocked) return;
+  if(!confirmed&&confirmLocationExit()) return;
 
   // На финальной локации сначала даём распорядиться оставшимися ключами.
   // Урожай фиксируется только при фактическом завершении, чтобы повторное
@@ -995,7 +1100,8 @@ function goNext(){
   state.locationIndex++;
   state.viewLocationIndex=state.locationIndex;
   playSound('locationChange');
-  state.board=createBoard(); state.movesLeft=OPENS_PER_LOCATION; state.locationHarvest=0; state.inventory=[]; state.character=null;
+  const carriedInventory=state.inventory.map(item=>({...item,justActivated:true}));
+  state.board=createBoard(state.locations[state.locationIndex]); state.movesLeft=OPENS_PER_LOCATION; state.locationHarvest=0; state.inventory=carriedInventory; state.character=null;
   state.rabbitSpawns=0; state.characterSpawns=0; state.activeRabbitCell=null; state.locationLocked=false; state.keyBlockedOpenUsed=false;
   setStatus('Новая локация. Откройте грядку.'); render(); save();
 }
@@ -1079,7 +1185,7 @@ function render(){
   }
   $('locationProgress').textContent=`Локация ${view.index+1} из 3${!view.live?' • просмотр':''}`;
   $('locationName').textContent=location.name;
-  $('harvestLabel').textContent=view.cumulativeHarvest??totalHarvest(); $('movesLabel').textContent=view.movesLeft;
+  updateHarvestLabel(view.cumulativeHarvest??totalHarvest(),view.live); $('movesLabel').textContent=view.movesLeft;
   renderStatusLog(); renderInlineAction();
   $('backLocationBtn').disabled=view.index<=0;
   const resultsBtn=$('resultsBtn');
@@ -1096,11 +1202,29 @@ function render(){
 function renderBeetleIndicator(){
   const indicator=$('beetleIndicator');
   const countNode=$('beetleIndicatorCount');
-  if(!indicator||!countNode) return;
+  const riskNode=$('beetleIndicatorRisk');
+  if(!indicator||!countNode||!riskNode) return;
   const count=Math.max(0,Number(state.beetles)||0);
+  const [min,max]=beetleRange(count);
   indicator.classList.toggle('active',count>0);
   indicator.setAttribute('aria-hidden',String(count<=0));
-  countNode.textContent=count>1?`×${count}`:'';
+  countNode.textContent=`${count} ${count===1?'жук':'жука'}`;
+  riskNode.textContent=`Итоговая потеря: ${min}–${max}%`;
+  indicator.title=`${countNode.textContent}. Итоговая потеря урожая составит от ${min}% до ${max}%.`;
+}
+
+function updateHarvestLabel(value,animate=true){
+  const node=$('harvestLabel');
+  const next=Math.max(0,Math.round(Number(value)||0));
+  const previous=Number(node.dataset.value);
+  node.textContent=next;
+  node.dataset.value=String(next);
+  if(!animate||!Number.isFinite(previous)||previous===next) return;
+  node.classList.remove('harvest-gain','harvest-loss');
+  void node.offsetWidth;
+  node.classList.add(next>previous?'harvest-gain':'harvest-loss');
+  clearTimeout(updateHarvestLabel.timer);
+  updateHarvestLabel.timer=setTimeout(()=>node.classList.remove('harvest-gain','harvest-loss'),520);
 }
 function renderCharacter(view=currentView()){
   const card=$('characterCard'); const c=view.character;
@@ -1126,28 +1250,33 @@ function renderBoard(view=currentView()){
   const board=view.board; const readOnly=!view.live;
   $('board').innerHTML=board.map(c=>{
     const rabbit=state.activeRabbitCell===c.id;
-    const classes=['cell',`type-${c.type}`,c.opened?'opened':'',c.opened&&c.type==='bomb'&&!c.neutralized?'bomb-cell':'',c.exploded?'exploded-bomb-cell':'',c.neutralized?'neutralized-bomb-cell':'',(c.destroyed||c.burned)&&!(c.type==='bomb'&&c.exploded)?'destroyed-cell':'',c.opened&&c.type==='chest'&&!c.chestResolved&&!c.destroyed?'active-chest-cell':'',c.opened&&c.type==='chest'&&c.chestResolved?'resolved-chest-cell':'',c.stolen?'stolen-cell':'',(c.characterBoost||0)>0&&!c.stolen?'character-boosted-cell':'',c.blocked&&!c.opened?'blocked':'',c.revealed?'revealed':'',c.openedByKey?'opened-by-key':'',selectionMode?.ids?.has(c.id)?'selectable-cell':'',rabbit?'rabbit rabbit-active':''].filter(Boolean).join(' ');
+    const classes=['cell',`type-${c.type}`,c.opened?'opened':'',c.opened&&c.type==='bomb'&&!c.neutralized?'bomb-cell':'',c.exploded?'exploded-bomb-cell':'',c.fizzled?'fizzled-bomb-cell':'',c.withered?'withered-weed-cell':'',c.neutralized?'neutralized-bomb-cell':'',(c.destroyed||c.burned)&&!(c.type==='bomb'&&(c.exploded||c.stolenByMole))?'destroyed-cell':'',c.opened&&c.type==='chest'&&!c.chestResolved&&!c.destroyed?'active-chest-cell':'',c.opened&&c.type==='chest'&&c.chestResolved?'resolved-chest-cell':'',c.stolen?'stolen-cell':'',(c.characterBoost||0)>0&&!c.stolen?'character-boosted-cell':'',c.blocked&&!c.opened?'blocked':'',c.revealed?'revealed':'',c.openedByKey?'opened-by-key':'',selectionMode?.ids?.has(c.id)?'selectable-cell':'',rabbit?'rabbit rabbit-active':''].filter(Boolean).join(' ');
     let body=rabbit
-      ? `<span class="icon rabbit-cell-icon">${assetMarkup('rabbit','🐇','rabbit-asset')}</span>`
+      ? `<span class="cell-visual"><span class="icon rabbit-cell-icon">${assetMarkup('rabbit','🐇','rabbit-asset')}</span></span>`
       : '';
     if(!rabbit&&(c.opened||c.revealed)){
-      if((c.destroyed||c.burned)&&!(c.type==='bomb'&&c.exploded)) body='<span class="icon">💥</span><span class="destroyed">Уничтожено</span>';
+      if(c.type==='bomb'&&c.stolenByMole) body=`<span class="cell-visual"><span class="icon">${assetMarkup('mole','🐹')}</span></span><span class="cell-caption"><span class="destroyed">Бомба украдена</span></span>`;
+      else if((c.destroyed||c.burned)&&!(c.type==='bomb'&&c.exploded)) body='<span class="cell-visual"><span class="icon">💥</span></span><span class="cell-caption"><span class="destroyed">Уничтожено</span></span>';
       else if(c.type==='wheat') body=c.stolen
-        ? `<span class="icon stolen-wheat-icon">${assetMarkup('wheat',ICONS.wheat)}</span><span class="stolen">Украдено</span><span class="stolen-value">−${c.stolenAmount||0}</span>`
-        : `<span class="icon">${assetMarkup('wheat',ICONS.wheat)}</span>${(c.characterBoost||0)>0
+        ? `<span class="cell-visual"><span class="icon stolen-wheat-icon">${assetMarkup('wheat',ICONS.wheat)}</span></span><span class="cell-caption"><span class="stolen">Украдено <span class="stolen-value">−${c.stolenAmount||0}</span></span></span>`
+        : `<span class="cell-visual"><span class="icon">${assetMarkup('wheat',ICONS.wheat)}</span></span><span class="cell-caption">${(c.characterBoost||0)>0
             ? `<span class="amount boosted-amount"><span class="base-amount">${Number.isFinite(c.originalAmount)?c.originalAmount:c.amount-(c.characterBoost||0)}</span><span class="boost-arrow">→</span><span class="boost-final">${c.amount}</span><small>(+${c.characterBoost})</small></span>`
-            : `<span class="amount">${c.amount}</span>`}`;
-      else if(c.type==='chest'&&c.chestResolved) body=`${c.resolvedBonus?`<span class="cell-effect-backdrop chest-effect-backdrop" title="${BONUS_NAMES[c.resolvedBonus]||''}">${assetMarkup(c.resolvedBonus,ICONS[c.resolvedBonus]||'')}</span>`:''}<span class="icon resolved-chest-icon cell-foreground">${assetMarkup('chest','🎁')}</span><span class="resolved-chest-label cell-foreground">Открыт</span>`;
-      else if(c.type==='chest') body=`<span class="icon active-chest-icon">${assetMarkup('chest',ICONS.chest)}</span><span class="amount chest-label">Загадочный ящик</span>`;
-      else if(c.type==='bomb'&&c.neutralized) body=`<span class="icon neutralized-bomb-icon">${assetMarkup('bomb',ICONS.bomb)}</span><span class="neutralized-label">Обезврежена</span>`;
-      else if(c.type==='bomb'&&c.exploded) body=`<span class="icon exploded-bomb-icon">${assetMarkup('bomb',ICONS.bomb)}</span><span class="exploded-label">Взорвана</span><span class="bomb-loss">−${c.bombLoss||0}</span>`;
-      else if(c.type==='weed'&&c.summonedBeetle) body=`<span class="cell-effect-backdrop beetle-effect-backdrop" title="Сорняк призвал жука">${assetMarkup('beetle',ICONS.beetle)}</span><span class="icon cell-foreground">${assetMarkup('weed',ICONS.weed)}</span><span class="amount cell-foreground">${typeLabel(c.type)}</span>`;
-      else body=`<span class="icon">${assetMarkup(c.type,ICONS[c.type])}</span><span class="amount">${typeLabel(c.type)}</span>`;
+            : `<span class="amount">${c.amount}</span>`}</span>`;
+      else if(c.type==='chest'&&c.chestResolved) body=`${c.resolvedBonus?`<span class="cell-effect-backdrop chest-effect-backdrop" title="${BONUS_NAMES[c.resolvedBonus]||''}">${assetMarkup(c.resolvedBonus,ICONS[c.resolvedBonus]||'')}</span>`:''}<span class="cell-visual"><span class="icon resolved-chest-icon cell-foreground">${assetMarkup('chest','🎁')}</span></span><span class="cell-caption"><span class="resolved-chest-label cell-foreground">Открыт</span></span>`;
+      else if(c.type==='chest') body=`<span class="cell-visual"><span class="icon active-chest-icon">${assetMarkup('chest',ICONS.chest)}</span></span><span class="cell-caption"><span class="amount chest-label">Загадочный ящик</span></span>`;
+      else if(c.type==='bomb'&&c.neutralized) body=`<span class="cell-visual"><span class="icon neutralized-bomb-icon">${assetMarkup('bomb',ICONS.bomb)}</span></span><span class="cell-caption"><span class="neutralized-label">Обезврежена</span></span>`;
+      else if(c.type==='bomb'&&c.fizzled) body=`<span class="cell-visual"><span class="icon neutralized-bomb-icon">${assetMarkup('bomb',ICONS.bomb)}</span></span><span class="cell-caption"><span class="neutralized-label">Не взорвалась</span></span>`;
+      else if(c.type==='bomb'&&c.exploded) body=`<span class="cell-visual"><span class="icon exploded-bomb-icon">${assetMarkup('bomb',ICONS.bomb)}</span></span><span class="cell-caption"><span class="exploded-label">Взорвана <span class="bomb-loss">−${c.bombLoss||0}</span></span></span>`;
+      else if(c.type==='weed'&&c.withered) body=`<span class="cell-visual"><span class="icon withered-weed-icon">${assetMarkup('weed',ICONS.weed)}</span></span><span class="cell-caption"><span class="neutralized-label">Засох</span></span>`;
+      else if(c.type==='weed'&&c.summonedBeetle) body=`<span class="cell-effect-backdrop beetle-effect-backdrop" title="Сорняк призвал жука">${assetMarkup('beetle',ICONS.beetle)}</span><span class="cell-visual"><span class="icon cell-foreground">${assetMarkup('weed',ICONS.weed)}</span></span><span class="cell-caption"><span class="amount cell-foreground">${typeLabel(c.type)}</span></span>`;
+      else body=`<span class="cell-visual"><span class="icon">${assetMarkup(c.type,ICONS[c.type])}</span></span><span class="cell-caption"><span class="amount">${typeLabel(c.type)}</span></span>`;
+      if(c.hiddenBonusCollected) body=`<span class="hidden-location-bonus" title="Найдено: ${BONUS_NAMES[c.hiddenBonus]}">${assetMarkup(c.hiddenBonus,ICONS[c.hiddenBonus]||'🎁')}</span>${body}`;
     }
     const timer=!rabbit&&c.timer!=null&&c.timer>0?`<span class="timer">${c.timer}</span>`:'';
     const originBadges=!rabbit?`${c.summonedByMole&&(c.type==='bomb'||c.type==='weed')?`<span class="origin-badge mole-origin" title="Призвано кротом">${assetMarkup('moleSource','🐹')}</span>`:''}`:'';
     const cellNumber=`<span class="cell-number" aria-hidden="true">${c.id+1}</span>`;
-    return `<button class="${classes}" data-cell-id="${c.id}" ${rabbit?'data-rabbit-cell="true"':''} type="button" ${(readOnly&&!selectionMode?.ids?.has(c.id))||((c.opened||c.blocked||state.locationLocked)&&!selectionMode?.ids?.has(c.id))?'disabled':''}>${cellNumber}<span class="cell-main">${body}</span>${timer}${originBadges}</button>`;
+    const stateBadge=!rabbit?`<span class="cell-state-badge ${c.blocked&&!c.opened?'is-blocked':c.opened||c.destroyed?'is-opened':'is-closed'}" title="${c.blocked&&!c.opened?'Заблокировано':c.opened||c.destroyed?'Обработано':'Закрыто'}" aria-hidden="true">${c.blocked&&!c.opened?'🔒':c.opened||c.destroyed?'✓':'•'}</span>`:'';
+    return `<button class="${classes}" data-cell-id="${c.id}" ${rabbit?'data-rabbit-cell="true"':''} type="button" ${(readOnly&&!selectionMode?.ids?.has(c.id))||((c.opened||c.blocked||state.locationLocked)&&!selectionMode?.ids?.has(c.id))?'disabled':''}>${cellNumber}${stateBadge}<span class="cell-main">${body}</span>${timer}${originBadges}</button>`;
   }).join('');
 
   document.querySelectorAll('.resolved-chest-cell .chest-effect-backdrop').forEach(node=>{
@@ -1228,7 +1357,7 @@ $('board').addEventListener('click',event=>{
   }
 },true);
 
-$('nextBtn').addEventListener('click',goNext);
+$('nextBtn').addEventListener('click',()=>goNext(false));
 $('backLocationBtn').addEventListener('click',goBack);
 /* PUBLIC_STRIP_DEBUG_START */
 $('newGameBtn').addEventListener('click',resetGame);

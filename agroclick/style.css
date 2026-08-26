@@ -237,6 +237,22 @@ button,a{font:inherit}.app-shell{width:min(860px,100%);height:100dvh;margin:0 au
   }
 }
 
+/* ===== v1.93 — location-specific discoveries and resolved hazards ===== */
+html body[class] #board .cell .hidden-location-bonus {
+  position:absolute;left:4px;bottom:4px;z-index:7;width:20px;height:20px;
+  display:grid;place-items:center;border-radius:7px;background:rgba(15,45,23,.88);
+  border:1px solid rgba(143,255,159,.64);box-shadow:0 1px 5px rgba(0,0,0,.48),0 0 7px rgba(92,255,126,.24);
+}
+html body[class] #board .cell .hidden-location-bonus .asset-wrap,
+html body[class] #board .cell .hidden-location-bonus img { width:17px!important;height:17px!important;object-fit:contain; }
+html body[class] #board .cell .withered-weed-icon { filter:grayscale(.82) sepia(.35) brightness(.72);opacity:.78; }
+html body[class] #board .cell.fizzled-bomb-cell { box-shadow:inset 0 0 0 2px rgba(133,203,222,.42)!important; }
+@media (max-width:650px) {
+  html body[class] #board .cell .hidden-location-bonus { left:3px;bottom:3px;width:17px;height:17px;border-radius:6px; }
+  html body[class] #board .cell .hidden-location-bonus .asset-wrap,
+  html body[class] #board .cell .hidden-location-bonus img { width:14px!important;height:14px!important; }
+}
+
 
 /* v1.9 — навигация по завершённым локациям и закрываемый итог */
 .location-copy{padding-right:224px!important}
@@ -3273,6 +3289,180 @@ html body[class] .inventory-title {
   html body[class] .footer-panel { padding: 5px !important; }
   /* узкая колонка активов -> шире поле -> крупнее клетки */
   html body[class] .game-layout { grid-template-columns: minmax(0, 1fr) clamp(52px, 8vw, 72px) !important; }
+}
+
+/* ===== v1.92 — explicit cell states, beetle risk and harvest feedback ===== */
+html body[class] #board .cell .cell-state-badge {
+  position: absolute; right: 4px; bottom: 4px; z-index: 8;
+  display: grid; place-items: center; width: 15px; height: 15px;
+  border-radius: 50%; box-sizing: border-box;
+  font: 900 9px/1 system-ui, sans-serif; color: rgba(255,255,255,.92);
+  background: rgba(21,31,23,.62); border: 1px solid rgba(255,255,255,.30);
+  box-shadow: 0 1px 3px rgba(0,0,0,.42); pointer-events: none;
+}
+html body[class] #board .cell .cell-state-badge.is-closed { color: #d8c69a; background: rgba(59,47,29,.72); }
+html body[class] #board .cell .cell-state-badge.is-blocked { font-size: 8px; background: rgba(58,68,73,.90); border-color: rgba(196,220,230,.60); }
+html body[class] #board .cell .cell-state-badge.is-opened { color: #d8ffd5; background: rgba(31,100,48,.84); border-color: rgba(157,235,164,.58); }
+
+html body[class] #board .cell .cell-caption {
+  border-top: 1px solid rgba(255,255,255,.13);
+  background: linear-gradient(180deg,rgba(3,8,4,.04),rgba(3,8,4,.18));
+}
+
+#harvestLabel.harvest-gain { animation: harvestGain .5s ease; }
+#harvestLabel.harvest-loss { animation: harvestLoss .5s ease; }
+@keyframes harvestGain { 0%,100% { transform:scale(1);color:inherit } 40% { transform:scale(1.22);color:#8cff9a;text-shadow:0 0 10px rgba(84,255,113,.85) } }
+@keyframes harvestLoss { 0%,100% { transform:scale(1);color:inherit } 40% { transform:scale(1.18);color:#ff7777;text-shadow:0 0 10px rgba(255,61,61,.82) } }
+
+.beetle-indicator-copy { display:flex;min-width:0;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.08; }
+.beetle-indicator-copy strong { font-size:.7rem;color:#fff;font-weight:900;white-space:nowrap;text-shadow:0 1px 3px #000; }
+.beetle-indicator-copy small { margin-top:3px;font-size:.56rem;color:#ffd1d1;font-weight:800;white-space:normal;text-align:left;text-shadow:0 1px 2px #000; }
+@media (max-width:650px) {
+  .beetle-indicator-copy strong { font-size:.61rem; }
+  .beetle-indicator-copy small { font-size:.49rem; }
+  html body[class] #board .cell .cell-state-badge { right:3px;bottom:3px;width:13px;height:13px;font-size:8px; }
+}
+
+/* ============================================================
+   v1.91 — единая внутренняя композиция клетки.
+   Иконка и подпись занимают независимые зоны: длина подписи больше
+   не меняет положение изображения. Геометрия зависит только от
+   фактического размера квадратной клетки.
+   ============================================================ */
+html body[class] #board .cell .cell-main {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) clamp(15px, 24cqmin, 25px) !important;
+  align-items: stretch !important;
+  justify-items: stretch !important;
+  gap: 0 !important;
+  padding: clamp(2px, 3cqmin, 4px) !important;
+}
+html body[class] #board .cell .cell-visual {
+  position: relative !important;
+  z-index: 2 !important;
+  grid-row: 1 !important;
+  display: grid !important;
+  place-items: center !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+html body[class] #board .cell .cell-visual > .icon {
+  position: relative !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+html body[class] #board .cell .cell-caption {
+  position: relative !important;
+  z-index: 3 !important;
+  grid-row: 2 !important;
+  align-self: stretch !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: clamp(1px, 2cqmin, 3px) !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: 1px clamp(2px, 4cqmin, 5px) !important;
+  border-radius: clamp(4px, 8cqmin, 8px) !important;
+  background: linear-gradient(90deg,rgba(8,18,8,.12),rgba(8,18,8,.52),rgba(8,18,8,.12)) !important;
+  overflow: hidden !important;
+  text-align: center !important;
+}
+html body[class] #board .cell .cell-caption > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+html body[class] #board .cell .cell-caption .amount,
+html body[class] #board .cell .cell-caption .stolen,
+html body[class] #board .cell .cell-caption .destroyed,
+html body[class] #board .cell .cell-caption .resolved-chest-label,
+html body[class] #board .cell .cell-caption .neutralized-label,
+html body[class] #board .cell .cell-caption .exploded-label {
+  display: block !important;
+  font-size: clamp(8px, 15cqmin, 13px) !important;
+  line-height: 1 !important;
+  overflow: hidden !important;
+  overflow-wrap: anywhere !important;
+  text-wrap: balance !important;
+}
+html body[class] #board .cell .cell-caption .chest-label {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  white-space: normal !important;
+  font-size: clamp(7px, 13cqmin, 11px) !important;
+  line-height: .92 !important;
+}
+html body[class] #board .cell.exploded-bomb-cell .cell-caption {
+  gap: 1px !important;
+  padding-inline: 1px !important;
+}
+html body[class] #board .cell.stolen-cell .cell-caption {
+  gap: 0 !important;
+  padding-inline: 0 !important;
+}
+html body[class] #board .cell.stolen-cell .cell-caption .stolen,
+html body[class] #board .cell.stolen-cell .cell-caption .stolen-value {
+  flex: 0 1 auto !important;
+  font-size: clamp(5px, 9cqmin, 9px) !important;
+  white-space: nowrap !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+html body[class] #board .cell.stolen-cell .cell-caption .stolen-value {
+  display: inline !important;
+}
+html body[class] #board .cell.exploded-bomb-cell .cell-caption .exploded-label,
+html body[class] #board .cell.exploded-bomb-cell .cell-caption .bomb-loss {
+  flex: 0 1 auto !important;
+  font-size: clamp(7px, 12cqmin, 11px) !important;
+  white-space: nowrap !important;
+}
+html body[class] #board .cell.exploded-bomb-cell .cell-caption .bomb-loss {
+  display: inline !important;
+}
+html body[class] #board .cell .cell-visual .icon .asset-wrap {
+  width: clamp(30px, 74cqmin, 76px) !important;
+  height: clamp(30px, 74cqmin, 76px) !important;
+}
+html body[class] #board .cell.type-wheat .cell-visual .icon .asset-wrap {
+  width: clamp(29px, 68cqmin, 68px) !important;
+  height: clamp(29px, 68cqmin, 68px) !important;
+}
+html body[class] #board .cell:is(.stolen-cell,.neutralized-bomb-cell,.exploded-bomb-cell) .cell-visual .icon .asset-wrap {
+  width: clamp(28px, 68cqmin, 64px) !important;
+  height: clamp(28px, 68cqmin, 64px) !important;
+}
+html body[class] #board .cell .cell-caption :is(.neutralized-label,.resolved-chest-label,.destroyed) {
+  font-size: clamp(6px, 10.5cqmin, 10px) !important;
+  font-weight: 850 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+}
+html body[class] #board .cell .cell-caption .boosted-amount {
+  display: grid !important;
+  grid-template-columns: auto auto auto !important;
+  gap: 1px 2px !important;
+}
+html body[class] #board .cell .cell-caption .boosted-amount small {
+  grid-column: 1 / -1 !important;
+  width: auto !important;
+  font-size: clamp(6px, 10cqmin, 9px) !important;
+  line-height: .9 !important;
+}
+html body[class] #board .cell.rabbit-active .cell-main {
+  grid-template-rows: 1fr !important;
+}
+html body[class] #board .cell.rabbit-active .cell-visual {
+  grid-row: 1 !important;
 }
 
 /* --- Телефоны: «Справочник» сворачивается в иконку.

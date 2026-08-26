@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#304f20" />
   <title>AgroClick</title>
-  <link rel="stylesheet" href="style.css?v=1.88" />
+  <link rel="stylesheet" href="style.css?v=1.93" />
   <script>
   /* Telegram SDK грузим ТОЛЬКО внутри Telegram. В обычном браузере он не нужен,
      а его синхронная загрузка блокировала отрисовку страницы на минуты, если
@@ -74,7 +74,7 @@
         </aside>
         <div id="beetleIndicator" class="beetle-indicator panel" aria-hidden="true" title="Активные жуки уменьшают итоговый урожай">
           <img src="./assets/debuffs/beetle.png" alt="Жук" draggable="false">
-          <span id="beetleIndicatorCount" class="beetle-indicator-count"></span>
+          <span class="beetle-indicator-copy"><strong id="beetleIndicatorCount" class="beetle-indicator-count"></strong><small id="beetleIndicatorRisk"></small></span>
         </div>
       </div>
     </section>
@@ -117,6 +117,7 @@
       <div class="guide-nav">
         <a href="#guideRules" class="guide-link">Описание</a>
         <a href="#guideBonuses" class="guide-link">Бонусы</a>
+        <a href="#guideLocations" class="guide-link">Локации</a>
         <a href="#guideDebuffs" class="guide-link">Вредители</a>
         <a href="#guideCharacters" class="guide-link">Персонажи</a>
       </div>
@@ -124,11 +125,29 @@
         <section id="guideRules" class="guide-section">
           <h3>Описание</h3>
           <ul>
+            <li><b>Перенос активов</b> — неиспользованные награды и созданные персонажами предметы переходят в следующую локацию с оставшимся сроком действия.</li>
             <li>В каждой сессии случайно выбираются <b>3 локации из 12</b>. На каждой локации доступно <b>15 открытий</b>.</li>
-            <li>На поле <b>30 грядок</b>. Внутри могут быть пшеница, бомбы, кроты, сорняки и Загадочный ящик. Открытый ящик запускает таймер на 3 хода и затем открывается автоматически.</li>
+            <li>На поле <b>30 грядок</b>. Внутри могут быть пшеница, бомбы, кроты, сорняки и Загадочный ящик. Правила наполнения и таймеры зависят от выбранной локации.</li>
             <li>Обычная пшеница сразу добавляет урожай. После окончания доступных ходов ключом можно открыть заблокированную грядку или открытый Загадочный ящик с незавершённым таймером в этой локации.</li>
             <li>Если ходы закончились, можно перейти дальше. Некоторые бонусы и обмен оставшихся ключей доступны и в завершённых локациях.</li>
             <li>Итоги сессии показывают: сбор с ячеек, бонусы и персонажей, сумму до потерь, а затем все потери от вредителей.</li>
+          </ul>
+        </section>
+        <section id="guideLocations" class="guide-section">
+          <h3>Особенности локаций</h3>
+          <ul>
+            <li><b>Бескрайняя равнина</b> — нет сорняков, два Загадочных ящика.</li>
+            <li><b>Ветреный хребет</b> — нет кротов.</li>
+            <li><b>Грозовая поляна</b> — нет бомб и кроликов; крот крадёт до пяти открытых урожаев.</li>
+            <li><b>Золотая долина</b> — ящик открывается через один ход; у бомбы 50% шанс не взорваться.</li>
+            <li><b>Каменистая пустошь</b> — сорняк блокирует до четырёх соседних грядок.</li>
+            <li><b>Медный уступ</b> — на поле по одной бомбе, одному кроту и одному сорняку.</li>
+            <li><b>Сухой разлом</b> — в двух пшеничных грядках дополнительно спрятано по Пугалу.</li>
+            <li><b>Теневой утёс</b> — в двух пшеничных грядках дополнительно спрятано по Цифровой лупе.</li>
+            <li><b>Туманный удел</b> — крот с вероятностью 70% предпочитает украсть активную бомбу; через ход сорняк с вероятностью 50% засыхает и снимает только собственные блокировки.</li>
+            <li><b>Чёрная борозда</b> — три крота, нет сорняков и бомб.</li>
+            <li><b>Южная степь</b> — четыре сорняка и одна бомба, нет кротов.</li>
+            <li><b>Янтарный склон</b> — каждая пшеничная грядка содержит от 10 до 20 единиц урожая.</li>
           </ul>
         </section>
         <section id="guideBonuses" class="guide-section">
@@ -153,7 +172,7 @@
             <li><img class="guide-item-icon" src="./assets/debuffs/mole.png" alt="" draggable="false"><b>Крот</b> — крадёт до трёх открытых пшеничных грядок. Если открыт Загадочный ящик с незавершённым таймером, с шансом 30% крот попытается украсть его вместо пшеницы. При нехватке урожая может призвать бомбу или сорняк; источник отмечается на поле.</li>
             <li><img class="guide-item-icon" src="./assets/debuffs/weed.png" alt="" draggable="false"><b>Сорняк</b> — блокирует соседние грядки. При 0 заблокированных клеток жук появляется со 100% шансом, при 1 — с 30%.</li>
             <li><img class="guide-item-icon" src="./assets/debuffs/beetle.png" alt="" draggable="false"><b>Дополнительный жук</b> — если сорняк был призван кротом, у него есть ещё 20% шанс призвать жука.</li>
-            <li><img class="guide-item-icon" src="./assets/debuffs/beetle.png" alt="" draggable="false"><b>Жук</b> — уменьшает итоговый урожай. Все отрицательные эффекты отражаются в хронологии и итоговом окне.</li>
+            <li><img class="guide-item-icon" src="./assets/debuffs/beetle.png" alt="" draggable="false"><b>Жук</b> — уменьшает итоговый урожай. Точный диапазон общей потери постоянно показан рядом с активами: 1 жук — 20–40%, 2 — 25–50%, 3 — 30–60%, 4 и более — 35–60%.</li>
             <li><img class="guide-item-icon" src="./assets/objects/rabbit.png" alt="" draggable="false"><b>Кролик</b> — после успешного открытия может появиться на случайной закрытой ячейке. На поимку даётся 2 секунды; максимум два появления на локацию. При поимке выдаёт ключ.</li>
           </ul>
         </section>
@@ -181,6 +200,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="script.js?v=1.84-fertilizer-beetle"></script>
+  <script src="script.js?v=1.93-location-rules"></script>
 </body>
 </html>
