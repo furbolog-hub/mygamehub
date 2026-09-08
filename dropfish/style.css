@@ -5711,8 +5711,87 @@ body.reduce-motion .history-item.is-dungeon-ally-catch::before{animation:none;tr
 .chrono-history-action,.golden-gear-history-action{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:4px}.chrono-history-action button,.golden-gear-history-action button{min-height:0;height:28px;padding:3px 9px;border:1px solid #e1b24e;border-radius:8px;background:#39270d;color:#ffeab7;font-size:12px;line-height:1;font-weight:800;cursor:pointer}.chrono-history-action small{font-size:11px;line-height:1.1}
 
 /* Final compactness guard: specialized item styles must not stretch active-effect backplates. */
-.inventory .chips>.chip{max-width:132px}
-.inventory .chips>.chip.effect-dungeon{max-width:132px}
+.inventory .chips>.chip{
+  flex:0 0 auto;
+  width:max-content;
+  min-width:0;
+  max-width:148px;
+  height:auto;
+  min-height:46px;
+  padding:5px 8px;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  overflow:hidden;
+}
+.inventory .chips>.chip.effect-dungeon{max-width:148px}
+.inventory .chip .effect-chip-main{
+  display:flex;
+  width:100%;
+  min-width:0;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+.inventory .chip .effect-chip-copy{
+  display:block;
+  flex:0 1 auto;
+  min-width:0;
+  max-width:100px;
+  align-self:center;
+  overflow:visible;
+  font-size:.69rem;
+  font-weight:800;
+  line-height:1.08;
+  text-align:center;
+  text-wrap:balance;
+  overflow-wrap:normal;
+  word-break:normal;
+  hyphens:none;
+}
+.inventory .chip .effect-chip-action{
+  display:block;
+  width:100%;
+  margin:0;
+  color:rgba(214,232,241,.72);
+  font-size:.58rem;
+  line-height:1;
+  text-align:center;
+}
+.inventory .chip .effect-symbol-icon.is-effect-icon{
+  display:grid;
+  place-items:center;
+  flex:0 0 30px;
+  width:30px;
+  height:30px;
+  font-size:22px;
+  line-height:1;
+}
+.inventory .chip :is(.artifact-entity-icon,.trade-item-icon,.island-loot-icon,.expedition-item-icon,.abyssal-entity-icon,.dungeon-icon,.fish-category-icon,.fish-status-icon,.rift-relic-icon).is-effect-icon{
+  flex:0 0 32px;
+  width:32px;
+  height:32px;
+  min-width:32px;
+  max-width:32px;
+  align-self:center;
+  margin:0;
+}
+.inventory .chip.rift-relic-btn,
+.inventory .chip.dungeon-reward-eye,
+.inventory .chip.effect-dungeon.dungeon-encounter-effect,
+.inventory .chip.effect-dungeon.leviaxar-wrath-effect{
+  width:max-content;
+  min-width:0;
+  max-width:148px;
+  height:auto;
+  min-height:46px;
+  padding:5px 8px;
+  flex-direction:column;
+  gap:2px;
+}
+.inventory .chip.effect-dungeon.dungeon-encounter-effect .effect-chip-copy{max-width:100px;text-align:center;align-items:center;font-size:.69rem}
+.inventory .chip.effect-dungeon.leviaxar-wrath-effect .dungeon-icon.is-effect-icon{width:32px;height:32px;flex-basis:32px}
 .history-item :is(.chrono-history-action,.dark-ether-history-action,.golden-gear-history-action) button{min-height:0;height:28px;padding-block:3px;line-height:1}
 
 /* Final icon guards for compact active effects and clean chronology artwork. */

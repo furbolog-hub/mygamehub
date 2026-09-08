@@ -44,7 +44,8 @@ assert(/arcade\?\{file:'arcade-catch'/.test(inlineStatus),'Arcade catches do not
 const sizeMarker=between('function fishSizeMarker','function fishCategoryIcons');
 assert(/dedicatedRiftFish\|\|islandFishKind\(fish\)/.test(sizeMarker),'Dedicated rift or island fish can still receive heavyweight/giant size markers');
 const embeddedFish=between('function renderEmbeddedFishList','function renderIslandLootResults');
-assert(/row\.type==='rift'\?'':fishSizeMarker\(fish\)/.test(embeddedFish),'Ordinary rift loot still duplicates the weight icon after its title');
+assert(!/fishSizeMarker\(fish\)/.test(embeddedFish),'Embedded fish still duplicates the category icon with a size marker');
+assert(!/fishInlineStatusIcon\(/.test(embeddedFish),'Embedded fish still duplicates the category icon with a cast marker');
 assert(!/suppressOrdinarySourceIcon:row\.type==='rift'/.test(embeddedFish),'Ordinary rift loot category icon is suppressed after its title');
 const unstableRift=between("unstable(r,d)","leviathan(r,d)");
 assert(!/[⚓🪞👁🔹⚡👑⚫]/u.test(unstableRift),'Emoji placeholders remain in unstable-rift choice buttons');
@@ -54,13 +55,19 @@ assert(/roll<0\.95\) return 'heavy'/.test(arcadeCategory),'Arcade heavyweight ch
 assert(/return 'giant'/.test(arcadeCategory),'Arcade giant chance is not the remaining 5%');
 const arcadeSpawn=between('function spawnArcadeCreature','function removeArcadeCreature');
 assert(/const isOrca=chance\(ARCADE_ORCA_CHANCE\)/.test(arcadeSpawn),'Arcade Orca chance was changed or bypassed');
-assert(/effect-chip-copy">\$\{config\.piranhas\}<\/span>/.test(source),'Piranha active effect contains extra status text');
+assert(/effectMarkup\(dungeonImg\(config\.piranhaFile,config\.piranhas,'is-effect-icon',config\.assetPath\),config\.piranhas\)/.test(source),'Piranha active effect contains extra status text');
 assert(!/категории «\$\{castFish\.category\}»/.test(source),'Echo-ray history leaks an internal category key');
 assert(/\.rift-actions \.primary-btn,\.rift-actions \.secondary-btn \{[\s\S]*?backdrop-filter:blur\(4px\)/.test(style),'Rift action buttons do not share the translucent treatment');
 
 const abyssWeight=between('function changeAbyssFishWeight','function transformAbyssFish');
 assert(/ensureChanged&&after===before/.test(abyssWeight),'Abyssal weight changes can still round back to their original value');
 assert(/changeAbyssFishWeight\(f,rand\(\.6,1\.4\),'Метаморф',true\)/.test(source),'Metamorph does not require a visible weight change');
+assert(/changeAbyssFishWeight\(f,rand\(\.6,1\.4\),[^,]+,true\)/.test(between('function destroyerAction','function metamorphBaseActions')),'Destroyer does not require a visible weight change');
+assert(/if\(fish\.weight===before\)fish\.weight=round1\(before\+\.1\)/.test(source),'Singula can still display an unchanged fish weight after its 30% bonus');
+assert(/crimson-shard\.webp/.test(source),'Crimson shard still lacks its own icon');
+const riftLootIcons=between('function riftLootCategoryIcons','function fishRarityBadge');
+assert(!/fishCategoryIcon\('rift'/.test(riftLootIcons),'Rift loot still repeats the rift-origin icon inside the rift interface');
+assert(/noActionHint:a\.name===/.test(source),'Storm Eye active effect still renders the clipped action hint');
 const expeditionDecode=between('function decodeExpeditionItem','function islandLootPurposeMarkup');
 assert(/if\(state\.castsLeft<=0\)maybeFinalizeSession\(\)/.test(expeditionDecode),'A failed final-cast expedition study does not resume session finalization');
 const finalization=between('function maybeFinalizeSession','function finishGame');
