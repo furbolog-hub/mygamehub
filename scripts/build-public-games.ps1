@@ -13,8 +13,12 @@ foreach ($game in $games) {
   $stageMin = [System.IO.Path]::GetFullPath((Join-Path $releaseDir 'script.public.stage.min.js'))
   $stageObfuscated = [System.IO.Path]::GetFullPath((Join-Path $releaseDir 'script.public.stage.obfuscated.js'))
   $target = [System.IO.Path]::GetFullPath((Join-Path $releaseDir 'script.public.min.js'))
+  $styleSource = [System.IO.Path]::GetFullPath((Join-Path $workspace "$game\style.css"))
+  $styleTarget = [System.IO.Path]::GetFullPath((Join-Path $releaseDir 'style.css'))
+  $assetsSource = [System.IO.Path]::GetFullPath((Join-Path $workspace "$game\assets"))
+  $assetsTarget = [System.IO.Path]::GetFullPath((Join-Path $releaseDir 'assets'))
 
-  foreach ($path in @($source, $releaseDir, $stageSource, $stageMin, $stageObfuscated, $target)) {
+  foreach ($path in @($source, $releaseDir, $stageSource, $stageMin, $stageObfuscated, $target, $styleSource, $styleTarget, $assetsSource, $assetsTarget)) {
     if (-not $path.StartsWith($workspace, [System.StringComparison]::OrdinalIgnoreCase)) {
       throw "Public build path escaped the canonical workspace: $path"
     }
@@ -58,6 +62,8 @@ foreach ($game in $games) {
     }
 
     Move-Item -LiteralPath $stageObfuscated -Destination $target -Force
+    Copy-Item -LiteralPath $styleSource -Destination $styleTarget -Force
+    Copy-Item -LiteralPath $assetsSource -Destination $releaseDir -Recurse -Force
     Write-Output "$game public bundle: $obfuscatedIds obfuscated identifiers, $((Get-Item -LiteralPath $target).Length) bytes"
   }
   finally {

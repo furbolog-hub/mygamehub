@@ -38,6 +38,15 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
           const replaced=makeFish('normal','Заброс',true,{initialWeight:3.8,fishName:'Заменённая рыба'});
           replaced.removed=true;replaced.crystalReplaced=true;
           const replacedRow=state.history.find(row=>row.fishId===replaced.id);replacedRow.crystalReplaced=true;
+          const angusRow=addHistory('Старина Ангус поделился уловом','angus','(Добавлена рыба)',{numbered:false});
+          const angusFish=makeFish('giant','Старина Ангус',false,{initialWeight:39.6,fishName:'Сом Ангуса',parentHistoryId:angusRow.id});
+          angusFish.tags=[];delete angusFish.leviathanImpact;
+          const symbioteRow=addHistory('Открыт Нестабильный разлом','rift','',{numbered:false});
+          const symbioteFish=makeFish('normal','Нестабильный разлом',false,{initialWeight:52,fishName:'Штормовой целакант',parentHistoryId:symbioteRow.id});
+          symbioteFish.category='heavy';symbioteFish.originalWeight=52;symbioteFish.weight=12.2;symbioteFish.abyssTransformed=true;
+          symbioteFish.tags=['Симбиот: normal → heavy'];delete symbioteFish.leviathanImpact;
+          symbioteFish.abyssImpacts=[{source:'Симбиот',type:'category',before:52,after:12.2,beforeCategory:'normal',afterCategory:'heavy'}];
+          window.__requestedRows={angus:angusRow.id,symbiote:symbioteRow.id};
           const cache={id:'visual-island-cache',kind:'cache',opened:false,items:[ISLAND_CACHE_TRADE_ITEMS[0],ISLAND_CACHE_TRADE_ITEMS[1]]};
           const cacheRow=addHistory('Экспедиция завершена: Остров Разрушительных Приливов','island','',{numbered:false,islandCompletion:true});
           cacheRow.islandLootResults=[cache];
@@ -48,6 +57,9 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
         const main=await page.evaluate(()=>{
           const chip=document.querySelector('.dungeon-encounter-effect');
           const fishRows=[...document.querySelectorAll('.history-item.type-fish')];
+          const angusRow=document.querySelector(`[data-history-id="${window.__requestedRows.angus}"]`);
+          const symbioteRow=document.querySelector(`[data-history-id="${window.__requestedRows.symbiote}"]`);
+          const symbioteImpact=symbioteRow?.querySelector('.abyss-fish-impact');
           return {
             chipOverflow:chip?chip.scrollWidth-chip.clientWidth:0,
             chipText:chip?.querySelector('.effect-chip-copy')?.textContent.trim(),
@@ -56,6 +68,10 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
             leadingIcons:Object.fromEntries(fishRows.map(row=>[row.querySelector('.history-fish-catch-text')?.textContent||'',[...row.querySelectorAll('.history-fish-leading img')].map(img=>img.getAttribute('src')||'')])),
             fishTextGaps:Object.fromEntries(fishRows.map(row=>{const lead=row.querySelector('.history-fish-leading'),copy=row.querySelector('.history-entity-copy');return [row.querySelector('.history-fish-catch-text')?.textContent||'',lead&&copy?copy.getBoundingClientRect().left-lead.getBoundingClientRect().right:null];})),
             replacedBadges:document.querySelectorAll('.crystal-replaced-status').length,
+            angusCategoryIcon:angusRow?.querySelector('.embedded-fish-name .fish-size-marker img')?.getAttribute('src')||'',
+            symbioteNegative:symbioteImpact?.classList.contains('abyss-impact-negative')||false,
+            symbioteResultColor:symbioteImpact?getComputedStyle(symbioteImpact.querySelector('.gear-result')).color:'',
+            leakedCategoryKeys:/\b(?:normal|heavy|giant)\b/i.test(document.querySelector('#historyList')?.textContent||''),
             horizontalOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
             fishRows:fishRows.length,
           };
@@ -86,6 +102,10 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
         assert(openedCache.contents===2&&openedCache.tradeItems===2&&openedCache.buttons===0,`${engineName}/${viewportName}: island cache did not reveal and grant each item exactly once`);
         assert(openedCache.overflow<=1,`${engineName}/${viewportName}: opened island cache caused ${openedCache.overflow}px horizontal overflow`);
         assert(main.replacedBadges===1,`${engineName}/${viewportName}: crystal replacement badge missing`);
+        assert(main.angusCategoryIcon.endsWith('/fish-status/giant.webp'),`${engineName}/${viewportName}: Angus giant fish status icon is missing or wrong (${main.angusCategoryIcon})`);
+        assert(main.symbioteNegative,`${engineName}/${viewportName}: Symbiote weight loss is not marked as negative`);
+        assert(main.symbioteResultColor==='rgb(255, 107, 120)',`${engineName}/${viewportName}: Symbiote reduced weight is not red (${main.symbioteResultColor})`);
+        assert(!main.leakedCategoryKeys,`${engineName}/${viewportName}: internal fish category key leaked into history`);
         assert(main.horizontalOverflow<=1,`${engineName}/${viewportName}: main page overflowed horizontally`);
         await page.screenshot({path:path.join(output,`${engineName}-${viewportName}-history.png`),fullPage:true});renders++;
 

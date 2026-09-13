@@ -44,7 +44,7 @@ assert(/arcade\?\{file:'arcade-catch'/.test(inlineStatus),'Arcade catches do not
 const sizeMarker=between('function fishSizeMarker','function fishCategoryIcons');
 assert(/dedicatedRiftFish\|\|islandFishKind\(fish\)/.test(sizeMarker),'Dedicated rift or island fish can still receive heavyweight/giant size markers');
 const embeddedFish=between('function renderEmbeddedFishList','function renderIslandLootResults');
-assert(!/fishSizeMarker\(fish\)/.test(embeddedFish),'Embedded fish still duplicates the category icon with a size marker');
+assert(/inlineAngusCategoryIcon=row\.type==='angus'[^;]+\?fishSizeMarker\(fish\):''/.test(embeddedFish),'Angus fish does not show its heavyweight/giant status icon');
 assert(!/fishInlineStatusIcon\(/.test(embeddedFish),'Embedded fish still duplicates the category icon with a cast marker');
 assert(!/suppressOrdinarySourceIcon:row\.type==='rift'/.test(embeddedFish),'Ordinary rift loot category icon is suppressed after its title');
 const unstableRift=between("unstable(r,d)","leviathan(r,d)");
@@ -61,6 +61,15 @@ assert(/\.rift-actions \.primary-btn,\.rift-actions \.secondary-btn \{[\s\S]*?ba
 
 const abyssWeight=between('function changeAbyssFishWeight','function transformAbyssFish');
 assert(/ensureChanged&&after===before/.test(abyssWeight),'Abyssal weight changes can still round back to their original value');
+const abyssTransform=between('function transformAbyssFish','function neutralizeRandomDebuff');
+const abyssImpacts=between('function renderAbyssFishImpacts','function renderEssenceImpact');
+assert(/const FISH_CATEGORY_LABELS=Object\.freeze\(\{normal:'обычная рыба',heavy:'тяжеловес',giant:'рыба-гигант'\}\)/.test(source),'Fish category labels are not centralized for user-facing text');
+assert(/fish\.tags\.push\(`\$\{source\}: \$\{fishCategoryLabel\(beforeCategory\)\} → \$\{fishCategoryLabel\(category\)\}`\)/.test(abyssTransform),'Abyss transformation tags can leak internal category keys');
+assert(/map\(localizeFishCategoryTransition\)/.test(embeddedFish),'Legacy history tags with internal category keys are not localized');
+assert(/fish\.tags\.map\(localizeFishCategoryTransition\)/.test(between('function renderTransmutation','function renderNautilusSummon')),'Legacy transmutation tags with internal category keys are not localized');
+assert(/historyDetailText=localizeFishCategoryTransition\(historyDetailText\)/.test(source),'Legacy saved history details with internal category keys are not localized');
+assert(/const weightDelta=Number\(impact\.after\)-Number\(impact\.before\)/.test(abyssImpacts)&&/weightDelta<-\.05\?'negative':weightDelta>\.05\?'positive':'neutral'/.test(abyssImpacts),'Abyss impact color is not based on the actual weight delta');
+assert(!/\|\|impact\.(?:beforeCategory|afterCategory)/.test(abyssImpacts),'Abyss impact category fallback can leak an internal key');
 assert(/changeAbyssFishWeight\(f,rand\(\.6,1\.4\),'Метаморф',true\)/.test(source),'Metamorph does not require a visible weight change');
 assert(/changeAbyssFishWeight\(f,rand\(\.6,1\.4\),[^,]+,true\)/.test(between('function destroyerAction','function metamorphBaseActions')),'Destroyer does not require a visible weight change');
 assert(/if\(fish\.weight===before\)fish\.weight=round1\(before\+\.1\)/.test(source),'Singula can still display an unchanged fish weight after its 30% bonus');
