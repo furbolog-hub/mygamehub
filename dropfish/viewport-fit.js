@@ -203,15 +203,56 @@
     [0, 60, 200, 500].forEach(function (t) { setTimeout(fitDungeonStage, t); });
   }
 
+  /* Воронка использует ту же фиксированную систему 720x1280. Безопасные
+     зоны меняют только доступный внешний прямоугольник и общий масштаб. */
+  function fitDeadWatersStage() {
+    var modal = document.getElementById('deadWatersDialog');
+    var card = document.getElementById('deadWatersCard');
+    if (!modal || !card) return;
+    var style = getComputedStyle(modal);
+    var paddingLeft = parseFloat(style.paddingLeft) || 0;
+    var paddingRight = parseFloat(style.paddingRight) || 0;
+    var paddingTop = parseFloat(style.paddingTop) || 0;
+    var paddingBottom = parseFloat(style.paddingBottom) || 0;
+    var availableWidth = Math.max(1, modal.clientWidth - paddingLeft - paddingRight);
+    var availableHeight = Math.max(1, modal.clientHeight - paddingTop - paddingBottom);
+    var scale = Math.min(1, availableWidth / 720, availableHeight / 1280);
+    card.style.setProperty('--dead-waters-stage-scale', String(scale));
+    card.style.setProperty('--dead-waters-stage-left', (paddingLeft + availableWidth / 2) + 'px');
+    card.style.setProperty('--dead-waters-stage-top', (paddingTop + availableHeight / 2) + 'px');
+  }
+
+  function watchDeadWatersStage() {
+    var modal = document.getElementById('deadWatersDialog');
+    if (!modal) return;
+    fitDeadWatersStage();
+    try {
+      if (typeof ResizeObserver === 'function') {
+        var deadWatersResizeObserver = new ResizeObserver(fitDeadWatersStage);
+        deadWatersResizeObserver.observe(modal);
+      }
+      if (typeof MutationObserver === 'function') {
+        var deadWatersOpenObserver = new MutationObserver(fitDeadWatersStage);
+        deadWatersOpenObserver.observe(modal, { attributes:true, attributeFilter:['open'] });
+      }
+    } catch (e) {}
+    [0, 60, 200, 500].forEach(function (t) { setTimeout(fitDeadWatersStage, t); });
+  }
+
   window.fitDungeonStage = fitDungeonStage;
+  window.fitDeadWatersStage = fitDeadWatersStage;
 
   watchBoard();
   watchDungeonStage();
+  watchDeadWatersStage();
   window.addEventListener('resize', fitBoard, { passive: true });
   window.addEventListener('resize', fitDungeonStage, { passive: true });
+  window.addEventListener('resize', fitDeadWatersStage, { passive: true });
   window.addEventListener('orientationchange', function () { setTimeout(fitBoard, 120); });
   window.addEventListener('orientationchange', function () { setTimeout(fitDungeonStage, 120); });
+  window.addEventListener('orientationchange', function () { setTimeout(fitDeadWatersStage, 120); });
   window.visualViewport?.addEventListener('resize', fitDungeonStage, { passive:true });
-  document.addEventListener('DOMContentLoaded', function () { watchBoard(); watchDungeonStage(); });
+  window.visualViewport?.addEventListener('resize', fitDeadWatersStage, { passive:true });
+  document.addEventListener('DOMContentLoaded', function () { watchBoard(); watchDungeonStage(); watchDeadWatersStage(); });
 
 })();

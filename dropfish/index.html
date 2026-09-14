@@ -20,7 +20,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=3.16-radioactive-agent-color" />
+  <link rel="stylesheet" href="style.css?v=3.22-dead-waters-cell-animation" />
   <script>
   /* Telegram SDK грузим ТОЛЬКО внутри Telegram. В обычном браузере он не нужен,
      а его синхронная загрузка блокировала отрисовку страницы на минуты, если
@@ -37,7 +37,7 @@
     }
   })();
   </script>
-  <script src="viewport-fit.js?v=1.84-fit-v3"></script>
+  <script src="viewport-fit.js?v=1.85-dead-waters"></script>
 </head>
 <body>
   <main class="app-shell">
@@ -212,6 +212,25 @@
     </div>
   </dialog>
 
+  <dialog id="deadWatersDialog" class="modal dead-waters-modal" aria-labelledby="deadWatersTitle">
+    <div id="deadWatersCard" class="dead-waters-card">
+      <section class="dead-waters-scene">
+        <header class="dead-waters-heading">
+          <span>Опасное событие</span>
+          <h2 id="deadWatersTitle">Воронка мёртвых вод</h2>
+          <p>Откройте минимум три ячейки. Каждый следующий шаг может отрезать путь назад.</p>
+        </header>
+        <div id="deadWatersGrid" class="dead-waters-grid" role="grid" aria-label="Закрытое поле три на три"></div>
+        <div class="dead-waters-hud">
+          <div id="deadWatersProgress" class="dead-waters-progress" aria-live="polite"></div>
+          <p id="deadWatersMessage" class="dead-waters-message"></p>
+          <button id="deadWatersLeaveBtn" type="button" class="dead-waters-leave">Забрать найденное и выбраться</button>
+        </div>
+        <div class="dead-waters-danger-overlay" aria-hidden="true"></div>
+      </section>
+    </div>
+  </dialog>
+
   <div id="effectOverlay" class="effect-overlay" aria-hidden="true">
     <div id="effectBackdrop" class="effect-backdrop"></div>
     <div id="effectParticles" class="effect-particles"></div>
@@ -223,6 +242,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="ui-enhancements.js?v=1.90-rift-media"></script>
-<script src="script.js?v=19.38-radioactive-audio-fade"></script>
+<script src="script.js?v=19.44-dead-waters-cell-animation"></script>
 </body>
 </html>

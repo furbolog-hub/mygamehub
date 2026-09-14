@@ -58,6 +58,7 @@ if (TelegramApp) {
 
 const SOUND_PATHS = {
   radioactive: './assets/audio/events/radioactive-outbreak.ogg',
+  deadWaters: './assets/audio/events/dead-waters-vortex.ogg',
   cast: './assets/audio/fishing/cast.ogg',
   bonus: './assets/audio/effects/bonus.ogg',
   debuff: './assets/audio/effects/debuff.ogg',
@@ -113,6 +114,7 @@ sounds.unstablePresence.volume = 0.85;
 sounds.dungeonPiranhas.volume = 0.85;
 sounds.dungeonScarletTrail.volume = 0.82;
 sounds.dungeonEntrance.volume = 0.88;
+sounds.deadWaters.volume = 0.85;
 sounds.riftAmbient.loop = true;
 ['islandDestructiveTides','islandLeadenFog','islandStoneGuardians','islandForgottenCurrents'].forEach(name=>{
   sounds[name].volume = 0.42;
@@ -130,6 +132,19 @@ function playSound(name) {
   if (playback && typeof playback.catch === 'function') {
     playback.catch(() => {});
   }
+  return audio;
+}
+
+let activeDeadWatersSound=null;
+function stopDeadWatersSound(){
+  const audio=activeDeadWatersSound;if(!audio)return;
+  audio.pause();audio.currentTime=0;activeDeadWatersSound=null;
+}
+function startDeadWatersSound(){
+  if(activeDeadWatersSound&&!activeDeadWatersSound.paused)return activeDeadWatersSound;
+  stopDeadWatersSound();
+  const audio=playSound('deadWaters');
+  if(audio){audio.loop=true;activeDeadWatersSound=audio;}
   return audio;
 }
 
@@ -262,7 +277,8 @@ sounds.dungeonBossBattle.addEventListener('ended',()=>{
 });
 window.addEventListener('dropfishsoundchange', event => {
   soundEnabled = event.detail?.enabled !== false;
-  if (!soundEnabled) {stopRadioactiveSound(false);stopRiftAmbient();stopIslandAmbient();stopDungeonBattleMusic();}
+  if (!soundEnabled) {stopRadioactiveSound(false);stopDeadWatersSound();stopRiftAmbient();stopIslandAmbient();stopDungeonBattleMusic();}
+  else if(activeDeadWaters()&&['available','playing','tentacle'].includes(activeDeadWaters().status))startDeadWatersSound();
   else if (state?.rifts?.active?.status === 'active' && $('riftDialog')?.open) startRiftAmbient();
   else if(state?.islands?.active&&$('islandDialog')?.open)startIslandAmbient();
   else if(state?.dungeon?.encounter?.phase==='battle'&&$('dungeonDialog')?.open)syncDungeonBattleMusic(true,Boolean(state.dungeon.encounter.chronoPhase));
@@ -398,6 +414,9 @@ const EXPEDITION_ITEMS=Object.freeze([
   'Половина старой карты','Страница дневника экспедиции','Повреждённый судовой журнал',
   'Тубус неизвестного картографа','Фрагмент навигационной таблички','Обрывок письма пропавшего капитана'
 ]);
+const DEAD_WATERS_NAME='Воронка мёртвых вод';
+const DEAD_WATERS_ICON_PATH='./assets/icons/events/dead-waters-vortex.webp';
+const DEAD_WATERS_TENTACLE_ICON_PATH='./assets/icons/events/giant-tentacle.webp';
 const MESSAGE_EXPEDITION_ITEMS=Object.freeze([
   'Половина старой карты','Страница дневника экспедиции','Страница повреждённого судового журнала','Обрывок письма пропавшего капитана'
 ]);
@@ -758,6 +777,14 @@ const BALANCE = Object.freeze({
     angusChance: 0.02,
     weatherChangeChance: 0.10
   }),
+  deadWaters:Object.freeze({
+    lifetimeMs:20000,
+    defaultChance:.03,
+    dangerousWeatherChance:.04,
+    rewardWeights:Object.freeze({trash:25,fish:25,trade:15,bonus:10,debuff:10,artifact:10,expedition:5}),
+    fishWeights:Object.freeze({normal:70,heavy:25,giant:5}),
+    artifactWeights:Object.freeze({epic:80,legendary:18,mythic:2})
+  }),
   arcade: Object.freeze({
     maxCatches: 2,
     triggerChance: 0.08,
@@ -1051,6 +1078,7 @@ function initialState() {
     rifts:{naturalOpened:false,active:null,completed:0,failed:0,declined:0,maxDepthCompleted:false,feats:[],relics:[],temporaryEffects:[],pendingDanger:false},
     islands:{items:[],expeditions:[],active:null,unstablePresence:false,sharpFinRod:false,flares:0,destructiveFlares:0,finishPromptResolved:false,flareFinishResolved:false,completed:0,navigators:[],navigatorCategory:null,fadedRelicFragments:0,moonShellActiveId:null,moonShellProtected:false,moonShellDoubles:0,moonShellLeviathanGranted:false,firstWaterWeakening:false,feats:[]},
     radioactive:{active:false,remaining:0,ms:0,rowId:null,cooldown:0,risk:.10,finalChecked:false,deferred:[]},
+    deadWaters:{active:null},
     abyssal:{entity:null},
     dungeon:{ordinaryFishSinceRoll:0,encounter:null,runs:0,rewards:[],wrath:false,leviaxarWrath:false,leviaxarWrathCasts:0,ethirionWrath:false,vexinonWrath:false,singulaFinalBonus:false,feats:[],chronoCurrentRowId:null,chronoSnapshot:null},
     sessionDate:null, finalResult:null
@@ -1064,7 +1092,7 @@ function hydrateState(raw) {
   raw=raw.replace(/к\u0430сатк/gi,word=>word[0]+(word[1]==='\u0410'?'О':'о')+word.slice(2));
   const parsed = JSON.parse(raw);
   const base=initialState();
-  const restored={...base, ...parsed, rifts:{...base.rifts,...(parsed.rifts||{})}, islands:{...base.islands,...(parsed.islands||{})}, abyssal:{...base.abyssal,...(parsed.abyssal||{})}, dungeon:{...base.dungeon,...(parsed.dungeon||{})}, mythic:{...base.mythic,...(parsed.mythic||{})}, disabledBonusIds:new Set(parsed.disabledBonusIds || [])};
+  const restored={...base, ...parsed, rifts:{...base.rifts,...(parsed.rifts||{})}, islands:{...base.islands,...(parsed.islands||{})}, abyssal:{...base.abyssal,...(parsed.abyssal||{})}, dungeon:{...base.dungeon,...(parsed.dungeon||{})}, mythic:{...base.mythic,...(parsed.mythic||{})}, deadWaters:{...base.deadWaters,...(parsed.deadWaters||{})}, disabledBonusIds:new Set(parsed.disabledBonusIds || [])};
   restored.tradeItems=(restored.tradeItems||[]).filter(item=>!(item.riftItem&&ISLAND_TRADE_KEYS.has(item.key)));
   if(Array.isArray(restored.rifts?.active?.loot))restored.rifts.active.loot=restored.rifts.active.loot.filter(item=>!(item.kind==='trade'&&ISLAND_TRADE_KEYS.has(item.key))&&!ISLAND_ONLY_REWARD_KINDS.has(item.kind));
   (restored.history||[]).forEach(row=>{if(Array.isArray(row.riftLootResults))row.riftLootResults=row.riftLootResults.filter(item=>!(item.kind==='trade'&&ISLAND_TRADE_KEYS.has(item.key))&&!ISLAND_ONLY_REWARD_KINDS.has(item.kind));});
@@ -1169,6 +1197,7 @@ function saveDailyState() {
 
 let state = loadDailyState();
 let primordialChaosTriggeredDuringCast=false;
+let deadWatersMergeTargetId=null;
 ;(state.trash||[]).filter(item=>!item.abyssCreated).forEach(item=>{if(item.recyclonEligible===undefined)item.recyclonEligible=true;});
 if (!Array.isArray(state.weatherSeen)) state.weatherSeen=[];
 if (!state.weatherSeen.includes(state.weather)) state.weatherSeen.push(state.weather);
@@ -1369,7 +1398,8 @@ function resolveAbyssalDecision(keep){
 
 function addHistory(text,type='event',detail='',meta={}) {
   const defaultNumbered=['fish','bonus','epic','legendary','mythic','trash','coin'].includes(type);
-  const row={id:uid(),text,type,detail,numbered:defaultNumbered,...meta};
+  const mergedMeta=deadWatersMergeTargetId?{mergedIntoHistoryId:deadWatersMergeTargetId}:{};
+  const row={id:uid(),text,type,detail,numbered:defaultNumbered,...mergedMeta,...meta};
   state.history.push(row);
   lastAnimatedHistoryId=row.id;
   renderHistory();
@@ -1405,6 +1435,212 @@ function attachFishToHistoryRow(rowId, fishId) {
   if (!Array.isArray(row.embeddedFishIds)) row.embeddedFishIds=[];
   row.embeddedFishIds.push(fishId);
   renderHistory();
+}
+
+function deadWatersState(){
+  if(!state.deadWaters||typeof state.deadWaters!=='object')state.deadWaters={active:null};
+  return state.deadWaters;
+}
+function activeDeadWaters(){return deadWatersState().active||null;}
+function deadWatersBlocksCasting(){const active=activeDeadWaters();return Boolean(active&&['playing','tentacle','committing'].includes(active.status));}
+function deadWatersHistoryRow(active=activeDeadWaters()){return active?state.history.find(row=>row.id===active.rowId):null;}
+function deadWatersTentacleIconMarkup(extraClass=''){
+  return `<span class="dead-waters-tentacle-icon${extraClass?` ${extraClass}`:''}" title="Гигантское щупальце"><img src="${DEAD_WATERS_TENTACLE_ICON_PATH}" alt="" aria-hidden="true" decoding="async"></span>`;
+}
+function deadWatersHistoryIconMarkup(){return `<span class="dead-waters-history-icon" aria-hidden="true"><img src="${DEAD_WATERS_ICON_PATH}" alt="" decoding="async"></span>`;}
+function deadWatersRewardIconMarkup(reward,extraClass=''){
+  if(!reward)return '';
+  if(reward.kind==='tentacle')return deadWatersTentacleIconMarkup(extraClass);
+  if(reward.kind==='fish')return fishCategoryIcon(reward.category,fishCategoryLabel(reward.category),extraClass);
+  if(reward.kind==='trade')return tradeItemIconMarkup(reward.key,extraClass);
+  if(reward.kind==='bonus')return bonusIconMarkup(reward.name,extraClass);
+  if(reward.kind==='debuff')return debuffIconMarkup(reward.name,extraClass);
+  if(reward.kind==='artifact')return artifactIconMarkup(reward.name,reward.tier,extraClass);
+  if(reward.kind==='expedition')return expeditionItemIconMarkup(reward.name,extraClass);
+  if(reward.kind==='trash')return trashIconMarkup(extraClass);
+  return '';
+}
+function rollDeadWatersReward(){
+  const kind=weightedResult(BALANCE.deadWaters.rewardWeights);
+  if(kind==='fish'){
+    const category=weightedResult(BALANCE.deadWaters.fishWeights);
+    const weight=category==='giant'?rand1(20,40):category==='heavy'?rand1(10,19.9):rand1(.1,9.9);
+    const name=pick(category==='giant'?DATA.giants:DATA.fish);
+    return {id:uid(),kind,category,name,weight,label:`${capitalize(name)} — ${kg(weight)}`,opened:false};
+  }
+  if(kind==='trade'){const item=pick(TRADE_ITEMS);return {id:uid(),kind,key:item.key,name:item.name,label:item.name,opened:false};}
+  if(kind==='bonus'){const name=pick(DATA.bonuses);return {id:uid(),kind,name,label:name,opened:false};}
+  if(kind==='debuff'){const name=pick(DATA.debuffs);return {id:uid(),kind,name,label:name,opened:false};}
+  if(kind==='artifact'){
+    const tier=weightedResult(BALANCE.deadWaters.artifactWeights),pool=tier==='epic'?DATA.epics:tier==='legendary'?DATA.legendary:DATA.mythic,name=pick(pool);
+    return {id:uid(),kind,tier,name,label:name,opened:false};
+  }
+  if(kind==='expedition'){const name=pick(EXPEDITION_ITEMS);return {id:uid(),kind,name,label:name,opened:false};}
+  const name=pick(DATA.trash);return {id:uid(),kind:'trash',name,label:capitalize(name),opened:false};
+}
+function createDeadWatersGrid(){
+  const cells=Array.from({length:8},rollDeadWatersReward),tentacle={id:uid(),kind:'tentacle',name:'Гигантское щупальце',label:'Гигантское щупальце',opened:false};
+  cells.splice(Math.floor(Math.random()*9),0,tentacle);
+  return cells;
+}
+function deadWatersOtherDecisionPending(){
+  return Boolean(
+    $('choiceDialog')?.open||$('riftDialog')?.open||$('islandDialog')?.open||$('dungeonDialog')?.open||$('tradeDialog')?.open||
+    state.rifts?.active||state.islands?.active||state.dungeon?.encounter||hasPendingAbyssalDecision()||radioactiveActive()||
+    hasPendingExpeditionStudy()||(state.tradeShipArrived&&!state.tradeShipCompleted)||
+    (activeChronocrystal()&&state.dungeon?.chronoSnapshot&&state.dungeon?.chronoCurrentRowId)||goldenGearReward()?.pending
+  );
+}
+function deadWatersSpawnChance(){return ['fog','thunder','storm'].includes(state.weather)?BALANCE.deadWaters.dangerousWeatherChance:BALANCE.deadWaters.defaultChance;}
+function maybeSpawnDeadWatersAfterCast(forced=false,cells=null){
+  if(state.finished||activeDeadWaters()||deadWatersOtherDecisionPending())return false;
+  if(!forced&&!chance(deadWatersSpawnChance()))return false;
+  const id=uid(),row=addHistory(DEAD_WATERS_NAME,'deadWaters','(Вход открыт на 20 секунд)',{numbered:false,deadWatersEvent:true,deadWatersId:id,deadWatersStatus:'available'});
+  deadWatersState().active={id,rowId:row.id,status:'available',expiresAt:Date.now()+BALANCE.deadWaters.lifetimeMs,cells:Array.isArray(cells)&&cells.length===9?cells:createDeadWatersGrid(),openedOrder:[],commitIndex:0};
+  startDeadWatersSound();
+  renderHistory();saveDailyState();
+  toast('В хронологии открылась Воронка мёртвых вод');
+  return true;
+}
+function expireDeadWaters(){
+  const active=activeDeadWaters();if(!active||active.status!=='available')return false;
+  const row=deadWatersHistoryRow(active);if(row){row.deadWatersStatus='expired';row.detail='(Воронка закрылась прежде, чем вы вошли)';}
+  stopDeadWatersSound();deadWatersState().active=null;renderHistory();saveDailyState();
+  if(state.castsLeft<=0&&!state.finished)maybeFinalizeSession();
+  return true;
+}
+function deadWatersTick(){
+  const active=activeDeadWaters();if(!active||active.status!=='available')return;
+  const remaining=Math.max(0,(Number(active.expiresAt)||0)-Date.now());
+  document.querySelectorAll('[data-dead-waters-time]').forEach(el=>el.textContent=(remaining/1000).toFixed(1));
+  if(remaining<=0)expireDeadWaters();
+}
+function openDeadWaters(rowId){
+  const active=activeDeadWaters();if(!active||active.rowId!==rowId)return;
+  if(active.status==='available'&&(Number(active.expiresAt)||0)<=Date.now()){expireDeadWaters();return;}
+  if(active.status==='available'&&deadWatersOtherDecisionPending()){toast('Сначала завершите другое активное событие или решение');return;}
+  if(!['available','playing'].includes(active.status))return;
+  if(active.status==='available'){
+    active.status='playing';active.expiresAt=null;
+    const row=deadWatersHistoryRow(active);if(row){row.deadWatersStatus='playing';row.detail='(Исследование начато • выход после 3 или 6 ячеек)';}
+  }
+  renderDeadWaters();
+  const dialog=$('deadWatersDialog');if(dialog&&!dialog.open)dialog.showModal();
+  window.fitDeadWatersStage?.();render();saveDailyState();
+}
+function deadWatersOpenedCells(active=activeDeadWaters()){
+  if(!active)return [];
+  const byId=new Map((active.cells||[]).map(cell=>[cell.id,cell]));
+  return (active.openedOrder||[]).map(id=>byId.get(id)).filter(Boolean);
+}
+function deadWatersCanLeave(active=activeDeadWaters()){const count=deadWatersOpenedCells(active).length;return count===3||count===6;}
+function deadWatersMessage(count){
+  if(count<3)return `Откройте ещё ${3-count}, чтобы получить возможность выбраться.`;
+  if(count===3||count===6)return 'Путь наружу открыт. Заберите найденное или рискните и продолжайте.';
+  const target=count<6?6:8;return `Путь назад закрылся. Нужно открыть ещё ${target-count} ${target===8?'безопасную ячейку':'ячейку'}.`;
+}
+function renderDeadWaters(){
+  const active=activeDeadWaters(),grid=$('deadWatersGrid');if(!grid)return;
+  const impact=active?.status==='tentacle';$('deadWatersCard')?.classList.toggle('is-tentacle-impact',Boolean(impact));
+  if(!active||!['playing','tentacle'].includes(active.status)){grid.innerHTML='';return;}
+  const opened=deadWatersOpenedCells(active),count=opened.length,newlyOpenedId=active.revealAnimationCellId||null;
+  grid.innerHTML=(active.cells||[]).map((cell,index)=>cell.opened
+    ?`<button type="button" class="dead-waters-cell is-open is-${cell.kind}${cell.id===newlyOpenedId?' is-newly-opened':''}" role="gridcell" disabled aria-label="Ячейка ${index+1}: ${cell.label}"><span class="dead-waters-cell-icon">${deadWatersRewardIconMarkup(cell,'is-dead-waters-icon')}</span><span class="dead-waters-cell-label">${cell.label}</span></button>`
+    :`<button type="button" class="dead-waters-cell" role="gridcell" data-dead-waters-cell="${cell.id}" aria-label="Открыть ячейку ${index+1}"${impact?' disabled':''}></button>`).join('');
+  active.revealAnimationCellId=null;
+  $('deadWatersProgress').innerHTML=`<span class="${count>=3?'is-reached':''}">3</span><span class="${count>=6?'is-reached':''}">6</span><span class="${count>=8?'is-reached':''}">8</span><strong>Открыто: ${count}/9</strong>`;
+  $('deadWatersMessage').textContent=impact?'Гигантское щупальце утягивает улов в глубину…':deadWatersMessage(count);
+  $('deadWatersLeaveBtn').disabled=impact||!deadWatersCanLeave(active);
+}
+function revealDeadWatersCell(cellId){
+  const active=activeDeadWaters();if(!active||active.status!=='playing')return;
+  const cell=(active.cells||[]).find(item=>item.id===cellId);if(!cell||cell.opened)return;
+  cell.opened=true;active.openedOrder.push(cell.id);active.revealAnimationCellId=cell.id;
+  TelegramApp?.HapticFeedback?.impactOccurred?.(cell.kind==='tentacle'?'heavy':'light');
+  if(cell.kind==='tentacle'){beginDeadWatersTentacle(active);return;}
+  if(deadWatersOpenedCells(active).length===8){escapeDeadWaters(true);return;}
+  renderDeadWaters();saveDailyState();
+}
+function applyDeadWatersReward(reward,rowId){
+  if(reward.kind==='fish'){
+    const fish=makeFish(reward.category,DEAD_WATERS_NAME,false,{initialWeight:reward.weight,fishName:reward.name});reward.entityId=fish?.id||null;
+    if(fish)reward.finalLabel=`${capitalize(fish.name)} — ${kg(fish.weight)}`;
+  }else if(reward.kind==='trade'){
+    const definition=TRADE_ITEMS.find(item=>item.key===reward.key)||pick(TRADE_ITEMS),item={id:uid(),key:definition.key,name:definition.name,icon:definition.icon,fishId:null,historyRowId:rowId,exchanged:false,deadWaters:true};state.tradeItems.push(item);reward.entityId=item.id;
+  }else if(reward.kind==='bonus')processBonus(reward.name);
+  else if(reward.kind==='debuff')processDebuff(reward.name);
+  else if(reward.kind==='artifact'){
+    const generatedRow=reward.tier==='epic'?processEpic(reward.name):reward.tier==='legendary'?processLegendary(reward.name):processMythic(reward.name,DEAD_WATERS_NAME);
+    reward.generatedHistoryId=generatedRow?.id||null;
+    reward.entityId=state.artifacts.find(item=>item.historyRowId===reward.generatedHistoryId)?.id||null;
+  }else if(reward.kind==='expedition'){
+    const item=maybeFindExpeditionItem(DEAD_WATERS_NAME,true,reward.name);reward.entityId=item?.id||null;
+  }else if(reward.kind==='trash'){
+    const before=state.trash.length;processTrash(reward.name);reward.entityId=state.trash[before]?.id||null;
+  }
+}
+function continueDeadWatersCommit(){
+  const active=activeDeadWaters();if(!active||active.status!=='committing'||$('choiceDialog')?.open)return;
+  const row=deadWatersHistoryRow(active),rewards=row?.deadWatersRewards||[];
+  if(active.commitIndex>=rewards.length){
+    deadWatersMergeTargetId=null;if(row){row.deadWatersStatus='escaped';row.detail=`(Успешный выход • получено наград: ${rewards.length})`;}
+    deadWatersState().active=null;commitState();if(state.castsLeft<=0&&!state.finished)maybeFinalizeSession();return;
+  }
+  const reward=rewards[active.commitIndex];active.commitIndex++;
+  if(!reward.committed){deadWatersMergeTargetId=active.rowId;applyDeadWatersReward(reward,active.rowId);reward.committed=true;}
+  renderHistory();saveDailyState();
+  if($('choiceDialog')?.open){$('choiceDialog').addEventListener('close',()=>setTimeout(continueDeadWatersCommit,0),{once:true});return;}
+  setTimeout(continueDeadWatersCommit,0);
+}
+function escapeDeadWaters(automatic=false){
+  const active=activeDeadWaters();if(!active||active.status!=='playing')return;
+  const opened=deadWatersOpenedCells(active);if(!automatic&&!deadWatersCanLeave(active))return;
+  if(automatic&&opened.length!==8)return;
+  const row=deadWatersHistoryRow(active);if(row){row.deadWatersRewards=opened.filter(item=>item.kind!=='tentacle').map(item=>({...item,opened:true}));row.deadWatersStatus='committing';row.detail=automatic?'(Восьмая безопасная ячейка закрыла воронку • награды сохраняются)':'(Вы выбрались из воронки • награды сохраняются)';}
+  stopDeadWatersSound();active.status='committing';active.commitIndex=0;$('deadWatersDialog')?.close();render();saveDailyState();setTimeout(continueDeadWatersCommit,0);
+}
+function beginDeadWatersTentacle(active=activeDeadWaters()){
+  if(!active)return;
+  active.status='tentacle';active.tentacleEndsAt=Date.now()+1000;
+  const row=deadWatersHistoryRow(active);if(row){row.deadWatersStatus='tentacle';row.detail='(Открыто гигантское щупальце…)';}
+  renderDeadWaters();saveDailyState();
+  setTimeout(()=>completeDeadWatersTentacle(active.id),1000);
+}
+function completeDeadWatersTentacle(activeId){
+  const active=activeDeadWaters();if(!active||active.id!==activeId||active.status!=='tentacle')return;
+  const opened=deadWatersOpenedCells(active),row=deadWatersHistoryRow(active);
+  if(row){row.deadWatersRewards=opened.map(item=>({...item,opened:true,lost:item.kind!=='tentacle'}));row.deadWatersStatus='dead';row.detail='(Гигантское щупальце завершило сессию • найденные награды потеряны)';}
+  stopDeadWatersSound();deadWatersMergeTargetId=null;deadWatersState().active=null;$('deadWatersDialog')?.close();$('deadWatersCard')?.classList.remove('is-tentacle-impact');state.castsLeft=0;finishGame();
+}
+function deadWatersRewardContents(reward){
+  if(reward?.kind!=='artifact'||reward.name!=='Бездонный ларь'||!reward.generatedHistoryId)return [];
+  const chestRow=state.history.find(row=>row.id===reward.generatedHistoryId);if(!chestRow)return [];
+  const fish=(chestRow.embeddedFishIds||[]).map(id=>state.fish.find(item=>item.id===id)).filter(Boolean).map(item=>({kind:'fish',category:item.category,label:`${capitalize(item.name)} — ${kg(item.weight)}`}));
+  const expedition=chestRow.bottomlessExpeditionItemId?state.islands?.items?.find(item=>item.id===chestRow.bottomlessExpeditionItemId):null;
+  if(expedition)fish.push({kind:'expedition',name:expedition.name,label:expedition.name,entityId:expedition.id});
+  return fish;
+}
+function deadWatersRewardContentsMarkup(reward){
+  const contents=deadWatersRewardContents(reward);if(!contents.length)return '';
+  return `<ul class="dead-waters-nested-loot">${contents.map(item=>{const expedition=item.kind==='expedition'&&item.entityId?state.islands?.items?.find(entry=>entry.id===item.entityId):null,study=expedition?.status==='active'?`<button type="button" data-expedition-study="${expedition.id}">Расшифровать</button>`:'';return `<li><span class="dead-waters-loot-icon">${deadWatersRewardIconMarkup(item,'is-history-icon')}</span><span>${item.label}</span>${study}</li>`;}).join('')}</ul>`;
+}
+function renderDeadWatersHistory(row){
+  if(!row?.deadWatersEvent)return '';
+  const active=activeDeadWaters(),isCurrent=active?.rowId===row.id;
+  if(isCurrent&&active.status==='available'){
+    const seconds=Math.max(0,((Number(active.expiresAt)||0)-Date.now())/1000);
+    return `<div class="dead-waters-history-action"><button type="button" data-open-dead-waters="${row.id}">Войти в воронку</button><span class="dead-waters-countdown">закроется через <b data-dead-waters-time>${seconds.toFixed(1)}</b> с</span></div>`;
+  }
+  if(isCurrent&&active.status==='playing')return `<div class="dead-waters-history-action"><button type="button" data-open-dead-waters="${row.id}">Продолжить исследование</button></div>`;
+  if(isCurrent&&active.status==='committing')return '<span class="dead-waters-history-status">Награды переносятся в улов…</span>';
+  const status=row.deadWatersStatus==='escaped'?'<span class="dead-waters-history-status is-safe">Успешный выход</span>':row.deadWatersStatus==='dead'?'<span class="dead-waters-history-status is-dead">Сессия завершена щупальцем</span>':row.deadWatersStatus==='expired'?'<span class="dead-waters-history-status">Воронка закрылась</span>':'';
+  const loot=(row.deadWatersRewards||[]).map(reward=>{
+    const expedition=reward.kind==='expedition'&&reward.entityId?state.islands?.items?.find(item=>item.id===reward.entityId):null;
+    const study=expedition?.status==='active'?`<button type="button" data-expedition-study="${expedition.id}">Расшифровать</button>`:'';
+    const contents=deadWatersRewardContentsMarkup(reward);
+    return `<li class="type-${reward.kind}${reward.lost?' is-lost':''}${contents?' has-contents':''}"><div class="dead-waters-loot-main"><span class="dead-waters-loot-icon">${deadWatersRewardIconMarkup(reward,'is-history-icon')}</span><span>${reward.finalLabel||reward.label}</span>${study}</div>${contents}</li>`;
+  }).join('');
+  return `${status}${loot?`<ul class="dead-waters-history-loot">${loot}</ul>`:''}`;
 }
 function fishIsStolen(fish) { return state.stolen.some(item=>item.id===fish.id); }
 function fishIsEaten(fish) { return state.eaten.some(item=>item.id===fish.id); }
@@ -3811,7 +4047,7 @@ function useChronocrystal(rowId){const snapshot=state.dungeon?.chronoSnapshot;if
 function useDungeonReward(id){const reward=(state.dungeon?.rewards||[]).find(item=>item.id===id&&!item.used);if(!reward)return;if(reward.key==='abyss')useDungeonAbyssCore(id);else if(reward.key==='blood')useLeviaxarBlood(id);else if(reward.key==='darkCoal')useDarkCoal(id);else if(reward.key==='singula')usePulsatingSingula(id);else if(reward.key==='darkEther')armDarkEther(id);}
 
 function castLine() {
-  if (state.finished || state.castsLeft<=0 || $('choiceDialog').open || $('riftDialog')?.open || $('dungeonDialog')?.open || state.islands?.active || hasPendingAbyssalDecision()) return;
+  if (state.finished || state.castsLeft<=0 || deadWatersBlocksCasting() || $('choiceDialog').open || $('riftDialog')?.open || $('dungeonDialog')?.open || state.islands?.active || hasPendingAbyssalDecision()) return;
   if(radioactiveActive())return castRadioactiveLine();
   expireDungeonEncounterBeforeCast();
   state.dungeon.chronoCurrentRowId=null;state.dungeon.chronoSnapshot=null;const chronoSnapshot=activeChronocrystal()?createChronoSnapshot():null;
@@ -3872,6 +4108,7 @@ function castLine() {
   advanceDungeonEncounterAfterCast();
   if(chronoSnapshot){const chronoRow=state.history.slice(historyStart).find(row=>row.numbered)||state.history[state.history.length-1];if(chronoRow){state.dungeon.chronoCurrentRowId=chronoRow.id;state.dungeon.chronoSnapshot=chronoSnapshot;}}
   advanceRadioactiveAfterOrdinaryCast();
+  maybeSpawnDeadWatersAfterCast();
   if (state.castsLeft<=0 && !$('choiceDialog').open) maybeFinalizeSession();
   commitState();
 }
@@ -4305,7 +4542,7 @@ function beginTradeShip(source='natural') {
   else completeTradeShip();
 }
 function maybeFinalizeSession() {
-  if (state.finished || state.castsLeft>0 || $('choiceDialog')?.open || state.rifts?.active || state.islands?.active || state.dungeon?.encounter || hasPendingAbyssalDecision()) return;
+  if (state.finished || state.castsLeft>0 || $('choiceDialog')?.open || state.rifts?.active || state.islands?.active || state.dungeon?.encounter || activeDeadWaters() || hasPendingAbyssalDecision()) return;
   if(hasPendingPulsatingSingula())return;
   if(hasUnopenedIslandCaches())return;
   if(hasPendingExpeditionStudy())return;
@@ -4418,7 +4655,7 @@ function render() {
   const castRodIcon=state.islands?.sharpFinRod
     ?islandLootIconMarkup({kind:'rod',name:'Удочка племени Острого Плавника'},'is-cast-icon')
     :uiIconMarkup('fishingRod','is-cast-icon');
-  $('castBtn').disabled=state.finished||state.castsLeft<=0; $('castBtn').innerHTML=state.finished?'<span>Сессия завершена</span>':`${castRodIcon}<span>Забросить удочку</span>`;
+  $('castBtn').disabled=state.finished||state.castsLeft<=0||deadWatersBlocksCasting(); $('castBtn').innerHTML=state.finished?'<span>Сессия завершена</span>':deadWatersBlocksCasting()?`${castRodIcon}<span>Сначала выберитесь из воронки</span>`:`${castRodIcon}<span>Забросить удочку</span>`;
   $('castBtn').classList.toggle('has-sharp-fin-rod',Boolean(state.islands.sharpFinRod)&&!state.finished);
   $('restartBtn').disabled=!BUILD_CONFIG.unlimitedSessions && Boolean(state.sessionDate);
   $('restartBtn').title=(!BUILD_CONFIG.unlimitedSessions && state.sessionDate)?'В сутки доступна только одна игровая сессия':'';
@@ -4557,7 +4794,7 @@ function initRiftFuzzyTitles() {
 }
 
 function renderHistory() {
-  const icons={fish:'🐟',bonus:'✅',debuff:'🛑',epic:'💜',legendary:'🧡',mythic:'◆',trash:'🔘',coin:'🪙',weather:'⚠️',angus:characterIconMarkup('angus','is-history-icon'),rift:'🌀',abyssal:'❓',island:'🗺️'};
+  const icons={fish:'🐟',bonus:'✅',debuff:'🛑',epic:'💜',legendary:'🧡',mythic:'◆',trash:'🔘',coin:'🪙',weather:'⚠️',angus:characterIconMarkup('angus','is-history-icon'),rift:'🌀',abyssal:'❓',island:'🗺️',deadWaters:deadWatersHistoryIconMarkup()};
   let visibleHistory=state.history.filter(row=>!row.mergedIntoHistoryId);
   const activePrompt=activeDungeonPrompt();
   if(activePrompt){const index=visibleHistory.findIndex(row=>row.id===activePrompt.historyRowId);if(index>=0)visibleHistory=[...visibleHistory.slice(0,index),...visibleHistory.slice(index+1),visibleHistory[index]];}
@@ -4592,6 +4829,7 @@ function renderHistory() {
     const embeddedFish=renderEmbeddedFishList(angusGiftRow||h);
     const riftLootResults=renderRiftLootResults(h);
     const islandLootResults=renderIslandLootResults(h);
+    const deadWatersHistory=renderDeadWatersHistory(h);
     const dungeonAction=renderDungeonHistoryAction(h);
     const dungeonPrediction=renderDungeonPrediction(h);
     const dungeonSmolder=renderBallistierSmolder(fish);
@@ -4688,10 +4926,10 @@ function renderHistory() {
       trashThreadImpact||firstWaterImpact||moonShellImpact||maskImpact||scubaImpact||diceImpact||
       finalOrcaImpact||gearBonusStatus||scubaBonusStatus||tradeItemFind||abyssObjectChanges||
       tradeShipHistory||coinAction||abyssDecision||expeditionAction||navigatorAction||transmutation||
-      angusGiftArtifactMarkup||nautilusSummon||embeddedFish||islandLootResults||riftLootResults||dungeonAction||dungeonPrediction||dungeonSmolder||darkEtherAction||chronocrystalAction
+       angusGiftArtifactMarkup||nautilusSummon||embeddedFish||islandLootResults||riftLootResults||deadWatersHistory||dungeonAction||dungeonPrediction||dungeonSmolder||darkEtherAction||chronocrystalAction
     );
     const abyssClass=abyssPersonality?` abyss-${abyssPersonality}`:'';
-     return `<li data-history-id="${h.id}" class="history-item type-${h.type} is-compact-row${rowHasExtendedContent?' has-extended-content':''}${isPrimordialChaos?' is-primordial-chaos':''}${islandCompletion?' is-island-completion':''}${h.threadRemoved?' is-thread-removed':''}${h.darkEtherRemoved?' is-dark-ether-removed':''}${h.ethirionTransform?' is-ethirion-transform':''}${h.darkCoalTransform?' is-dark-coal-transform':''}${h.eaten&&!fish?.mythicSkeleton&&!h.darkCoalTransform?' is-eaten':''}${h.crystalReplaced?' is-crystal-replaced':''}${fish?.mythicSkeleton&&!fish?.islandSkeleton?' is-chaos-skeleton':''}${fish?.islandSkeleton?' is-island-skeleton':''}${fish?.dungeonAlly?' is-dungeon-ally-catch':''}${fish?.ballistierEscaped?' is-dungeon-escaped':''}${h.stolen?' is-stolen':''}${h.abyssLost?' is-abyss-lost':''}${h.islandDisplaced?' is-island-displaced':''}${h.islandTraded?' is-island-traded':''}${expeditionItem&&expeditionItem.status!=='active'?' is-expedition-inactive':''}${h.abyssManifestation?' is-abyss-manifestation':''}${h.abyssDecision?' has-abyss-decision':''}${h.transmutation?' is-transmutation':''}${h.radioactivePrompt?' is-radioactive-prompt':''}${h.radioactiveCatch?' is-radioactive-catch':''}${fish?.radioactiveDiscarded?' is-radioactive-discarded':''}${weatherClass}${orcaHistoryClass}${abyssClass}${h.id===lastAnimatedHistoryId?' is-new':''}">${riftLightning}${abyssPulse}${riftOriginIcon}${artifactTierBadge}<strong>${mainLine}</strong>${h.darkCoalTransform?'':`${separateHistoryDetail}${impactContent?`<small class="history-impact-note${h.islandDisplaced||fish?.islandSkeleton?' island-displaced-note':''}${h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?' orca-eaten-hint':''}${h.abyssLost?' abyss-negative-hint':''}">${impactContent}</small>`:''}${islandDangerImpact}${megalodonImpact}${singularityImpact}${riftEffectImpact}${abyssFishImpacts}${essenceImpact}${goldenHourImpact}${leviathanImpact}${coinImpacts}${luminarImpacts}${pulsatingSingulaImpact}${debuffWeightImpact}${messageImpact}${flipperImpact}${pendingThreadImpact}${sparkChaosImpact}${trashThreadImpact}${firstWaterImpact}${moonShellImpact}${maskImpact}${scubaImpact}${diceImpact}${finalOrcaImpact}${gearBonusStatus}${scubaBonusStatus}${tradeItemFind}${abyssObjectChanges}${tradeShipHistory}${coinAction}${abyssDecision}${compactExpeditionHeader?'':expeditionAction}${navigatorAction}${transmutation}${angusGiftArtifactMarkup}${nautilusSummon}${embeddedFish}${islandLootResults}${riftLootResults}${dungeonAction}${dungeonPrediction}${dungeonSmolder}${darkEtherAction}`}</li>`;
+     return `<li data-history-id="${h.id}" class="history-item type-${h.type} is-compact-row${rowHasExtendedContent?' has-extended-content':''}${isPrimordialChaos?' is-primordial-chaos':''}${islandCompletion?' is-island-completion':''}${h.threadRemoved?' is-thread-removed':''}${h.darkEtherRemoved?' is-dark-ether-removed':''}${h.ethirionTransform?' is-ethirion-transform':''}${h.darkCoalTransform?' is-dark-coal-transform':''}${h.eaten&&!fish?.mythicSkeleton&&!h.darkCoalTransform?' is-eaten':''}${h.crystalReplaced?' is-crystal-replaced':''}${fish?.mythicSkeleton&&!fish?.islandSkeleton?' is-chaos-skeleton':''}${fish?.islandSkeleton?' is-island-skeleton':''}${fish?.dungeonAlly?' is-dungeon-ally-catch':''}${fish?.ballistierEscaped?' is-dungeon-escaped':''}${h.stolen?' is-stolen':''}${h.abyssLost?' is-abyss-lost':''}${h.islandDisplaced?' is-island-displaced':''}${h.islandTraded?' is-island-traded':''}${expeditionItem&&expeditionItem.status!=='active'?' is-expedition-inactive':''}${h.abyssManifestation?' is-abyss-manifestation':''}${h.abyssDecision?' has-abyss-decision':''}${h.transmutation?' is-transmutation':''}${h.radioactivePrompt?' is-radioactive-prompt':''}${h.radioactiveCatch?' is-radioactive-catch':''}${fish?.radioactiveDiscarded?' is-radioactive-discarded':''}${weatherClass}${orcaHistoryClass}${abyssClass}${h.id===lastAnimatedHistoryId?' is-new':''}">${riftLightning}${abyssPulse}${riftOriginIcon}${artifactTierBadge}<strong>${mainLine}</strong>${h.darkCoalTransform?'':`${separateHistoryDetail}${impactContent?`<small class="history-impact-note${h.islandDisplaced||fish?.islandSkeleton?' island-displaced-note':''}${h.eaten&&!h.abyssLost&&!h.riftSacrificeLabel?' orca-eaten-hint':''}${h.abyssLost?' abyss-negative-hint':''}">${impactContent}</small>`:''}${islandDangerImpact}${megalodonImpact}${singularityImpact}${riftEffectImpact}${abyssFishImpacts}${essenceImpact}${goldenHourImpact}${leviathanImpact}${coinImpacts}${luminarImpacts}${pulsatingSingulaImpact}${debuffWeightImpact}${messageImpact}${flipperImpact}${pendingThreadImpact}${sparkChaosImpact}${trashThreadImpact}${firstWaterImpact}${moonShellImpact}${maskImpact}${scubaImpact}${diceImpact}${finalOrcaImpact}${gearBonusStatus}${scubaBonusStatus}${tradeItemFind}${abyssObjectChanges}${tradeShipHistory}${coinAction}${abyssDecision}${compactExpeditionHeader?'':expeditionAction}${navigatorAction}${transmutation}${angusGiftArtifactMarkup}${nautilusSummon}${embeddedFish}${islandLootResults}${riftLootResults}${deadWatersHistory}${dungeonAction}${dungeonPrediction}${dungeonSmolder}${darkEtherAction}`}</li>`;
   }).join('');
   state.history.filter(row=>row.chronoRolledBack).forEach(row=>$('historyList').querySelector(`[data-history-id="${row.id}"]`)?.classList.add('is-chrono-rolled-back'));
   state.history.filter(row=>row.goldenAlternative).forEach(row=>{const el=$('historyList').querySelector(`[data-history-id="${row.id}"]`);el?.classList.add('golden-alternative');if(row.goldenDecision==='keep'||row.goldenAccepted)el?.classList.add('is-golden-kept');if(row.goldenDecision==='reject')el?.classList.add('is-golden-rejected');});
@@ -5024,6 +5262,7 @@ function buildDropfishDebugPanel() {
     ['Легендарные',DATA.legendary.map(name=>button(`${artifactIconMarkup(name,'legendary','is-debug-icon')} ${name}`,`legendary:${encodeURIComponent(name)}`)).join('')],
     ['Мифические',DATA.mythic.map(name=>button(`${artifactIconMarkup(name,'mythic','is-debug-icon')} ${name}`,`mythic:${encodeURIComponent(name)}`)).join('')],
     ['Разломы',Object.entries(RIFT_TYPES).map(([key,value])=>button(`${fishCategoryIcon('rift','Разлом','is-debug-icon')} ${value.short}`,`rift:${key}`)).join('')],
+    ['Воронка мёртвых вод',[button(`${deadWatersHistoryIconMarkup()} Вызвать воронку`,'dead-waters')].join('')],
     ['Подземелье',[
       button(`${dungeonImg('piranhas-eternal-darkness.webp','Пираньи вечной тьмы','is-debug-icon')} Вызвать пираний`,'dungeon:piranhas'),
       button(`${dungeonImg('piranhas-leviathan-cradle.webp','Пираньи Колыбели Левиафана','is-debug-icon','./assets/dungeons/leviathan-cradle/')} Вызвать пираний Колыбели`,'dungeon:cradle'),
@@ -5089,6 +5328,7 @@ function buildDropfishDebugPanel() {
     else if(action.startsWith('legendary:')) processLegendary(decodeURIComponent(action.slice(10)));
     else if(action.startsWith('mythic:')) processMythic(decodeURIComponent(action.slice(7)),'Тестовая панель');
     else if(action.startsWith('rift:')){dialog.close();makeRift(action.slice(5),true);}
+    else if(action==='dead-waters'){dialog.close();maybeSpawnDeadWatersAfterCast(true);}
     else if(action==='dungeon:piranhas'){ensureDungeon();state.dungeon.encounter=null;const row=addHistory('Пираньи вечной тьмы','dungeon','(Тестовый вызов • жертву можно выбрать позже)',{numbered:false,dungeonAction:'sacrifice'});state.dungeon.encounter={id:uid(),phase:'piranhas',historyRowId:row.id,castsUsed:0,sacrifice:null,cleanWeight:null,weapon:null,ally:null,playerHp:BALANCE.dungeon.playerHealth,bossHp:BALANCE.dungeon.bossHealth,round:0,log:[],speed:1};dialog.close();}
     else if(action==='dungeon:cradle'){ensureDungeon();state.dungeon.encounter=null;const row=addHistory(DUNGEON_TYPES.cradle.piranhas,'dungeon','(Тестовый вызов • жертву можно выбрать позже)',{numbered:false,dungeonAction:'sacrifice',dungeonType:'cradle'});state.dungeon.encounter={id:uid(),dungeonType:'cradle',phase:'piranhas',historyRowId:row.id,castsUsed:0,sacrifice:null,cleanWeight:null,weapon:null,ally:null,playerHp:BALANCE.dungeon.playerHealth,bossHp:BALANCE.dungeon.bossHealth,round:0,log:[],speed:1};dialog.close();}
     else if(action==='dungeon:astral'){ensureDungeon();state.dungeon.encounter=null;const row=addHistory(DUNGEON_TYPES.astral.piranhas,'dungeon','(Тестовый вызов • жертву можно выбрать позже)',{numbered:false,dungeonAction:'sacrifice',dungeonType:'astral'});state.dungeon.encounter={id:uid(),dungeonType:'astral',phase:'piranhas',historyRowId:row.id,castsUsed:0,sacrifice:null,cleanWeight:null,weapon:null,ally:null,playerHp:BALANCE.dungeon.playerHealth,bossHp:BALANCE.dungeon.bossHealth,round:0,log:[],speed:1};dialog.close();}
@@ -5128,6 +5368,7 @@ buildDropfishDebugPanel();
 /* PUBLIC_STRIP_DEBUG_END */
 $('castBtn').addEventListener('click',castLine);
 $('historyList').addEventListener('click',event=>{
+  const deadWaters=event.target.closest('[data-open-dead-waters]');if(deadWaters){openDeadWaters(deadWaters.dataset.openDeadWaters);return;}
   const islandCache=event.target.closest('[data-island-cache]');if(islandCache){openIslandCache(islandCache.dataset.islandCacheRow,islandCache.dataset.islandCache);return;}
   const goldenDecision=event.target.closest('[data-golden-decision]');if(goldenDecision){resolveGoldenGear(goldenDecision.dataset.goldenDecision,goldenDecision.dataset.goldenId);return;}
   const chrono=event.target.closest('[data-chrono-row]');if(chrono){useChronocrystal(chrono.dataset.chronoRow);if(state.castsLeft<=0)maybeFinalizeSession();return;}
@@ -5169,6 +5410,9 @@ $('islandContinueBtn').addEventListener('click',continueIsland);
 $('islandLeaveBtn').addEventListener('click',requestLeaveIsland);
 $('islandDialog').addEventListener('cancel',event=>event.preventDefault());
 $('dungeonDialog').addEventListener('cancel',event=>event.preventDefault());
+$('deadWatersDialog').addEventListener('cancel',event=>event.preventDefault());
+$('deadWatersGrid').addEventListener('click',event=>{const cell=event.target.closest('[data-dead-waters-cell]');if(cell)revealDeadWatersCell(cell.dataset.deadWatersCell);});
+$('deadWatersLeaveBtn').addEventListener('click',()=>escapeDeadWaters(false));
 $('tradeOffers').addEventListener('click',event=>{
   const temporalGemButton=event.target.closest('[data-trade-temporal-gem]');if(temporalGemButton){exchangeTemporalGem(temporalGemButton.dataset.tradeTemporalGem);return;}
   const colossusButton=event.target.closest('[data-trade-colossus]');if(colossusButton){exchangeIslandColossus(colossusButton.dataset.tradeColossus);return;}
@@ -5179,7 +5423,7 @@ $('tradeOffers').addEventListener('click',event=>{
 $('tradeAllBtn').addEventListener('click',()=>state.tradeShipSource==='recyclon'?recycleAllTrash():exchangeAllTradeItems());
 $('tradeFinishBtn').addEventListener('click',completeTradeShip);
 $('motionBtn').addEventListener('click',()=>{playSound('motion');reduceMotion=!reduceMotion;localStorage.setItem(MOTION_KEY,reduceMotion?'1':'0');applyMotionPreference();toast(reduceMotion?'Анимации уменьшены • аркадный режим доступен':'Полные анимации включены • аркадный режим доступен');});
-$('restartBtn').addEventListener('click',()=>{if(!BUILD_CONFIG.unlimitedSessions&&state.sessionDate){toast('Доступна только одна игровая сессия в сутки');return;}stopRadioactiveSound(false);stopDungeonBattleMusic();removeArcadeCreature(activeArcadeFish);state=initialState();state.weatherSeen=[state.weather];if(state.weather==='storm')state.stormSeen=true;if(BUILD_CONFIG.unlimitedSessions)localStorage.removeItem(TEST_SESSION_KEY);render();toast('Началась новая игровая сессия');});
+$('restartBtn').addEventListener('click',()=>{if(!BUILD_CONFIG.unlimitedSessions&&state.sessionDate){toast('Доступна только одна игровая сессия в сутки');return;}stopRadioactiveSound(false);stopDeadWatersSound();stopDungeonBattleMusic();removeArcadeCreature(activeArcadeFish);$('deadWatersDialog')?.close();$('deadWatersCard')?.classList.remove('is-tentacle-impact');deadWatersMergeTargetId=null;state=initialState();state.weatherSeen=[state.weather];if(state.weather==='storm')state.stormSeen=true;if(BUILD_CONFIG.unlimitedSessions)localStorage.removeItem(TEST_SESSION_KEY);render();toast('Началась новая игровая сессия');});
 $('guideBtn').addEventListener('click',()=>{playSound('guide');openGuide();});
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).close()));
 $('guideDialog').addEventListener('click',e=>{if(e.target===$('guideDialog'))$('guideDialog').close();});
@@ -5190,12 +5434,13 @@ if(state.rifts?.active)renderRift();
 if(state.islands?.active){renderIsland();$('islandDialog').showModal();startIslandAmbient();}
 if(state.dungeon?.encounter&&!['piranhas','trail'].includes(state.dungeon.encounter.phase)){renderDungeon();if(state.dungeon.encounter.phase==='battle'){state.dungeon.encounter.battleToken=uid();setTimeout(()=>runDungeonRound(state.dungeon?.encounter?.battleToken),500);}}
 if(goldenGearReward()?.applying)setTimeout(resumeGoldenGearApplication,0);
+{const restoredDeadWaters=activeDeadWaters();if(restoredDeadWaters?.status==='available'){if((Number(restoredDeadWaters.expiresAt)||0)<=Date.now())expireDeadWaters();else startDeadWatersSound();}else if(restoredDeadWaters?.status==='playing'){startDeadWatersSound();setTimeout(()=>openDeadWaters(restoredDeadWaters.rowId),0);}else if(restoredDeadWaters?.status==='tentacle'){startDeadWatersSound();renderDeadWaters();$('deadWatersDialog')?.showModal();window.fitDeadWatersStage?.();setTimeout(()=>completeDeadWatersTentacle(restoredDeadWaters.id),Math.max(0,(Number(restoredDeadWaters.tentacleEndsAt)||0)-Date.now()));}else if(restoredDeadWaters?.status==='committing'){deadWatersMergeTargetId=restoredDeadWaters.rowId;setTimeout(continueDeadWatersCommit,0);}}
 
 
 scheduleFishShadow();
 
 let radioactiveLastTick=performance.now();
-setInterval(()=>{const now=performance.now(),elapsed=now-radioactiveLastTick;radioactiveLastTick=now;radioactiveTick(elapsed);},100);
+setInterval(()=>{const now=performance.now(),elapsed=now-radioactiveLastTick;radioactiveLastTick=now;radioactiveTick(elapsed);deadWatersTick();},100);
 document.addEventListener('visibilitychange',()=>{radioactiveLastTick=performance.now();saveDailyState();});
 document.addEventListener('click',event=>{const button=event.target.closest('[data-radioactive-discard]');if(button)discardRadioactiveSample(button.dataset.radioactiveDiscard);});
 GUIDE['Радиоактивный выброс']=[
@@ -5203,6 +5448,13 @@ GUIDE['Радиоактивный выброс']=[
  ['Образцы','Шесть равновероятных видов весом 50–100 кг. Монеты и артефакты могут усиливать их, снаряжение и погода — нет. Защищены от чайки, рака, утки, косатки, гнева боссов и нестабильного присутствия. Абиссальная форма может только усиливать. Выбросить каждый образец можно в грозу или шторм.'],
  ['Заражение','Пока есть образцы, после обычного заброса отдельно проверяются рыба и предметы: шанс от 10%, +2 процентных пункта за проверку, до 100%. Случайное количество рыб обычной рыбалки и аркады становится скелетами. Простые предметы обмена обычной рыбалки и островов становятся хламом; особые островные предметы, добыча Разломов и боссов защищены. Последняя проверка — перед торговлей или итогом.'],
  ['Осьминог','Новый осьминог во время выброса при наличии образца становится уловом 20–40 кг, не отключая бонусы. Образцы и положительные абиссальные воздействия могут мутировать его до 100 кг; прочие усиления могут превысить этот предел. Свойств образцов осьминог не получает.']
+];
+GUIDE[DEAD_WATERS_NAME]=[
+ ['Появление','После обычного заброса Воронка мёртвых вод открывается с вероятностью 3%. В тумане, грозе и шторме вероятность равна 4%. Войти через строку хронологии можно в течение 20 секунд; ожидание не запрещает продолжать рыбалку.'],
+ ['Поле','Внутри находится закрытое поле 3×3. В каждой сессии поля ровно одна ячейка скрывает гигантское щупальце. Остальные ячейки выбираются независимо и могут повторяться.'],
+ ['Выход','Выбраться с наградами можно после 3 или 6 открытых ячеек. Открытие следующей ячейки закрывает путь до нового рубежа. Если восемь открытых ячеек безопасны, воронка автоматически закрывается и сохраняет всю найденную добычу.'],
+ ['Награды','Возможны рыба, обычные предметы обмена, бонусы, дебафы, артефакты, экспедиционные предметы и хлам. Они показываются сразу, но применяются только после успешного выхода. Экспедиционные предметы расшифровываются штатно с вероятностью 50%.'],
+ ['Щупальце','Гигантское щупальце немедленно обнуляет оставшиеся забросы и завершает сессию. Все ещё не вынесенные из текущей воронки награды теряются.']
 ];
 /* PUBLIC_STRIP_DEBUG_START */
 if(BUILD_CONFIG.unlimitedSessions){const grid=$('dropfishDebugGrid');if(grid){const group=document.createElement('div');group.className='debug-group';group.innerHTML='<h3>Радиоактивный выброс</h3><button type="button" data-radio-debug="start">Выброс</button><button type="button" data-radio-debug="sample">Образец</button><button type="button" data-radio-debug="octopus">Осьминог</button><button type="button" data-radio-debug="infect">Заражение 100%</button>';grid.append(group);group.addEventListener('click',e=>{const action=e.target.dataset.radioDebug;if(!action)return;if(action==='start')startRadioactiveOutbreak();if(action==='sample'||action==='octopus'){const f=createRadioactiveCatch(action==='octopus');addFishHistory(f,'Заброс');}if(action==='infect'){radioactiveState().risk=1;checkRadioactiveContamination();}commitState();});}}
