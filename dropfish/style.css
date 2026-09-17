@@ -5908,3 +5908,426 @@ body.reduce-motion .dungeon-ally-vanished{animation:none}
 @keyframes radioactive-drift{from{transform:translate(-3%,-2%) rotate(-5deg)}to{transform:translate(3%,2%) rotate(5deg)}}
 @media(prefers-reduced-motion:reduce){.history-item:is(.is-radioactive-prompt,.is-radioactive-sample)::before{animation:none}}
 body.reduce-motion .history-item:is(.is-radioactive-prompt,.is-radioactive-sample)::before,body.animations-off .history-item:is(.is-radioactive-prompt,.is-radioactive-sample)::before{animation:none}
+
+/* v1.91 — mobile information architecture. Presentation only. */
+:root{
+  --ui-positive:#67edc0;
+  --ui-negative:#ff6b78;
+  --ui-multiplier:#ffd36a;
+  --ui-artifact:#c69aff;
+  --ui-neutral:#a9c0cf;
+}
+html,body{width:100%;overscroll-behavior:none}
+html body[class] .app-shell{
+  box-sizing:border-box;
+  gap:clamp(5px,1.2dvh,9px)!important;
+}
+html body[class] .inventory{
+  align-self:start;
+  width:100%;
+  max-height:none!important;
+  padding:6px 9px!important;
+  overflow:hidden!important;
+}
+html body[class] .inventory .section-heading{
+  min-height:0;
+  margin:0 0 3px!important;
+}
+html body[class] .inventory .section-heading h2{
+  margin:0!important;
+  font-size:clamp(.82rem,3.3vw,1rem)!important;
+  line-height:1.1;
+}
+html body[class] .inventory .chips{
+  display:flex;
+  flex-flow:row nowrap!important;
+  align-items:stretch;
+  gap:8px!important;
+  width:100%;
+  margin:0;
+  padding:0 20px 2px 0!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x proximity;
+  scrollbar-width:none;
+}
+html body[class] .inventory .chips::-webkit-scrollbar{display:none}
+html body[class] .inventory .chips>.chip,
+html body[class] .inventory .chip.rift-relic-btn,
+html body[class] .inventory .chip.dungeon-reward-eye,
+html body[class] .inventory .chip.effect-dungeon.dungeon-encounter-effect,
+html body[class] .inventory .chip.effect-dungeon.leviaxar-wrath-effect{
+  box-sizing:border-box;
+  flex:0 0 auto;
+  width:max-content;
+  min-width:82px;
+  max-width:142px;
+  min-height:42px;
+  height:42px;
+  padding:4px 7px;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  gap:5px;
+  border-radius:14px;
+  scroll-snap-align:start;
+  overflow:hidden;
+}
+html body[class] .inventory .chip .effect-chip-main{
+  display:flex;
+  min-width:0;
+  width:100%;
+  align-items:center;
+  justify-content:flex-start;
+  gap:5px;
+}
+html body[class] .inventory .chip .effect-chip-copy{
+  display:flex;
+  min-width:0;
+  max-width:96px;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:1px;
+  overflow:hidden;
+  color:#edfaff;
+  font-size:clamp(.64rem,2.8vw,.73rem);
+  line-height:1.05;
+  text-align:left;
+  text-wrap:wrap;
+}
+.effect-chip-title{
+  display:block;
+  max-width:100%;
+  overflow:hidden;
+  overflow-wrap:anywhere;
+  font-weight:850;
+}
+.effect-chip-state{
+  display:block;
+  max-width:100%;
+  margin:0!important;
+  overflow:hidden;
+  color:var(--ui-multiplier)!important;
+  font-size:.59rem!important;
+  font-weight:850;
+  line-height:1!important;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+html body[class] .inventory .chip .effect-chip-action{
+  position:absolute;
+  width:1px;
+  height:1px;
+  clip-path:inset(50%);
+  overflow:hidden;
+}
+html body[class] .inventory .chip :is(.artifact-entity-icon,.trade-item-icon,.island-loot-icon,.expedition-item-icon,.abyssal-entity-icon,.dungeon-icon,.fish-category-icon,.fish-status-icon,.rift-relic-icon).is-effect-icon,
+html body[class] .inventory .chip .effect-symbol-icon.is-effect-icon{
+  flex:0 0 30px;
+  width:30px;
+  min-width:30px;
+  height:30px;
+  max-width:30px;
+  margin:0;
+}
+
+html body[class] .history{
+  min-height:0!important;
+  padding:7px 8px!important;
+}
+html body[class] .history .section-heading{margin-bottom:4px}
+html body[class] .history .section-heading h2{
+  margin:0!important;
+  font-size:clamp(1rem,4.1vw,1.28rem)!important;
+  line-height:1.08;
+}
+html body[class] .history-scroll{
+  height:100%;
+  min-height:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+  touch-action:pan-y;
+}
+.history-list{gap:8px!important}
+.history-item{
+  box-sizing:border-box;
+  min-width:0;
+  padding:8px 10px!important;
+  border-radius:14px!important;
+  font-size:clamp(.81rem,3.25vw,.96rem);
+  overflow-wrap:anywhere;
+}
+.history-item.ui-compact{padding-block:6px!important}
+.history-item.ui-standard{border-left-width:3px}
+.history-item.ui-featured{
+  border-color:rgba(169,120,255,.43);
+  background:linear-gradient(115deg,rgba(61,31,100,.48),rgba(7,46,64,.66));
+  box-shadow:inset 0 1px rgba(255,255,255,.06),0 0 14px rgba(118,76,214,.12);
+}
+.history-item.ui-featured>strong{font-size:clamp(.95rem,3.8vw,1.12rem)}
+
+.history-fish-layout{
+  display:grid!important;
+  grid-template-columns:44px minmax(0,1fr) auto!important;
+  align-items:start!important;
+  gap:7px!important;
+  min-width:0;
+}
+.history-fish-layout.has-rift-fish-icon{grid-template-columns:64px minmax(0,1fr) auto!important;gap:10px!important}
+.history-fish-layout.has-rift-fish-icon .history-fish-leading{width:64px;min-width:64px;min-height:64px}
+.history-fish-leading{width:44px;min-width:44px}
+.history-entity-copy,.history-entity-title,.catch-primary,.catch-primary-title{min-width:0}
+.history-fish-catch-text-primary{display:contents}
+.history-entity-title{display:flex!important;flex-wrap:wrap;align-items:center;gap:4px 6px}
+.catch-primary{
+  display:flex;
+  flex:1 1 180px;
+  min-width:0;
+  flex-direction:column;
+  gap:4px;
+}
+.catch-primary-title{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  color:#edfaff;
+  font-size:clamp(1rem,4vw,1.2rem);
+  font-weight:900;
+  line-height:1.1;
+}
+.history-fish-catch-text{min-width:0;overflow-wrap:anywhere}
+.catch-weight-summary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:end;
+  gap:8px;
+  width:min(100%,350px);
+  padding-top:5px;
+  border-top:1px solid rgba(184,220,235,.12);
+  font-variant-numeric:tabular-nums;
+}
+.catch-weight-summary.is-simple{display:block;width:auto;padding:0;border:0}
+.catch-weight-cell{display:flex;min-width:0;flex-direction:column;gap:1px;color:#c4d5df}
+.catch-weight-cell small{
+  color:#7894a6!important;
+  font-size:clamp(.61rem,2.6vw,.72rem)!important;
+  font-weight:750;
+  line-height:1;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.catch-weight-cell>span,.catch-weight-cell>b,.catch-simple-weight{
+  font-size:clamp(1.02rem,4.2vw,1.3rem);
+  line-height:1.08;
+  white-space:nowrap;
+}
+.catch-weight-cell.is-final{align-items:flex-end;color:#eafff7}
+.catch-weight-cell.is-final>b{color:var(--ui-positive);text-shadow:0 0 9px rgba(73,239,187,.18)}
+.catch-weight-arrow{align-self:end;padding-bottom:1px;color:#7ca2b8;font-size:1rem}
+.catch-simple-weight{display:block;color:#dff9ff;font-weight:900}
+.fish-history-source{
+  display:inline-flex!important;
+  align-items:center;
+  min-height:18px;
+  padding:2px 6px;
+  border:1px solid rgba(116,193,222,.23);
+  border-radius:999px;
+  background:rgba(44,111,140,.15);
+  color:#9fc6d8!important;
+  font-size:.58rem!important;
+  font-weight:850!important;
+  line-height:1;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+
+.modifier-chain{
+  display:grid;
+  gap:0;
+  margin-top:7px;
+  padding:0 8px 2px;
+  border-radius:11px;
+  background:rgba(1,18,29,.28);
+}
+.modifier-chain-label{
+  display:block;
+  padding:6px 0 4px;
+  color:#799bad;
+  font-size:clamp(.61rem,2.6vw,.72rem);
+  font-weight:900;
+  line-height:1;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.modifier-chain .modifier-row{
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr);
+  align-items:center!important;
+  gap:7px;
+  min-height:0!important;
+  margin:0!important;
+  padding:7px 0!important;
+  border:0!important;
+  border-top:1px solid rgba(167,205,222,.11)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.modifier-row-icon{display:grid!important;place-items:center;width:32px!important;min-width:32px;height:32px!important;margin:0!important}
+.modifier-row-icon :is(img,.artifact-entity-icon,.dungeon-icon,.trade-item-icon,.weather-icon){max-width:32px;max-height:32px}
+.modifier-row-copy{display:flex;min-width:0;flex-direction:column;gap:2px}
+.modifier-row-heading{display:flex;min-width:0;align-items:baseline;justify-content:space-between;gap:8px}
+.modifier-row-title{min-width:0;color:#e7f3f8;font-size:clamp(.82rem,3.35vw,.98rem);line-height:1.12;overflow-wrap:anywhere}
+.modifier-row-delta{flex:0 0 auto;color:var(--ui-neutral);font-size:clamp(.78rem,3.2vw,.94rem);line-height:1;white-space:nowrap}
+.modifier-row-flow{display:flex;align-items:center;gap:7px;color:#aabec9;font-size:clamp(.78rem,3.2vw,.92rem);font-variant-numeric:tabular-nums}
+.modifier-flow-arrow{color:#7594a6;font-weight:900}
+.modifier-weight-after{color:inherit}
+.modifier-row-detail{display:flex;flex-wrap:wrap;gap:4px;color:#809baa!important;font-size:clamp(.65rem,2.8vw,.76rem)!important;line-height:1.2!important}
+.modifier-positive :is(.modifier-row-delta,.modifier-weight-after){color:var(--ui-positive)!important}
+.modifier-negative :is(.modifier-row-delta,.modifier-weight-after){color:var(--ui-negative)!important}
+.modifier-multiplier :is(.modifier-row-delta,.modifier-weight-after){color:var(--ui-multiplier)!important}
+.modifier-artifact :is(.modifier-row-delta,.modifier-weight-after){color:var(--ui-artifact)!important}
+.modifier-row :is(.gear-target,.gear-arrow){display:none!important}
+
+.gear-bonus-status,.scuba-bonus-status{
+  display:flex!important;
+  flex-wrap:wrap;
+  gap:3px 9px;
+  margin-top:6px!important;
+  padding:7px 9px!important;
+  border:1px solid rgba(111,207,226,.18);
+  border-radius:10px;
+  background:rgba(16,74,91,.2);
+  color:#cbeaf3;
+  font-size:clamp(.7rem,2.9vw,.82rem);
+  line-height:1.2;
+}
+.gear-bonus-status>strong,.scuba-bonus-status>strong{flex:1 1 100%;color:#e9fbff}
+.carapace-current-state{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:3px 10px;
+  margin-top:6px;
+  padding:8px 9px;
+  border:1px solid rgba(190,154,255,.23);
+  border-radius:10px;
+  background:linear-gradient(110deg,rgba(83,49,126,.24),rgba(21,72,87,.2));
+}
+.carapace-current-state .current-state-label{color:#bba7d6;font-size:.62rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
+.carapace-current-state>strong{grid-column:2;grid-row:1/3;align-self:center;color:var(--ui-artifact);font-size:clamp(1rem,4vw,1.25rem)}
+.carapace-current-state>span:not(.current-state-label){color:#c6dae3;font-size:clamp(.69rem,2.9vw,.82rem)}
+.carapace-current-state .carapace-targets{grid-column:1/-1;display:block;padding-top:4px;border-top:1px solid rgba(189,158,236,.15);line-height:1.35}
+.carapace-current-state .carapace-targets b{color:#e8dcfa}
+.expandable-description{margin-top:5px;border-top:1px solid rgba(175,213,229,.12)}
+.description-toggle{
+  display:flex;
+  width:100%;
+  min-height:44px;
+  padding:7px 3px;
+  align-items:center;
+  justify-content:space-between;
+  border:0;
+  background:transparent;
+  color:#9edcea;
+  font:inherit;
+  font-size:clamp(.75rem,3.1vw,.88rem);
+  font-weight:850;
+  cursor:pointer;
+}
+.description-toggle>span:last-child{font-size:1rem;transition:transform .18s ease}
+.description-toggle[aria-expanded="true"]>span:last-child{transform:rotate(180deg)}
+.description-panel{
+  padding:2px 3px 9px;
+  color:#a9bec9;
+  font-size:clamp(.72rem,3vw,.84rem);
+  line-height:1.4;
+}
+.description-panel[hidden]{display:none!important}
+
+.trade-item-find{
+  gap:7px!important;
+  margin-top:6px!important;
+  padding:6px 8px!important;
+}
+.trade-item-find-copy,.trade-item-find .abyss-object-source{display:flex;min-width:0;flex:1 1 auto;flex-direction:column;gap:1px}
+.trade-item-find-copy strong,.trade-item-find .abyss-object-source strong{overflow-wrap:anywhere}
+.trade-item-find-copy small,.trade-item-find .abyss-object-source small{
+  color:#a785c8!important;
+  font-size:.58rem!important;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.trash-event-chain{
+  display:flex;
+  min-width:0;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:5px 7px;
+  margin-top:4px;
+}
+.trash-event-step{
+  display:inline-flex;
+  min-width:0;
+  align-items:center;
+  gap:4px;
+  color:#a9c0cf;
+  font-size:clamp(.68rem,2.9vw,.8rem);
+  font-weight:700;
+  line-height:1.2;
+}
+.trash-event-step :is(.weather-icon,.artifact-entity-icon,.bonus-entity-icon){flex:0 0 24px;width:24px;height:24px}
+.trash-event-step.is-positive{color:var(--ui-positive)}
+.trash-event-step.is-negative{color:var(--ui-negative)}
+.trash-event-step>b{font-size:.82rem}
+
+html body[class] .cast-panel{padding:5px 6px max(5px,env(safe-area-inset-bottom,0px))!important}
+html body[class] .cast-panel :is(.primary-btn,.secondary-btn){min-height:44px!important}
+html body[class] .merged-weather-card .weather-copy p{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+}
+
+@media(max-width:430px){
+  html body[class] .topbar h1{font-size:1.15rem!important}
+  html body[class] .topbar .header-actions{gap:4px}
+  html body[class] .topbar .header-actions .icon-btn{flex:0 0 44px!important;width:44px;height:44px}
+  html body[class] .topbar .menu-exit-btn{display:grid;place-items:center;flex:0 0 44px!important;width:44px;min-width:44px;min-height:44px;padding:0}
+  html body[class] .topbar .menu-exit-btn>span:last-child{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}
+}
+@media(max-width:390px){
+  html body[class] .topbar{display:grid!important;grid-template-columns:minmax(0,1fr);gap:4px!important}
+  html body[class] .topbar .header-brand{justify-self:start}
+  html body[class] .topbar .header-actions{width:100%;justify-content:flex-end}
+}
+
+@media(max-width:420px){
+  html body[class] .app-shell{padding-inline:6px!important}
+  html body[class] .topbar{padding:6px 9px!important}
+  html body[class] .header-actions .icon-btn{width:42px;height:42px}
+  .history-fish-layout{grid-template-columns:38px minmax(0,1fr) auto!important;gap:6px!important}
+  .history-fish-layout.has-rift-fish-icon{grid-template-columns:58px minmax(0,1fr) auto!important;gap:7px!important}
+  .history-fish-layout.has-rift-fish-icon .history-fish-leading{width:58px;min-width:58px;min-height:58px}
+  .history-fish-layout.has-rift-fish-icon .rift-fish-icon,.history-fish-layout.has-rift-fish-icon .island-fish-icon{width:58px;height:58px}
+  .history-fish-leading{width:38px;min-width:38px}
+  .modifier-chain{padding-inline:6px}
+}
+@media(max-width:350px){
+  .modifier-row-heading{flex-wrap:wrap;gap:3px 7px}
+  .modifier-row-delta{margin-left:auto}
+  .catch-weight-summary{gap:5px}
+}
+@media(orientation:landscape) and (max-height:560px){
+  html body[class] .app-shell{grid-template-rows:auto auto minmax(0,1fr) auto!important}
+  html body[class] .topbar .header-actions .icon-btn{width:40px;height:40px}
+  html body[class] .topbar .menu-exit-btn{min-height:40px}
+  html body[class] .inventory{min-height:0!important;max-height:64px!important;padding:4px 7px!important}
+  html body[class] .inventory .section-heading h2{font-size:.7rem!important}
+  html body[class] .inventory .chips>.chip{height:40px;min-height:40px;padding-block:2px}
+  html body[class] .inventory .chip :is(.artifact-entity-icon,.trade-item-icon,.island-loot-icon,.expedition-item-icon,.abyssal-entity-icon,.dungeon-icon,.fish-category-icon,.fish-status-icon,.rift-relic-icon).is-effect-icon,
+  html body[class] .inventory .chip .effect-symbol-icon.is-effect-icon{width:26px;min-width:26px;height:26px;flex-basis:26px}
+  html body[class] .inventory .chip.island-flare-btn .island-loot-icon.is-effect-icon img{width:26px;height:26px}
+}
+@media(prefers-reduced-motion:reduce){.description-toggle>span:last-child{transition:none}}

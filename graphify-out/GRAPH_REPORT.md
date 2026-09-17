@@ -1,16 +1,16 @@
-# Graph Report - DropFish-Rifts-v1.90  (2026-09-15)
+# Graph Report - DropFish-Rifts-v1.90  (2026-09-18)
 
 ## Corpus Check
-- 103 files · ~3,557,801 words
+- 104 files · ~3,508,294 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3742 nodes · 7996 edges · 264 communities (106 shown, 158 thin omitted)
+- 3768 nodes · 8022 edges · 261 communities (104 shown, 157 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 91 edges (avg confidence: 0.52)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7a4a689d`
+- Built from commit: `ce2098f5`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -270,22 +270,19 @@
 - Module
 - maybeFinalizeSession
 - Q: Сделать плавное заглушение звука радиоактивного выброса после последнего доступного заброса
-- checkRadioactiveContamination
-- refreshUnstablePresence
-- renderTradeDialog
 - render
 
 ## God Nodes (most connected - your core abstractions)
 1. `renderHistory()` - 110 edges
-2. `renderHistory()` - 110 edges
+2. `renderHistory()` - 95 edges
 3. `kg()` - 64 edges
-4. `kg()` - 64 edges
+4. `pick()` - 61 edges
 5. `pick()` - 61 edges
-6. `pick()` - 61 edges
+6. `chance()` - 56 edges
 7. `chance()` - 56 edges
-8. `chance()` - 56 edges
-9. `capitalize()` - 55 edges
-10. `capitalize()` - 55 edges
+8. `capitalize()` - 55 edges
+9. `commitState()` - 54 edges
+10. `commitState()` - 54 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `useNeutralizer()` --indirect_call--> `c()`  [INFERRED]
@@ -294,7 +291,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (264 total, 158 thin omitted)
+## Communities (261 total, 157 thin omitted)
 
 ### Community 0 - "Подземелья DropFish — общие правила входа"
 Cohesion: 0.18
@@ -309,12 +306,12 @@ Cohesion: 0.14
 Nodes (10): {chromium,webkit}, engines, fixture, fs, output, path, {pathToFileURL}, phases (+2 more)
 
 ### Community 3 - "commitState"
-Cohesion: 0.06
-Nodes (97): abyssalIconMarkup(), abyssalPersonalityKey(), abyssChangeTargetType(), abyssObjectsForHistoryRow(), activeDungeonPrompt(), artifactIconMarkup(), artifactVisualName(), bonusIconMarkup() (+89 more)
+Cohesion: 0.09
+Nodes (44): abyssalIconMarkup(), artifactIconMarkup(), bonusIconMarkup(), deadWatersRewardContents(), deadWatersRewardContentsMarkup(), deadWatersRewardIconMarkup(), deadWatersTentacleIconMarkup(), debuffIconMarkup() (+36 more)
 
 ### Community 4 - "buildDropfishDebugPanel"
 Cohesion: 0.02
-Nodes (155): ABYSSAL_ICON_FILES, ABYSSAL_PERSONALITIES, ABYSSAL_WEATHERS, abyssalPulseMarkup(), achievements(), activateAstralNavigator(), activeBonuses(), activeCorruptedPearl() (+147 more)
+Nodes (144): ABYSSAL_ICON_FILES, ABYSSAL_PERSONALITIES, ABYSSAL_WEATHERS, abyssalPersonalityKey(), achievements(), activateDeepThing(), activeBonuses(), activeCorruptedPearl() (+136 more)
 
 ### Community 5 - "round1"
 Cohesion: 0.08
@@ -325,16 +322,16 @@ Cohesion: 0.00
 Nodes (847): RFC-2253, RFC-3339, RFC-5246, RFC-9440, AgentMemoryGetSummaryOptions, AgentMemoryGetSummaryResponse, AgentMemoryIncomingMemory, AgentMemoryIngestOptions (+839 more)
 
 ### Community 7 - "radioactiveState"
-Cohesion: 0.09
-Nodes (49): addIslandFeat(), armDarkEther(), assertIslandLootSource(), availableExpeditions(), availableIslandNavigator(), chooseIslandLocation(), chooseOwnedFish(), commitState() (+41 more)
+Cohesion: 0.07
+Nodes (59): addIslandFeat(), armDarkEther(), assertIslandLootSource(), availableExpeditions(), availableIslandNavigator(), availableTradeItemsForKey(), chooseIslandLocation(), chooseOwnedFish() (+51 more)
 
 ### Community 8 - "renderRift"
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Как реализован Обсидиановый ключ для всех автоматических смен погоды?, Source Nodes
 
 ### Community 9 - "dungeonType"
-Cohesion: 0.11
-Nodes (36): allyAction(), applyBossMagma(), applyDaggerPreciseStrikes(), applyStaticElectricity(), battleLog(), beginDungeonDive(), bossAttack(), chronoChoiceMarkup() (+28 more)
+Cohesion: 0.09
+Nodes (42): abandonDungeonPrompt(), advanceDungeonEncounterAfterCast(), allyAction(), applyBossMagma(), applyDaggerPreciseStrikes(), applyStaticElectricity(), applyVexinonWrath(), battleLog() (+34 more)
 
 ### Community 10 - "islandLootIconMarkup"
 Cohesion: 0.40
@@ -366,7 +363,7 @@ Nodes (4): Answer, Outcome, Q: Где добавить Рециклон во в�
 
 ### Community 17 - "useStormEye"
 Cohesion: 0.02
-Nodes (159): a0_0x2f82(), a0_0x39cb(), ABYSSAL_ICON_FILES, ABYSSAL_ICON_PATH, ABYSSAL_PERSONALITIES, ABYSSAL_WEATHERS, abyssalPulseMarkup(), achievements() (+151 more)
+Nodes (181): a0_0x2f82(), a0_0x39cb(), ABYSSAL_ICON_FILES, ABYSSAL_ICON_PATH, ABYSSAL_PERSONALITIES, ABYSSAL_WEATHERS, abyssalPulseMarkup(), achievements() (+173 more)
 
 ### Community 18 - "scheduleFishShadow"
 Cohesion: 0.40
@@ -405,8 +402,8 @@ Cohesion: 0.33
 Nodes (5): Canonical project workspace, graphify, Mandatory cross-device visual stability, Mandatory public-release protection, Test-first release workflow
 
 ### Community 29 - "README.md"
-Cohesion: 0.08
-Nodes (89): abyssalEntity(), activateDeepThing(), activeCorruptedPearls(), activeMythics(), addDungeonFeat(), addHistory(), advanceAbyssalAfterCast(), advanceDungeonEncounterAfterCast() (+81 more)
+Cohesion: 0.07
+Nodes (102): activateAstralNavigator(), activeCorruptedPearls(), activeMythics(), addDungeonFeat(), addHistory(), addIslandFeat(), addRiftRelic(), advanceMythicAfterCast() (+94 more)
 
 ### Community 32 - "README-TRADE-SHIP.md"
 Cohesion: 0.40
@@ -441,8 +438,8 @@ Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Почему Обсидиановый ключ не дал выбор после смены погоды?, Source Nodes
 
 ### Community 40 - "activateAstralNavigator"
-Cohesion: 0.06
-Nodes (102): abyssalIconMarkup(), abyssalPersonalityKey(), abyssChangeTargetType(), abyssObjectsForHistoryRow(), artifactIconMarkup(), bonusCategoryBadge(), bonusIconMarkup(), capitalize() (+94 more)
+Cohesion: 0.05
+Nodes (105): abyssalIconMarkup(), abyssalPersonalityKey(), abyssChangeTargetType(), abyssObjectsForHistoryRow(), artifactCategoryBadge(), artifactIconMarkup(), bonusCategoryBadge(), bonusIconMarkup() (+97 more)
 
 ### Community 41 - "renderTradeDialog"
 Cohesion: 0.17
@@ -509,12 +506,16 @@ Cohesion: 0.33
 Nodes (5): DropFish — Разломы, v1.90, Общие правила, Появление, Тестирование
 
 ### Community 130 - "HTMLRewriterElementContentHandlers"
-Cohesion: 0.21
-Nodes (23): activeDeadWaters(), beginDeadWatersTentacle(), completeDeadWatersTentacle(), continueDeadWatersCommit(), createDeadWatersGrid(), deadWatersBlocksCasting(), deadWatersCanLeave(), deadWatersHistoryRow() (+15 more)
+Cohesion: 0.09
+Nodes (47): activateMegalodon(), activeDebuff(), addFishHistory(), appendLatestHistoryDetail(), applyLeviathanScale(), applyLeviaxarWrathBeforeCast(), applyLeviaxarWrathToNewFish(), applySingulaFishBonus() (+39 more)
 
 ### Community 134 - "Module"
+Cohesion: 0.05
+Nodes (75): abyssalPulseMarkup(), activeDungeonPrompt(), artifactCategoryBadge(), artifactVisualName(), attachFishToHistoryRow(), bonusCategoryBadge(), characterIconMarkup(), compactFishHistoryDetail() (+67 more)
+
+### Community 138 - "Span"
 Cohesion: 0.08
-Nodes (58): activateMegalodon(), activeDebuff(), activeSingulaCount(), addFishHistory(), applyLeviathanScale(), applyLeviaxarWrathBeforeCast(), applyLeviaxarWrathToNewFish(), applySingulaFishBonus() (+50 more)
+Nodes (45): abyssChangeTargetType(), abyssObjectsForHistoryRow(), assertIslandLootSource(), availableIslandNavigator(), chooseIslandLocation(), coinIconMarkup(), eligibleFinalCastTradeCoin(), exchangeAllTradeItems() (+37 more)
 
 ### Community 145 - "dropfish/viewport-fit.min.js"
 Cohesion: 0.43
@@ -549,8 +550,8 @@ Cohesion: 0.22
 Nodes (6): assert, {chromium,webkit}, fs, path, {pathToFileURL}, viewports
 
 ### Community 216 - "renderTradeDialog"
-Cohesion: 0.07
-Nodes (106): activateDeepThing(), activeCorruptedPearls(), activeDebuff(), activeMythics(), addDungeonFeat(), addFishHistory(), addHistory(), advanceAbyssalAfterCast() (+98 more)
+Cohesion: 0.06
+Nodes (128): activateDeepThing(), activateMegalodon(), activeCorruptedPearls(), activeDebuff(), activeMythics(), activeSingulaCount(), addDungeonFeat(), addFishHistory() (+120 more)
 
 ### Community 217 - "pick"
 Cohesion: 0.14
@@ -621,8 +622,8 @@ Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Исправить замечания по снимкам 1-8 в тестовой версии DropFish, Source Nodes
 
 ### Community 236 - "processDebuff"
-Cohesion: 0.24
-Nodes (12): availableTradeItemsForKey(), eligibleFinalCastTradeCoin(), exchangeAllTradeItems(), exchangeFinalCastCoin(), exchangeIslandColossus(), exchangeTemporalGem(), exchangeTradeItem(), hasTradeShipChoices() (+4 more)
+Cohesion: 0.20
+Nodes (8): {chromium,webkit}, engines, fs, output, path, {pathToFileURL}, root, viewports
 
 ### Community 237 - "renderTradeDialog"
 Cohesion: 0.40
@@ -669,56 +670,44 @@ Cohesion: 0.40
 Nodes (4): assert, {chromium,webkit}, path, {pathToFileURL}
 
 ### Community 254 - "buildDropfishDebugPanel"
-Cohesion: 0.07
-Nodes (66): abandonDungeonPrompt(), activeChronocrystal(), addIslandFeat(), armDarkEther(), assertIslandLootSource(), availableExpeditions(), availableIslandNavigator(), beginTradeShip() (+58 more)
+Cohesion: 0.09
+Nodes (56): abyssalEntity(), activeChronocrystal(), activeDeadWaters(), applyEthirionWrath(), applyLeviaxarWrath(), armDarkEther(), beginDeadWatersTentacle(), beginTradeShip() (+48 more)
 
 ### Community 255 - "round1"
-Cohesion: 0.16
-Nodes (30): abyssFishLabel(), abyssPercent(), abyssSample(), availableAbyssFish(), availableAbyssTrash(), availableTradeItems(), changeAbyssFishWeight(), createAbyssCoin() (+22 more)
+Cohesion: 0.11
+Nodes (47): abyssFishLabel(), abyssPercent(), abyssSample(), activeSingulaCount(), advanceAbyssalAfterCast(), availableAbyssFish(), availableAbyssTrash(), availableTradeItems() (+39 more)
 
 ### Community 258 - "maybeFinalizeSession"
-Cohesion: 0.11
-Nodes (30): addRiftRelic(), availableRiftRelic(), beginRift(), commitRiftFish(), commitRiftLoot(), continueRift(), declineRift(), ensureRifts() (+22 more)
+Cohesion: 0.18
+Nodes (14): advanceRadioactiveAfterOrdinaryCast(), catchArcadeCreature(), chooseArcadeFishCategory(), discardRadioactiveSample(), radioactivePaused(), radioactivePrompt(), radioactiveSamples(), radioactiveState() (+6 more)
 
 ### Community 259 - "Q: Сделать плавное заглушение звука радиоактивного выброса после последнего доступного заброса"
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Сделать плавное заглушение звука радиоактивного выброса после последнего доступного заброса, Source Nodes
 
-### Community 260 - "checkRadioactiveContamination"
-Cohesion: 0.14
-Nodes (20): advanceRadioactiveAfterOrdinaryCast(), catchArcadeCreature(), checkRadioactiveContamination(), chooseArcadeFishCategory(), discardRadioactiveSample(), endRadioactiveOutbreak(), radioactiveItemEligible(), radioactivePaused() (+12 more)
-
-### Community 261 - "refreshUnstablePresence"
-Cohesion: 0.11
-Nodes (29): activateMegalodon(), activeBonuses(), activeEnhancedDiver(), activeSingulaCount(), applyLeviathanScale(), applyLeviaxarWrathBeforeCast(), applySingulaFishBonus(), categoryForWeight() (+21 more)
-
-### Community 262 - "renderTradeDialog"
-Cohesion: 0.19
-Nodes (13): availableTradeItemsForKey(), eligibleFinalCastTradeCoin(), exchangeAllTradeItems(), exchangeTemporalGem(), exchangeTradeItem(), hasTradeShipChoices(), openTradeDialog(), recycleAllTrash() (+5 more)
-
 ### Community 263 - "render"
-Cohesion: 0.09
-Nodes (51): abyssalEntity(), activeChronocrystal(), activeDeadWaters(), activeDungeonPrompt(), artifactVisualName(), beginDeadWatersTentacle(), beginTradeShip(), checkRadioactiveContamination() (+43 more)
+Cohesion: 0.08
+Nodes (52): abyssalEntity(), activeChronocrystal(), activeDeadWaters(), activeDungeonPrompt(), artifactVisualName(), beginDeadWatersTentacle(), beginTradeShip(), checkRadioactiveContamination() (+44 more)
 
 ## Knowledge Gaps
-- **1371 isolated node(s):** `BALANCE`, `LOCATION_RULES`, `LOCATIONS`, `ICONS`, `BONUS_DESCRIPTIONS` (+1366 more)
+- **1380 isolated node(s):** `BALANCE`, `LOCATION_RULES`, `LOCATIONS`, `ICONS`, `BONUS_DESCRIPTIONS` (+1375 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **158 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **157 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Console` connect `maybeTriggerDebuffEvent` to `metamorphBaseActions`?**
-  _High betweenness centrality (0.073) - this node is a cross-community bridge._
+  _High betweenness centrality (0.065) - this node is a cross-community bridge._
+- **Why does `destroyerAction()` connect `round1` to `maybeTriggerDebuffEvent`, `buildDropfishDebugPanel`, `README.md`?**
+  _High betweenness centrality (0.060) - this node is a cross-community bridge._
 - **Why does `CustomEvent` connect `triggerHeaderPresence` to `metamorphBaseActions`?**
   _High betweenness centrality (0.059) - this node is a cross-community bridge._
-- **Why does `destroyerAction()` connect `round1` to `maybeTriggerDebuffEvent`, `buildDropfishDebugPanel`, `README.md`?**
-  _High betweenness centrality (0.059) - this node is a cross-community bridge._
 - **What connects `BALANCE`, `LOCATION_RULES`, `LOCATIONS` to the rest of the system?**
-  _1371 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1380 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `renderHistory` be split into smaller, more focused modules?**
   _Cohesion score 0.06961506961506962 - nodes in this community are weakly interconnected._
 - **Should `renderTradeDialog` be split into smaller, more focused modules?**
   _Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected._
 - **Should `commitState` be split into smaller, more focused modules?**
-  _Cohesion score 0.060352233676975946 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09090909090909091 - nodes in this community are weakly interconnected._

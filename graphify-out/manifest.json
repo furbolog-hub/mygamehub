@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "dropfish/script.js": {
-    "mtime": 1789420151.3950467,
-    "ast_hash": "8da5f7a8c06e29283a53a5d94fddf865",
+    "mtime": 1789684530.0391445,
+    "ast_hash": "9ef30a70b67f935ab84cb52eda7da725",
     "semantic_hash": ""
   },
   "dropfish/ui-enhancements.js": {
@@ -200,8 +200,8 @@
     "semantic_hash": ""
   },
   "dropfish/index.html": {
-    "mtime": 1789420148.5883083,
-    "ast_hash": "1f9edd093ba42cb742263d7e3074b718",
+    "mtime": 1789683346.6546452,
+    "ast_hash": "d0da9d0f81c65389a9b602d67d08cf6f",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260728_101552_\u043f\u043e\u0447\u0435\u043c\u0443_\u0438\u043a\u043e\u043d\u043a\u0438_\u0430\u0440\u0442\u0435\u0444\u0430\u043a\u0442\u043e\u0432_\u043e\u0431\u0440\u0435\u0437\u0430\u043b\u0438\u0441\u044c_\u0432\u043e_\u0432\u043a\u043b\u0430\u0434\u043a\u0430\u0445_\u0441\u043f.md": {
@@ -3819,16 +3819,6 @@
     "ast_hash": "139a8ea289c99ecf90d622ec1eb1cbf7",
     "semantic_hash": ""
   },
-  "\u0421\u043d\u0438\u043c\u043e\u043a1.PNG": {
-    "mtime": 1789076922.2029881,
-    "ast_hash": "3fc16bb2e94dca8f67b97caa3d5d9c71",
-    "semantic_hash": ""
-  },
-  "\u0421\u043d\u0438\u043c\u043e\u043a2.jpg": {
-    "mtime": 1789326387.6784892,
-    "ast_hash": "aded62f3074ac1e2b88c561870907abf",
-    "semantic_hash": ""
-  },
   "graphify-out/memory/query_20260913_193948_\u0441\u0434\u0435\u043b\u0430\u0442\u044c_\u043f\u043b\u0430\u0432\u043d\u043e\u0435_\u0437\u0430\u0433\u043b\u0443\u0448\u0435\u043d\u0438\u0435_\u0437\u0432\u0443\u043a\u0430_\u0440\u0430\u0434\u0438\u043e\u0430\u043a\u0442\u0438\u0432\u043d\u043e\u0433\u043e_\u0432\u044b.md": {
     "mtime": 1789328388.6631644,
     "ast_hash": "000e4214d2bc51adeb6d831c2e0c0507",
@@ -3899,24 +3889,9 @@
     "ast_hash": "d3e94c81916d9d5062073a87f526edd6",
     "semantic_hash": ""
   },
-  "\u0421\u043d\u0438\u043c\u043e\u043a3.PNG": {
-    "mtime": 1789417900.829793,
-    "ast_hash": "a9e8f772c288de6ad6ac0339bca502d0",
-    "semantic_hash": ""
-  },
   "dropfish/assets/icons/events/dead-waters-vortex.webp": {
     "mtime": 1789418621.4851148,
     "ast_hash": "744cd543cb3f2c8a5d5d9f06c6b32cbe",
-    "semantic_hash": ""
-  },
-  "\u0421\u043d\u0438\u043c\u043e\u043a4.PNG": {
-    "mtime": 1789419307.3673189,
-    "ast_hash": "d481d5c94719dc63eaed0195197e73e7",
-    "semantic_hash": ""
-  },
-  "\u0421\u043d\u0438\u043c\u043e\u043a5.PNG": {
-    "mtime": 1789419397.1601813,
-    "ast_hash": "6a2e142d0e9c29480e52f5d43879865c",
     "semantic_hash": ""
   },
   "public-release/dropfish/assets/events/dead-waters-vortex.webp": {
@@ -3937,6 +3912,11 @@
   "public-release/dropfish/assets/audio/events/dead-waters-vortex.ogg": {
     "mtime": 1789414499.5514805,
     "ast_hash": "d3e94c81916d9d5062073a87f526edd6",
+    "semantic_hash": ""
+  },
+  "scripts/test-mobile-ui-optimization.js": {
+    "mtime": 1789684880.8727038,
+    "ast_hash": "d03ba35742670713fd05dd1d76bf3210",
     "semantic_hash": ""
   }
 }
