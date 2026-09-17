@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "renders": 10,
+  "viewports": {
+    "desktop": {
+      "width": 1440,
+      "height": 900
+    },
+    "phonePortrait": {
+      "width": 390,
+      "height": 844
+    },
+    "phoneLandscape": {
+      "width": 844,
+      "height": 390
+    },
+    "tabletPortrait": {
+      "width": 768,
+      "height": 1024
+    },
+    "tabletLandscape": {
+      "width": 1024,
+      "height": 768
+    }
+  }
+}

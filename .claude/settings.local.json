@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(graphify query *)",
+      "Bash(graphify explain *)",
+      "Bash(graphify --version)",
+      "Bash(graphify path *)",
+      "Bash(node -e ' *)",
+      "Bash(grep -n \"'rift',\\\\`\\\\|'rift','\" script.js)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"print\\(1\\)\")",
+      "Bash(/c/Python314/python -c ' *)"
+    ]
+  }
+}

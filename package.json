@@ -1,0 +1,21 @@
+{
+  "name": "mygamehub-visual-tests",
+  "private": true,
+  "scripts": {
+    "test": "npm run test:requested && npm run test:rift-ui && npm run test:loot-sources && npm run test:ethirion && npm run test:vexinon && npm run test:temporal && npm run test:activatable && npm run test:dungeon-visuals",
+    "test:radioactive": "node scripts/test-radioactive.js",
+    "test:dead-waters": "node scripts/test-dead-waters.js",
+    "test:requested": "node scripts/test-requested-regressions.js",
+    "test:requested-visuals": "node scripts/test-requested-visuals.js",
+    "test:rift-ui": "node scripts/test-rift-ui-regressions.js",
+    "test:loot-sources": "node scripts/test-loot-source-boundaries.js",
+    "test:dungeon-visuals": "node scripts/test-dungeon-visuals.js && node scripts/test-leviaxar-visuals.js && node scripts/test-ethirion-visuals.js && node scripts/test-vexinon-visuals.js",
+    "test:ethirion": "node scripts/test-ethirion-mechanics.js",
+    "test:vexinon": "node scripts/test-vexinon-mechanics.js",
+    "test:temporal": "node scripts/test-temporal-state-mechanics.js",
+    "test:activatable": "node scripts/test-activatable-mechanics.js"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

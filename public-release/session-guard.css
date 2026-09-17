@@ -1,0 +1,15 @@
+html.public-game-locked body>:not(.public-gate){pointer-events:none;user-select:none}
+.public-gate{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:18px;background:rgba(3,12,22,.88);backdrop-filter:blur(9px);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#eef8ff}
+.public-gate-card{width:min(460px,100%);display:grid;gap:15px;padding:26px;border:1px solid rgba(123,209,255,.42);border-radius:22px;background:linear-gradient(145deg,#102f47,#071827);box-shadow:0 24px 80px rgba(0,0,0,.55);text-align:center}
+.public-gate-card h1,.public-gate-card p{margin:0}.public-gate-card p{line-height:1.5;color:#c8dbea}
+.public-gate-card button{min-height:50px;padding:12px 18px;border:0;border-radius:14px;background:linear-gradient(135deg,#ffd45a,#ff9f31);color:#17202a;font-size:1rem;font-weight:900;cursor:pointer}
+.public-gate-card button:disabled{filter:saturate(.5);cursor:wait}.public-gate-card small{min-height:1.25em;color:#ffcfbf}.public-gate-card a{color:#9edcff}
+.public-countdown{font-variant-numeric:tabular-nums;font-size:clamp(2rem,10vw,3.3rem);letter-spacing:.06em;color:#ffe07a}
+.public-gate-review{background:linear-gradient(135deg,#7ce8ff,#69d899)!important}
+html.public-results-review #newGameBtn,
+html.public-results-review #restartBtn{display:none!important}
+.public-gate.is-review{inset:max(8px,env(safe-area-inset-top)) 8px auto auto;display:block;width:min(330px,calc(100vw - 16px));padding:0;background:transparent;backdrop-filter:none;pointer-events:none}
+.public-gate.is-review .public-gate-card{width:100%;gap:5px;padding:10px 12px;border-radius:14px;background:linear-gradient(145deg,rgba(16,47,71,.96),rgba(7,24,39,.96));box-shadow:0 10px 34px rgba(0,0,0,.42);text-align:left;pointer-events:auto}
+.public-gate.is-review .public-gate-card p{font-size:.76rem;line-height:1.25}
+.public-gate.is-review .public-countdown{font-size:1.35rem;line-height:1.1}
+.public-gate.is-review .public-gate-card a{font-size:.72rem}

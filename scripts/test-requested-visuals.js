@@ -1,0 +1,130 @@
+const fs=require('fs');
+const path=require('path');
+const {pathToFileURL}=require('url');
+const {chromium,webkit}=require('playwright');
+
+const root=path.resolve(__dirname,'..');
+const target=pathToFileURL(path.join(root,'dropfish','index.html')).href;
+const output=path.join(root,'.visual-test-output','requested-regressions');
+const viewports={desktop:{width:1366,height:768},phonePortrait:{width:390,height:844},phoneLandscape:{width:844,height:390},tabletPortrait:{width:768,height:1024},tabletLandscape:{width:1024,height:768}};
+const engines={chromium,webkit};
+const assert=(condition,message)=>{if(!condition)throw new Error(message);};
+
+(async()=>{
+  fs.mkdirSync(output,{recursive:true});
+  let renders=0;
+  for(const [engineName,engine] of Object.entries(engines)){
+    const browser=await engine.launch({headless:true});
+    try{
+      for(const [viewportName,viewport] of Object.entries(viewports)){
+        const page=await browser.newPage({viewport});
+        await page.goto(target,{waitUntil:'load'});
+        await page.evaluate(()=>{
+          state=initialState();
+          state.artifacts.push({id:uid(),name:'Чешуя Левиафана',tier:'epic',traded:false});
+          state.leviathanStep=0;
+          makeFish('normal','Заброс',true,{initialWeight:4.2,fishName:'Заброс обычная'});
+          makeFish('heavy','Заброс',true,{initialWeight:12,fishName:'Заброс тяжеловес'});
+          makeFish('giant','Заброс',true,{initialWeight:24,fishName:'Заброс гигант'});
+          makeFish('normal','Аркадный улов',false,{initialWeight:4.2,fishName:'Аркада обычная',arcadeCatch:true});
+          makeFish('heavy','Аркадный улов',false,{initialWeight:12,fishName:'Аркада тяжеловес',arcadeCatch:true});
+          makeFish('giant','Аркадный улов',false,{initialWeight:24,fishName:'Аркада гигант',arcadeCatch:true});
+          const riftFish=makeFish('heavy','Нестабильный разлом',false,{initialWeight:18.7,fishName:'Золотая рыбка'});
+          riftFish.riftFish=true;riftFish.rarity='heavy';
+          const dedicatedRiftFish=makeFish('heavy','Нестабильный разлом',false,{initialWeight:49.2,fishName:'Сингулярный тунец'});
+          dedicatedRiftFish.riftFish=true;dedicatedRiftFish.rarity='epic';
+          const islandFish=makeFish('giant','Заброс',false,{initialWeight:126.3,fishName:'Островной гигант'});
+          islandFish.islandColossus=true;islandFish.rarity='common';
+          const replaced=makeFish('normal','Заброс',true,{initialWeight:3.8,fishName:'Заменённая рыба'});
+          replaced.removed=true;replaced.crystalReplaced=true;
+          const replacedRow=state.history.find(row=>row.fishId===replaced.id);replacedRow.crystalReplaced=true;
+          const angusRow=addHistory('Старина Ангус поделился уловом','angus','(Добавлена рыба)',{numbered:false});
+          const angusFish=makeFish('giant','Старина Ангус',false,{initialWeight:39.6,fishName:'Сом Ангуса',parentHistoryId:angusRow.id});
+          angusFish.tags=[];delete angusFish.leviathanImpact;
+          const symbioteRow=addHistory('Открыт Нестабильный разлом','rift','',{numbered:false});
+          const symbioteFish=makeFish('normal','Нестабильный разлом',false,{initialWeight:52,fishName:'Штормовой целакант',parentHistoryId:symbioteRow.id});
+          symbioteFish.category='heavy';symbioteFish.originalWeight=52;symbioteFish.weight=12.2;symbioteFish.abyssTransformed=true;
+          symbioteFish.tags=['Симбиот: normal → heavy'];delete symbioteFish.leviathanImpact;
+          symbioteFish.abyssImpacts=[{source:'Симбиот',type:'category',before:52,after:12.2,beforeCategory:'normal',afterCategory:'heavy'}];
+          window.__requestedRows={angus:angusRow.id,symbiote:symbioteRow.id};
+          const cache={id:'visual-island-cache',kind:'cache',opened:false,items:[ISLAND_CACHE_TRADE_ITEMS[0],ISLAND_CACHE_TRADE_ITEMS[1]]};
+          const cacheRow=addHistory('Экспедиция завершена: Остров Разрушительных Приливов','island','',{numbered:false,islandCompletion:true});
+          cacheRow.islandLootResults=[cache];
+          state.dungeon.encounter={id:uid(),dungeonType:'cradle',phase:'piranhas',historyRowId:null,castsUsed:0};
+          render();
+        });
+        await page.waitForTimeout(100);
+        const main=await page.evaluate(()=>{
+          const chip=document.querySelector('.dungeon-encounter-effect');
+          const fishRows=[...document.querySelectorAll('.history-item.type-fish')];
+          const angusRow=document.querySelector(`[data-history-id="${window.__requestedRows.angus}"]`);
+          const symbioteRow=document.querySelector(`[data-history-id="${window.__requestedRows.symbiote}"]`);
+          const symbioteImpact=symbioteRow?.querySelector('.abyss-fish-impact');
+          return {
+            chipOverflow:chip?chip.scrollWidth-chip.clientWidth:0,
+            chipText:chip?.querySelector('.effect-chip-copy')?.textContent.trim(),
+            inlineStatuses:document.querySelectorAll('.history-item.type-fish .fish-inline-status').length,
+            sourceIcons:Object.fromEntries(fishRows.map(row=>[row.querySelector('.history-fish-catch-text')?.textContent||'',row.querySelector('.fish-inline-status img')?.getAttribute('src')||''])),
+            leadingIcons:Object.fromEntries(fishRows.map(row=>[row.querySelector('.history-fish-catch-text')?.textContent||'',[...row.querySelectorAll('.history-fish-leading img')].map(img=>img.getAttribute('src')||'')])),
+            fishTextGaps:Object.fromEntries(fishRows.map(row=>{const lead=row.querySelector('.history-fish-leading'),copy=row.querySelector('.history-entity-copy');return [row.querySelector('.history-fish-catch-text')?.textContent||'',lead&&copy?copy.getBoundingClientRect().left-lead.getBoundingClientRect().right:null];})),
+            replacedBadges:document.querySelectorAll('.crystal-replaced-status').length,
+            angusCategoryIcon:angusRow?.querySelector('.embedded-fish-name .fish-size-marker img')?.getAttribute('src')||'',
+            symbioteNegative:symbioteImpact?.classList.contains('abyss-impact-negative')||false,
+            symbioteResultColor:symbioteImpact?getComputedStyle(symbioteImpact.querySelector('.gear-result')).color:'',
+            leakedCategoryKeys:/\b(?:normal|heavy|giant)\b/i.test(document.querySelector('#historyList')?.textContent||''),
+            horizontalOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+            fishRows:fishRows.length,
+          };
+        });
+        assert(main.chipOverflow<=1,`${engineName}/${viewportName}: piranha chip overflowed by ${main.chipOverflow}px`);
+        assert(main.chipText==='Пираньи Колыбели Левиафана',`${engineName}/${viewportName}: piranha chip has extra copy: ${JSON.stringify(main.chipText)}`);
+        assert(main.inlineStatuses===7,`${engineName}/${viewportName}: ordinary cast or arcade fish icons are missing or duplicated (${main.inlineStatuses} found)`);
+        const iconFor=name=>Object.entries(main.sourceIcons).find(([title])=>title.includes(name))?.[1]||'';
+        assert(iconFor('Заброс обычная').endsWith('/cast-catch.webp'),`${engineName}/${viewportName}: normal cast icon is wrong`);
+        assert(iconFor('Заброс тяжеловес').endsWith('/heavyweight.webp'),`${engineName}/${viewportName}: heavyweight cast icon is wrong`);
+        assert(iconFor('Заброс гигант').endsWith('/giant.webp'),`${engineName}/${viewportName}: giant cast icon is wrong`);
+        for(const name of ['Аркада обычная','Аркада тяжеловес','Аркада гигант'])assert(iconFor(name).endsWith('/arcade-catch.webp'),`${engineName}/${viewportName}: ${name} does not use the arcade icon`);
+        assert(!iconFor('Золотая рыбка'),`${engineName}/${viewportName}: rift reward incorrectly uses an ordinary post-title weight icon`);
+        const ordinaryRiftLeading=main.leadingIcons[Object.keys(main.leadingIcons).find(title=>title.includes('Золотая рыбка'))]||[];
+        assert(ordinaryRiftLeading.some(src=>/heavy\.webp$/.test(src)),`${engineName}/${viewportName}: ordinary heavyweight rewarded by a rift lost its leading category badge`);
+        for(const name of ['Сингулярный тунец','Островной гигант']){
+          assert(!iconFor(name),`${engineName}/${viewportName}: ${name} incorrectly uses an ordinary cast/arcade icon`);
+          const categoryFiles=main.leadingIcons[Object.keys(main.leadingIcons).find(title=>title.includes(name))]||[];
+          assert(!categoryFiles.some(src=>/(?:normal|heavyweight|giant)\.webp$/.test(src)),`${engineName}/${viewportName}: ${name} incorrectly uses an ordinary weight-category icon`);
+          const gap=main.fishTextGaps[Object.keys(main.fishTextGaps).find(title=>title.includes(name))];
+          assert(gap===null||gap>=0,`${engineName}/${viewportName}: ${name} category visual overlaps its title by ${-gap}px`);
+        }
+        const closedCache=await page.evaluate(()=>{const button=document.querySelector('[data-island-cache="visual-island-cache"]');return{buttonHeight:button?.getBoundingClientRect().height||0,contents:document.querySelectorAll('.island-cache-contents>li').length,tradeItems:state.tradeItems.filter(item=>item.islandCacheId==='visual-island-cache').length};});
+        assert(closedCache.buttonHeight>0&&closedCache.buttonHeight<=30,`${engineName}/${viewportName}: island cache action is not compact (${closedCache.buttonHeight}px)`);
+        assert(closedCache.contents===0&&closedCache.tradeItems===0,`${engineName}/${viewportName}: closed island cache revealed or granted contents early (${JSON.stringify(closedCache)})`);
+        await page.locator('[data-island-cache="visual-island-cache"]').click();
+        const openedCache=await page.evaluate(()=>({contents:document.querySelectorAll('.island-cache-contents>li').length,tradeItems:state.tradeItems.filter(item=>item.islandCacheId==='visual-island-cache').length,buttons:document.querySelectorAll('[data-island-cache="visual-island-cache"]').length,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}));
+        assert(openedCache.contents===2&&openedCache.tradeItems===2&&openedCache.buttons===0,`${engineName}/${viewportName}: island cache did not reveal and grant each item exactly once`);
+        assert(openedCache.overflow<=1,`${engineName}/${viewportName}: opened island cache caused ${openedCache.overflow}px horizontal overflow`);
+        assert(main.replacedBadges===1,`${engineName}/${viewportName}: crystal replacement badge missing`);
+        assert(main.angusCategoryIcon.endsWith('/fish-status/giant.webp'),`${engineName}/${viewportName}: Angus giant fish status icon is missing or wrong (${main.angusCategoryIcon})`);
+        assert(main.symbioteNegative,`${engineName}/${viewportName}: Symbiote weight loss is not marked as negative`);
+        assert(main.symbioteResultColor==='rgb(255, 107, 120)',`${engineName}/${viewportName}: Symbiote reduced weight is not red (${main.symbioteResultColor})`);
+        assert(!main.leakedCategoryKeys,`${engineName}/${viewportName}: internal fish category key leaked into history`);
+        assert(main.horizontalOverflow<=1,`${engineName}/${viewportName}: main page overflowed horizontally`);
+        await page.screenshot({path:path.join(output,`${engineName}-${viewportName}-history.png`),fullPage:true});renders++;
+
+        await page.evaluate(()=>{state.rifts.active=null;makeRift('df1',true);});
+        await page.waitForTimeout(80);
+        const buttons=await page.evaluate(()=>{
+          const leave=document.querySelector('#riftLeaveBtn'),next=document.querySelector('#riftContinueBtn');
+          const a=getComputedStyle(leave),b=getComputedStyle(next),card=document.querySelector('.rift-card').getBoundingClientRect();
+          return {leaveHeight:leave.getBoundingClientRect().height,nextHeight:next.getBoundingClientRect().height,leaveRadius:a.borderRadius,nextRadius:b.borderRadius,leaveBackground:a.backgroundImage,nextBackground:b.backgroundImage,card:{left:card.left,top:card.top,right:card.right,bottom:card.bottom}};
+        });
+        assert(Math.abs(buttons.leaveHeight-buttons.nextHeight)<=1,`${engineName}/${viewportName}: rift action heights differ`);
+        assert(buttons.leaveRadius===buttons.nextRadius,`${engineName}/${viewportName}: rift action radii differ`);
+        assert(buttons.leaveBackground!=='none'&&buttons.nextBackground!=='none',`${engineName}/${viewportName}: translucent button backgrounds missing`);
+        assert(buttons.card.left>=-1&&buttons.card.top>=-1&&buttons.card.right<=viewport.width+1&&buttons.card.bottom<=viewport.height+1,`${engineName}/${viewportName}: rift card clipped`);
+        await page.screenshot({path:path.join(output,`${engineName}-${viewportName}-rift.png`)});renders++;
+        await page.close();
+      }
+    }finally{await browser.close();}
+  }
+  fs.writeFileSync(path.join(output,'report.json'),JSON.stringify({passed:true,renders,engines:Object.keys(engines),viewports},null,2));
+  process.stdout.write(`PASS: ${renders} requested-regression renders across Chromium and WebKit\n`);
+})().catch(error=>{process.stderr.write(`FAIL: ${error.stack||error}\n`);process.exitCode=1;});

@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-09-14T20:10:50.373461+00:00",
+  "nodes": {
+    "promo_dropfish_teaser_v1_build": {
+      "code_fingerprint": "6a00035e7dd1ffb822cac37bab3f054b8c11f7dadde8641ab6c1e63c8f6aec69",
+      "label": "build.ps1",
+      "last": "2026-08-15T09:04:10.021831+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-15T09:04:10.021831+00:00",
+          "outcome": "useful",
+          "q": "Перенести исправления Метаморфа и экспедиционного предмета в обе версии и опубликовать с полной защитой публичной сборки"
+        }
+      ],
+      "score": 0.494680099,
+      "source_file": "promo/dropfish-teaser-v1/build.ps1",
+      "status": "tentative",
+      "uses": 1
+    },
+    "public_release_session_guard": {
+      "code_fingerprint": "6a7ea45f16b9ab43034ed2e9fa36c50c82739e9958a4cfec066b68d60958ea8f",
+      "label": "session-guard.js",
+      "last": "2026-08-15T09:04:10.021831+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-15T09:04:10.021831+00:00",
+          "outcome": "useful",
+          "q": "Перенести исправления Метаморфа и экспедиционного предмета в обе версии и опубликовать с полной защитой публичной сборки"
+        }
+      ],
+      "score": 0.494680099,
+      "source_file": "public-release/session-guard.js",
+      "status": "tentative",
+      "uses": 1
+    },
+    "scripts_test_activatable_mechanics": {
+      "code_fingerprint": "f3ebe20b534b1dbc4f8804a77728ef1438cf8dfe9e148d9aaa091b3bb60e956e",
+      "label": "test-activatable-mechanics.js",
+      "last": "2026-08-15T08:54:19.870245+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-15T08:54:19.870245+00:00",
+          "outcome": "useful",
+          "q": "Что за сбой панцирных чешуй - поясни что там не так?"
+        }
+      ],
+      "score": 0.494602036,
+      "source_file": "scripts/test-activatable-mechanics.js",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

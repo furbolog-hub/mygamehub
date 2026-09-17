@@ -1,0 +1,14 @@
+{
+  "name": "game-portal-daily-limit",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "deploy:dry": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "wrangler": "4.114.0"
+  }
+}

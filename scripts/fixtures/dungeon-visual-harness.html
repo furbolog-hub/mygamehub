@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <link rel="stylesheet" href="../../dropfish/style.css">
+  <style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}</style>
+</head>
+<body>
+  <dialog id="dungeonDialog" class="modal dungeon-modal" open>
+    <div id="dungeonCard" class="dungeon-card"><div id="dungeonScene" class="dungeon-scene"></div></div>
+  </dialog>
+  <script>
+    const asset='../../dropfish/assets/dungeons/eternal-darkness-vault/';
+    const icon=(file,label,extra='')=>`<span class="dungeon-icon ${extra}" title="${label}"><img src="${asset}${file}" alt=""></span>`;
+    const phase=new URLSearchParams(location.search).get('phase')||'battle';
+    const scene=document.getElementById('dungeonScene'),dialog=document.getElementById('dungeonDialog');
+    dialog.dataset.phase=phase;
+    const battle=`<section class="dungeon-battle-world">
+      <div class="dungeon-battle-hud"><span>Раунд 4 / 10</span><button class="secondary-btn battle-speed">Ускорить ×4</button></div>
+      <div class="battle-actor boss-actor">${icon('boss-ballistier.webp','Балистьер','is-battle-boss')}<strong>Балистьер</strong></div>
+      <div class="battle-health boss"><span>Балистьер</span><div class="battle-health-track"><i style="width:43%"></i></div><strong>1288 / 3000</strong></div>
+      <div class="battle-actor ally-actor">${icon('ally-stonefish.webp','Рыба-камень','is-fighter')}<small>Рыба-камень</small></div>
+      <div class="battle-actor player-actor">${icon('weapon-sword.webp','Меч','is-fighter')}<strong>Игрок</strong></div>
+      <div class="battle-health player"><span>Игрок</span><div class="battle-health-track"><i style="width:67%"></i></div><strong>336 / 500</strong></div>
+      <aside class="battle-log battle-log-player"><h3>По игроку</h3><div class="battle-log-entries"><p class="tone-damage">Балистьер: −70</p><p class="tone-mitigation">Каменная стойкость готова</p></div></aside>
+      <aside class="battle-log battle-log-boss"><h3>По Балистьеру</h3><div class="battle-log-entries"><p class="tone-damage">Игрок: −278</p><p class="tone-positive">Точный удар</p></div></aside>
+    </section>`;
+    const world=`<section class="dungeon-world reveal-3">
+      <div class="dungeon-level level-three"><header class="dungeon-level-heading"><span>Третий уровень</span><strong>Балистьер — могучий страж</strong></header><div class="dungeon-boss-anchor">${icon('boss-ballistier.webp','Балистьер','is-boss')}<small>3000 здоровья</small></div></div>
+      <div class="dungeon-level level-two"><header class="dungeon-level-heading"><span>Второй уровень</span><strong>Союзник выбран</strong></header><div class="dungeon-level-objects"><button class="dungeon-placed-object is-ally slot-1">${icon('ally-stonefish.webp','Рыба-камень')}</button></div></div>
+      <div class="dungeon-level level-one"><header class="dungeon-level-heading"><span>Первый уровень</span><strong>Оружие получено</strong></header><div class="dungeon-level-objects"><button class="dungeon-placed-object is-weapon slot-2">${icon('weapon-sword.webp','Меч')}</button></div></div>
+    </section>`;
+    const entrance=`<section class="dungeon-splash"><div class="dungeon-splash-weight">Чистый вес отряда: <strong>92,5 кг</strong></div><button class="primary-btn dungeon-enter">Войти</button></section>`;
+    const result=`<section class="dungeon-result"><p class="dungeon-kicker">Итог сражения</p><h2>Испытание пройдено</h2><div class="dungeon-result-loot"><span>${icon('ally-stonefish.webp','Рыба-камень','is-loot')}<strong>Рыба-камень</strong></span><span>${icon('loot-burning-core.webp','Пылающее ядро','is-loot')}<strong>Пылающее ядро</strong></span></div><p>Отряд возвращается с наградой.</p><button class="primary-btn">Вернуться к забросам</button></section>`;
+    scene.innerHTML={entrance,world,battle,result}[phase];
+  </script>
+  <script src="../../dropfish/viewport-fit.js"></script>
+</body>
+</html>
