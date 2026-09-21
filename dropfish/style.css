@@ -6480,3 +6480,36 @@ body.reduce-motion .history-item:is(.is-radioactive-prompt,.is-radioactive-sampl
   .history-row-head{gap:2px 4px}
   .history-row-actions button,.history-item .history-row-actions button{padding-inline:5px!important;font-size:.62rem!important}
 }
+
+/* Radioactive trash and isotope core: compact, shared geometry on every viewport. */
+.inventory .chip.effect-radioactive{
+  border-color:rgba(185,235,78,.58);
+  background:linear-gradient(135deg,rgba(50,72,23,.88),rgba(45,34,17,.9));
+  color:#ecffc0;
+  box-shadow:inset 0 0 12px rgba(182,239,69,.12),0 0 10px rgba(151,216,49,.16);
+}
+.radioactive-trash-icon img,.isotope-core-icon img{object-fit:contain;filter:drop-shadow(0 0 6px rgba(179,239,70,.42))}
+.history-item.is-radioactive-trash,.history-item.type-radioactiveCore{
+  border-color:#8fb742;
+  background:linear-gradient(115deg,rgba(28,49,27,.86),rgba(53,43,21,.82));
+  color:#efffc9;
+}
+.history-item.is-isotope-exploded{
+  border-color:#d53f48!important;
+  background:linear-gradient(110deg,rgba(92,19,25,.9),rgba(43,17,21,.92))!important;
+}
+.history-item.is-isotope-destroyed{
+  border-color:#d4444d!important;
+  background:linear-gradient(110deg,rgba(94,22,28,.82),rgba(47,19,23,.88))!important;
+}
+.history-item.is-isotope-destroyed :is(.history-row-head,.history-row-details),
+.history-item.is-isotope-exploded :is(.history-row-head,.history-row-details){color:#9b9b9b!important;filter:grayscale(1);opacity:.78}
+.history-item.is-isotope-destroyed img,.history-item.is-isotope-exploded img{filter:grayscale(1)!important}
+.embedded-fish-item.is-isotope-destroyed{
+  border-left:2px solid #d4444d!important;
+  background:rgba(91,25,30,.36)!important;
+  color:#969696!important;
+  filter:grayscale(1);
+  opacity:.78;
+}
+.inventory .chips>.chip.effect-radioactive{width:max-content;min-width:0;max-width:148px;min-height:46px;height:auto;padding:5px 8px}
