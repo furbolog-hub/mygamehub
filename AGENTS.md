@@ -21,6 +21,13 @@ Rules:
 - Keep each game within this project and integrate current and future games into the common game-selection menu as the project grows.
 - Unless the user explicitly says otherwise, references to "the project", "the current version", or "the game workspace" mean this canonical directory.
 
+## Asset intake folder
+
+- `C:\Users\ss\Desktop\DropFish-Rifts-v1.90\For work` is an incoming-assets folder only. Runtime HTML, CSS, JavaScript, manifests, and build configuration must never reference files from it.
+- Before using any file supplied through `For work`, copy it into the owning game's permanent project directory, normally `<game>/assets/...`, under a stable project filename. Reference only that transferred project copy.
+- Keep each transferred asset inside the game that owns it; do not leave production or test runtime dependencies on staging folders outside the game directory.
+- When a finished branded logo is supplied, use that logo image itself. Do not replace it with assembled text, emoji, or an unrelated icon.
+
 ## Test-first release workflow
 
 - Always make changes to game mechanics, calculations and balance, markup, and visuals in the test versions first.

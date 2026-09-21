@@ -10,8 +10,8 @@ const assert=require('assert/strict');
    const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];
    page.on('pageerror',e=>errors.push(e.message));
    await page.goto(pathToFileURL(path.resolve('dropfish/index.html')).href);
-   await page.waitForFunction(()=>{const image=document.querySelector('.header-brand .is-brand-icon img');return image?.complete&&image.naturalWidth>0;});
-   assert.equal(await page.evaluate(()=>document.querySelector('.header-brand h1')?.textContent.trim()),'DropFish',`${engine} game logo`);
+   await page.waitForFunction(()=>{const image=document.querySelector('.header-brand .brand-logo');return image?.complete&&image.naturalWidth>0;});
+   assert.deepEqual(await page.evaluate(()=>{const heading=document.querySelector('.header-brand h1'),image=heading?.querySelector(':scope > .brand-logo');return {onlyLogo:heading?.children.length===1&&image?.tagName==='IMG',source:image?.getAttribute('src'),hasAssembledBrand:Boolean(heading?.querySelector('.is-brand-icon'))||Boolean(heading?.textContent.trim())};}),{onlyLogo:true,source:'./assets/branding/dropfish-logo.png',hasAssembledBrand:false},`${engine} game logo`);
    const checks=await page.evaluate(async()=>{
     const results=[];
     const ok=(value,label)=>{if(!value)throw new Error(label);results.push(label);};
