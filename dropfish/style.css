@@ -1524,11 +1524,11 @@ body.reduce-motion .rift-relic-name-shine {
 .type-legendary .history-detail { color:rgba(224,190,157,.88) !important; }
 
 /* Случайный силуэт рыбы в строке улова */
-.catch-fish-shadow { position:absolute; right:-46px; top:50%; width:34px; height:16px; opacity:0; pointer-events:none; z-index:0; background:rgba(5,26,37,.42); border-radius:65% 42% 42% 65%; filter:blur(.35px); transform:translateY(-50%); }
+.catch-fish-shadow { position:absolute; right:-46px; top:var(--history-fish-top,50%); width:34px; height:16px; opacity:0; pointer-events:none; z-index:0; background:rgba(5,26,37,.42); border-radius:65% 42% 42% 65%; filter:blur(.35px); transform:translateY(-50%); }
 .catch-fish-shadow::before { content:""; position:absolute; right:-10px; top:2px; border-top:6px solid transparent; border-bottom:6px solid transparent; border-left:11px solid rgba(5,26,37,.42); }
 .catch-fish-shadow::after { content:""; position:absolute; left:7px; top:4px; width:4px; height:4px; border-radius:50%; background:rgba(180,231,238,.48); }
-.catch-fish-shadow.swim { animation:historyFishSwim 1.8s cubic-bezier(.35,.02,.25,1) both; }
-@keyframes historyFishSwim { 0%{opacity:0;transform:translate(0,-50%) scaleX(1)} 12%{opacity:.48} 48%{opacity:.56;transform:translate(-78px,-50%) scaleX(1)} 54%{opacity:.6;transform:translate(-82px,-50%) scaleX(-1)} 100%{opacity:0;transform:translate(70px,-50%) scaleX(-1)} }
+.catch-fish-shadow.swim { animation:historyFishSwim var(--history-fish-duration,1.9s) cubic-bezier(.35,.02,.25,1) both; }
+@keyframes historyFishSwim { 0%{opacity:0;transform:translate(0,-50%) scale(var(--history-fish-scale,1)) scaleX(1)} 12%{opacity:.48} 48%{opacity:.56;transform:translate(calc(0px - var(--history-fish-distance,78px)),-50%) scale(var(--history-fish-scale,1)) scaleX(1)} 54%{opacity:.6;transform:translate(calc(-4px - var(--history-fish-distance,78px)),-50%) scale(var(--history-fish-scale,1)) scaleX(-1)} 100%{opacity:0;transform:translate(var(--history-fish-exit,70px),-50%) scale(var(--history-fish-scale,1)) scaleX(-1)} }
 
 /* Карточка смены погоды в палитре соответствующего режима */
 .type-weather { color:#ecfbff; text-shadow:0 1px 2px rgba(0,0,0,.9); }
@@ -1580,7 +1580,7 @@ body.reduce-motion .rift-relic-name-shine {
 .history-ambient { position:absolute; right:-42px; top:50%; opacity:0; pointer-events:none; z-index:0; user-select:none; }
 .history-ambient.from-bottom { top:64%; }
 .history-ambient.catch-fish-shadow,
-.history-ambient.catch-fish-shadow.from-bottom { top:50%; }
+.history-ambient.catch-fish-shadow.from-bottom { top:var(--history-fish-top,50%); }
 @keyframes bonusOrbit { 0%{opacity:0;transform:translate(0,-50%) scale(.4);} 28%{opacity:.7;transform:translate(-48px,-72%) scale(1);} 60%{opacity:.78;transform:translate(-86px,-48%) scale(1.06);} 100%{opacity:0;transform:translate(24px,-56%) scale(.6);} }
 @keyframes epicGlide { 0%{opacity:0;transform:translate(0,-50%) scale(.55) rotate(-18deg);} 35%{opacity:.68;} 65%{opacity:.82;transform:translate(-88px,-50%) scale(1) rotate(8deg);} 100%{opacity:0;transform:translate(18px,-50%) scale(.65) rotate(22deg);} }
 @keyframes legendarySweep { 0%{opacity:0;transform:translate(0,-50%) scale(.6);} 22%{opacity:.76;} 55%{opacity:.86;transform:translate(-88px,-74%) scale(1.08);} 100%{opacity:0;transform:translate(10px,-44%) scale(.72);} }
@@ -5902,6 +5902,7 @@ body.reduce-motion .dungeon-ally-vanished{animation:none}
 .radioactive-countdown{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:2px 7px;border-radius:7px;background:#101b0be8;color:#eaffc6;font-size:11px;line-height:1.3;white-space:normal}
 .radioactive-countdown b{display:inline-block;min-width:3ch;font-variant-numeric:tabular-nums}
 .radioactive-fish-icon{display:block;width:42px;height:42px;object-fit:contain;flex:none}
+.radioactive-impact-icon{display:grid;width:26px;height:26px;place-items:center;border:1px solid rgba(205,244,91,.55);border-radius:50%;background:rgba(45,66,17,.72);color:#dcff5b;font-size:18px;font-weight:900;line-height:1;text-shadow:0 0 7px rgba(190,255,70,.5);box-shadow:inset 0 0 8px rgba(185,238,66,.14)}
 .radioactive-action{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
 .radioactive-action button{height:28px;min-height:0;padding:3px 9px;line-height:1;border:1px solid #b8d960;border-radius:8px;background:#293923;color:#efffc8;font-size:12px;cursor:pointer}
 .is-radioactive-discarded{opacity:.65}
@@ -5909,425 +5910,573 @@ body.reduce-motion .dungeon-ally-vanished{animation:none}
 @media(prefers-reduced-motion:reduce){.history-item:is(.is-radioactive-prompt,.is-radioactive-sample)::before{animation:none}}
 body.reduce-motion .history-item:is(.is-radioactive-prompt,.is-radioactive-sample)::before,body.animations-off .history-item:is(.is-radioactive-prompt,.is-radioactive-sample)::before{animation:none}
 
-/* v1.91 — mobile information architecture. Presentation only. */
-:root{
-  --ui-positive:#67edc0;
-  --ui-negative:#ff6b78;
-  --ui-multiplier:#ffd36a;
-  --ui-artifact:#c69aff;
-  --ui-neutral:#a9c0cf;
+/* Compact chronology disclosure system. Keep this final so every new feature inherits it. */
+.history{container-type:inline-size}
+.history-list{gap:4px}
+.history-item.is-compact-row,
+.history-item.is-compact-row.has-extended-content{
+  padding:0 7px;
+  border-radius:9px;
+  line-height:1.12;
 }
-html,body{width:100%;overscroll-behavior:none}
-html body[class] .app-shell{
-  box-sizing:border-box;
-  gap:clamp(5px,1.2dvh,9px)!important;
+.history-row-summary{
+  position:relative!important;
+  z-index:2;
+  display:block!important;
+  min-width:0;
+  min-height:46px!important;
+  padding:0 22px 0 0!important;
+  color:inherit;
+  line-height:1.12!important;
 }
-html body[class] .inventory{
-  align-self:start;
-  width:100%;
-  max-height:none!important;
-  padding:6px 9px!important;
+.history-row-summary[data-history-toggle]{cursor:pointer;outline:none}
+.history-row-summary:not([data-history-toggle]){padding-right:0!important}
+.history-row-summary[data-history-toggle]:focus-visible{border-radius:7px;box-shadow:0 0 0 2px rgba(122,226,255,.82)}
+.history-disclosure-chevron{
+  position:absolute;
+  right:1px;
+  top:50%;
+  display:grid;
+  width:18px;
+  height:18px;
+  place-items:center;
+  border:1px solid rgba(181,222,236,.28);
+  border-radius:50%;
+  background:rgba(2,18,28,.48);
+  color:#bfeaf6;
+  font-size:16px;
+  line-height:1;
+  transform:translateY(-50%);
+  transition:transform .16s ease,background .16s ease;
+}
+.history-item.is-expanded .history-disclosure-chevron{background:rgba(31,116,141,.42);transform:translateY(-50%) rotate(180deg)}
+.history-row-details[hidden]{display:none!important}
+.history-row-details{
+  position:relative;
+  z-index:2;
+  display:grid;
+  min-width:0;
+  gap:3px;
+  margin:0 0 1px 52px;
+  padding:0;
+  border:0;
+}
+.history-row-details>*{min-width:0;max-width:100%;margin-top:0!important}
+.history-row-details :is(.history-detail,.history-impact-note){margin:0!important;font-size:.69rem;line-height:1.18}
+.history-row-actions{
+  position:relative;
+  z-index:3;
+  display:flex;
+  min-width:0;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:4px;
+  margin:0 0 1px 52px;
+}
+.history-row-actions>*{margin:0!important}
+.history-row-actions button,
+.history-item .history-row-actions button{
+  width:auto;
+  min-width:0;
+  min-height:0!important;
+  height:26px!important;
+  margin:0!important;
+  padding:2px 8px!important;
+  border-radius:7px;
+  font-size:.68rem;
+  line-height:1!important;
+}
+.history-entity-layout,
+.history-fish-layout,
+.history-expedition-layout{
+  display:grid!important;
+  min-width:0;
+  min-height:46px;
+  grid-template-columns:46px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:6px!important;
+  padding:0!important;
+}
+.history-entity-leading,
+.history-fish-leading,
+.history-expedition-leading{
+  display:grid!important;
+  width:46px!important;
+  min-width:46px!important;
+  max-width:46px!important;
+  height:46px!important;
+  min-height:46px!important;
+  max-height:46px!important;
+  place-items:center;
+  align-self:center!important;
+  margin:0!important;
+  overflow:visible;
+}
+.history-row-summary :is(.history-entity-copy,.history-expedition-copy){min-width:0;padding:0!important}
+.history-row-summary :is(.history-entity-title,.history-expedition-title){display:block;min-width:0;line-height:1.12;overflow-wrap:anywhere}
+.history-row-summary .history-fish-catch-text{line-height:1.12}
+.history-row-summary :is(.history-entity-leading,.history-fish-leading,.history-expedition-leading) :is(.artifact-entity-icon,.bonus-entity-icon,.debuff-entity-icon,.trash-entity-icon,.weather-warning-icon,.abyssal-entity-icon,.expedition-item-icon,.trade-item-icon,.island-loot-icon,.dungeon-icon,.fish-skeleton-main-icon,.fish-eaten-main-icon,.fish-crystal-replaced-main-icon,.fish-category-icons){
+  display:grid!important;
+  width:46px!important;
+  min-width:46px!important;
+  max-width:46px!important;
+  height:46px!important;
+  min-height:46px!important;
+  place-items:center;
+  margin:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+.history-row-summary :is(.history-entity-leading,.history-fish-leading,.history-expedition-leading) :is(img,.fish-category-icon,.fish-status-icon,.rift-relic-icon,.rift-fish-icon,.island-fish-icon){
+  position:static!important;
+  width:46px!important;
+  min-width:46px!important;
+  max-width:46px!important;
+  height:46px!important;
+  min-height:46px!important;
+  max-height:46px!important;
+  object-fit:contain!important;
+  transform:none!important;
+}
+.history-row-summary :is(.history-entity-leading,.history-fish-leading,.history-expedition-leading) .fish-category-icons{
+  position:relative!important;
   overflow:hidden!important;
 }
-html body[class] .inventory .section-heading{
-  min-height:0;
-  margin:0 0 3px!important;
-}
-html body[class] .inventory .section-heading h2{
+.history-row-summary :is(.history-entity-leading,.history-fish-leading,.history-expedition-leading) .fish-category-icons .fish-category-icon{
+  position:absolute!important;
+  top:50%!important;
+  left:50%!important;
+  width:80px!important;
+  min-width:80px!important;
+  max-width:80px!important;
+  height:80px!important;
+  min-height:80px!important;
+  max-height:80px!important;
   margin:0!important;
-  font-size:clamp(.82rem,3.3vw,1rem)!important;
-  line-height:1.1;
+  transform:translate(-50%,-50%)!important;
 }
-html body[class] .inventory .chips{
-  display:flex;
-  flex-flow:row nowrap!important;
-  align-items:stretch;
-  gap:8px!important;
-  width:100%;
-  margin:0;
-  padding:0 20px 2px 0!important;
-  overflow-x:auto!important;
-  overflow-y:hidden!important;
-  scroll-snap-type:x proximity;
-  scrollbar-width:none;
+.history-row-summary :is(.fish-skeleton-main-icon,.fish-eaten-main-icon) .fish-status-icon{
+  width:54px!important;
+  min-width:54px!important;
+  max-width:54px!important;
+  height:54px!important;
+  min-height:54px!important;
+  max-height:54px!important;
 }
-html body[class] .inventory .chips::-webkit-scrollbar{display:none}
-html body[class] .inventory .chips>.chip,
-html body[class] .inventory .chip.rift-relic-btn,
-html body[class] .inventory .chip.dungeon-reward-eye,
-html body[class] .inventory .chip.effect-dungeon.dungeon-encounter-effect,
-html body[class] .inventory .chip.effect-dungeon.leviaxar-wrath-effect{
-  box-sizing:border-box;
-  flex:0 0 auto;
-  width:max-content;
-  min-width:82px;
-  max-width:142px;
-  min-height:42px;
-  height:42px;
-  padding:4px 7px;
-  flex-direction:row;
-  align-items:center;
-  justify-content:flex-start;
-  gap:5px;
-  border-radius:14px;
-  scroll-snap-align:start;
+.history-row-summary .artifact-entity-icon.is-history-icon::before{inset:0!important;filter:blur(5px)!important}
+.history-row-summary .fish-inline-status{
+  position:relative;
+  display:inline-grid;
+  width:38px;
+  height:32px;
+  margin-left:4px;
+  place-items:center;
   overflow:hidden;
+  vertical-align:middle;
 }
-html body[class] .inventory .chip .effect-chip-main{
-  display:flex;
-  min-width:0;
-  width:100%;
+.history-row-summary .fish-inline-status .fish-status-icon{position:absolute!important;top:50%!important;left:50%!important;width:56px!important;min-width:56px!important;max-width:56px!important;height:56px!important;min-height:56px!important;max-height:56px!important;transform:translate(-50%,-50%)!important}
+.history-trade-item-indicator{
+  display:inline-flex;
+  height:28px;
+  margin-left:3px;
   align-items:center;
-  justify-content:flex-start;
-  gap:5px;
-}
-html body[class] .inventory .chip .effect-chip-copy{
-  display:flex;
-  min-width:0;
-  max-width:96px;
-  flex-direction:column;
-  align-items:flex-start;
   gap:1px;
-  overflow:hidden;
-  color:#edfaff;
-  font-size:clamp(.64rem,2.8vw,.73rem);
-  line-height:1.05;
-  text-align:left;
-  text-wrap:wrap;
+  color:#d9a8de;
+  font-size:.68rem;
+  line-height:1;
+  text-decoration:none!important;
+  vertical-align:middle;
 }
-.effect-chip-title{
-  display:block;
-  max-width:100%;
-  overflow:hidden;
-  overflow-wrap:anywhere;
-  font-weight:850;
+.history-trade-item-indicator .trade-item-icon.is-parent-icon{
+  width:26px;
+  height:26px;
+  flex:0 0 26px;
 }
-.effect-chip-state{
-  display:block;
-  max-width:100%;
-  margin:0!important;
-  overflow:hidden;
-  color:var(--ui-multiplier)!important;
-  font-size:.59rem!important;
-  font-weight:850;
-  line-height:1!important;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-}
-html body[class] .inventory .chip .effect-chip-action{
-  position:absolute;
-  width:1px;
-  height:1px;
-  clip-path:inset(50%);
-  overflow:hidden;
-}
-html body[class] .inventory .chip :is(.artifact-entity-icon,.trade-item-icon,.island-loot-icon,.expedition-item-icon,.abyssal-entity-icon,.dungeon-icon,.fish-category-icon,.fish-status-icon,.rift-relic-icon).is-effect-icon,
-html body[class] .inventory .chip .effect-symbol-icon.is-effect-icon{
-  flex:0 0 30px;
-  width:30px;
-  min-width:30px;
-  height:30px;
-  max-width:30px;
-  margin:0;
-}
-
-html body[class] .history{
-  min-height:0!important;
-  padding:7px 8px!important;
-}
-html body[class] .history .section-heading{margin-bottom:4px}
-html body[class] .history .section-heading h2{
-  margin:0!important;
-  font-size:clamp(1rem,4.1vw,1.28rem)!important;
-  line-height:1.08;
-}
-html body[class] .history-scroll{
-  height:100%;
-  min-height:0!important;
-  overflow-y:auto!important;
-  overflow-x:hidden!important;
-  overscroll-behavior:contain!important;
-  touch-action:pan-y;
-}
-.history-list{gap:8px!important}
-.history-item{
-  box-sizing:border-box;
+.history-trade-item-indicator .trade-item-icon.is-parent-icon img{width:46px;height:46px}
+.history-trade-item-indicator b{font-size:.62rem;white-space:nowrap}
+.history-item.type-fish.is-stolen>.history-row-summary .history-entity-copy{opacity:1!important;filter:none!important}
+.history-item.type-fish.is-stolen>.history-row-summary :is(.history-fish-catch-text,.fish-inline-status,.fish-history-source){opacity:.9;filter:saturate(.5) brightness(.92)}
+.history-row-summary .fish-history-source{font-size:.76em;white-space:nowrap}
+.history-row-summary .rift-fish-badges .fish-category-icon{width:17px!important;min-width:17px!important;height:17px!important;min-height:17px!important}
+.history-row-summary .fish-rarity{margin-right:.32em;padding:2px 6px;font-size:.68rem;line-height:1.2;vertical-align:.12em}
+.history-terminal-arrow{color:#ff6868;font-weight:900}
+.history-terminal-outcome{color:#ff6868;font-weight:900;text-decoration:none!important}
+.fish-final-equals.is-positive,.fish-final-weight.is-positive{color:#62e89b!important}
+.fish-final-equals.is-negative,.fish-final-weight.is-negative{color:#ff6868!important}
+.island-weight-final.is-positive,.island-weight-difference.is-positive{color:#62e89b!important}
+.island-weight-final.is-negative,.island-weight-difference.is-negative{color:#ff6868!important}
+.history-mechanic{
+  display:grid;
   min-width:0;
-  padding:8px 10px!important;
-  border-radius:14px!important;
-  font-size:clamp(.81rem,3.25vw,.96rem);
-  overflow-wrap:anywhere;
-}
-.history-item.ui-compact{padding-block:6px!important}
-.history-item.ui-standard{border-left-width:3px}
-.history-item.ui-featured{
-  border-color:rgba(169,120,255,.43);
-  background:linear-gradient(115deg,rgba(61,31,100,.48),rgba(7,46,64,.66));
-  box-shadow:inset 0 1px rgba(255,255,255,.06),0 0 14px rgba(118,76,214,.12);
-}
-.history-item.ui-featured>strong{font-size:clamp(.95rem,3.8vw,1.12rem)}
-
-.history-fish-layout{
-  display:grid!important;
-  grid-template-columns:44px minmax(0,1fr) auto!important;
-  align-items:start!important;
-  gap:7px!important;
-  min-width:0;
-}
-.history-fish-layout.has-rift-fish-icon{grid-template-columns:64px minmax(0,1fr) auto!important;gap:10px!important}
-.history-fish-layout.has-rift-fish-icon .history-fish-leading{width:64px;min-width:64px;min-height:64px}
-.history-fish-leading{width:44px;min-width:44px}
-.history-entity-copy,.history-entity-title,.catch-primary,.catch-primary-title{min-width:0}
-.history-fish-catch-text-primary{display:contents}
-.history-entity-title{display:flex!important;flex-wrap:wrap;align-items:center;gap:4px 6px}
-.catch-primary{
-  display:flex;
-  flex:1 1 180px;
-  min-width:0;
-  flex-direction:column;
+  grid-template-columns:minmax(0,auto) minmax(0,1fr);
+  align-items:start;
   gap:4px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
 }
-.catch-primary-title{
-  display:flex;
-  align-items:baseline;
+.history-mechanic.is-own-entry{display:block}
+.history-mechanic-label{display:inline-flex;min-width:0;align-items:center;gap:4px;color:#d9f7ff;font-size:.67rem;line-height:1.12}
+.history-mechanic-label .trade-item-icon{width:24px!important;height:24px!important;min-width:24px!important}
+.history-mechanic small{
+  display:-webkit-box!important;
+  margin:0!important;
+  overflow:hidden;
+  color:#b9cbd1!important;
+  font-size:.67rem!important;
+  line-height:1.14!important;
+  overflow-wrap:anywhere;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+.history-row-details .gear-impact{
+  display:grid;
+  min-height:28px;
+  grid-template-columns:28px minmax(0,1fr);
+  align-items:center;
   gap:5px;
-  color:#edfaff;
-  font-size:clamp(1rem,4vw,1.2rem);
-  font-weight:900;
+  padding:2px 5px;
+  border-radius:7px;
+  font-size:.68rem;
   line-height:1.1;
 }
-.history-fish-catch-text{min-width:0;overflow-wrap:anywhere}
-.catch-weight-summary{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
-  align-items:end;
-  gap:8px;
-  width:min(100%,350px);
-  padding-top:5px;
-  border-top:1px solid rgba(184,220,235,.12);
-  font-variant-numeric:tabular-nums;
-}
-.catch-weight-summary.is-simple{display:block;width:auto;padding:0;border:0}
-.catch-weight-cell{display:flex;min-width:0;flex-direction:column;gap:1px;color:#c4d5df}
-.catch-weight-cell small{
-  color:#7894a6!important;
-  font-size:clamp(.61rem,2.6vw,.72rem)!important;
-  font-weight:750;
-  line-height:1;
-  letter-spacing:.05em;
-  text-transform:uppercase;
-}
-.catch-weight-cell>span,.catch-weight-cell>b,.catch-simple-weight{
-  font-size:clamp(1.02rem,4.2vw,1.3rem);
-  line-height:1.08;
-  white-space:nowrap;
-}
-.catch-weight-cell.is-final{align-items:flex-end;color:#eafff7}
-.catch-weight-cell.is-final>b{color:var(--ui-positive);text-shadow:0 0 9px rgba(73,239,187,.18)}
-.catch-weight-arrow{align-self:end;padding-bottom:1px;color:#7ca2b8;font-size:1rem}
-.catch-simple-weight{display:block;color:#dff9ff;font-weight:900}
-.fish-history-source{
-  display:inline-flex!important;
-  align-items:center;
-  min-height:18px;
-  padding:2px 6px;
-  border:1px solid rgba(116,193,222,.23);
-  border-radius:999px;
-  background:rgba(44,111,140,.15);
-  color:#9fc6d8!important;
-  font-size:.58rem!important;
-  font-weight:850!important;
-  line-height:1;
-  letter-spacing:.05em;
-  text-transform:uppercase;
-}
-
-.modifier-chain{
-  display:grid;
-  gap:0;
-  margin-top:7px;
-  padding:0 8px 2px;
-  border-radius:11px;
-  background:rgba(1,18,29,.28);
-}
-.modifier-chain-label{
-  display:block;
-  padding:6px 0 4px;
-  color:#799bad;
-  font-size:clamp(.61rem,2.6vw,.72rem);
-  font-weight:900;
-  line-height:1;
-  letter-spacing:.09em;
-  text-transform:uppercase;
-}
-.modifier-chain .modifier-row{
+.history-row-details .gear-impact>span:last-child{min-width:0;line-height:1.1}
+.history-row-details .gear-impact small{margin:1px 0 0!important;font-size:.64rem;line-height:1.12}
+.history-row-details :is(.gear-icon,.trade-item-icon,.artifact-entity-icon,.bonus-entity-icon,.debuff-entity-icon,.weather-warning-icon,.rift-relic-icon,.coin-entity-icon,.dungeon-icon,.fish-effect-badge-slot){
   display:grid!important;
-  grid-template-columns:34px minmax(0,1fr);
-  align-items:center!important;
-  gap:7px;
-  min-height:0!important;
+  width:28px!important;
+  min-width:28px!important;
+  max-width:28px!important;
+  height:28px!important;
+  min-height:28px!important;
+  max-height:28px!important;
+  place-items:center;
   margin:0!important;
-  padding:7px 0!important;
-  border:0!important;
-  border-top:1px solid rgba(167,205,222,.11)!important;
   border-radius:0!important;
   background:transparent!important;
   box-shadow:none!important;
 }
-.modifier-row-icon{display:grid!important;place-items:center;width:32px!important;min-width:32px;height:32px!important;margin:0!important}
-.modifier-row-icon :is(img,.artifact-entity-icon,.dungeon-icon,.trade-item-icon,.weather-icon){max-width:32px;max-height:32px}
-.modifier-row-copy{display:flex;min-width:0;flex-direction:column;gap:2px}
-.modifier-row-heading{display:flex;min-width:0;align-items:baseline;justify-content:space-between;gap:8px}
-.modifier-row-title{min-width:0;color:#e7f3f8;font-size:clamp(.82rem,3.35vw,.98rem);line-height:1.12;overflow-wrap:anywhere}
-.modifier-row-delta{flex:0 0 auto;color:var(--ui-neutral);font-size:clamp(.78rem,3.2vw,.94rem);line-height:1;white-space:nowrap}
-.modifier-row-flow{display:flex;align-items:center;gap:7px;color:#aabec9;font-size:clamp(.78rem,3.2vw,.92rem);font-variant-numeric:tabular-nums}
-.modifier-flow-arrow{color:#7594a6;font-weight:900}
-.modifier-weight-after{color:inherit}
-.modifier-row-detail{display:flex;flex-wrap:wrap;gap:4px;color:#809baa!important;font-size:clamp(.65rem,2.8vw,.76rem)!important;line-height:1.2!important}
-.modifier-positive :is(.modifier-row-delta,.modifier-weight-after){color:var(--ui-positive)!important}
-.modifier-negative :is(.modifier-row-delta,.modifier-weight-after){color:var(--ui-negative)!important}
-.modifier-multiplier :is(.modifier-row-delta,.modifier-weight-after){color:var(--ui-multiplier)!important}
-.modifier-artifact :is(.modifier-row-delta,.modifier-weight-after){color:var(--ui-artifact)!important}
-.modifier-row :is(.gear-target,.gear-arrow){display:none!important}
+.history-row-details :is(.gear-icon,.trade-item-icon,.artifact-entity-icon,.bonus-entity-icon,.debuff-entity-icon,.weather-warning-icon,.rift-relic-icon,.coin-entity-icon,.dungeon-icon,.fish-effect-badge-slot) img,
+.history-row-details .gear-icon :is(img,.rift-relic-icon,.fish-status-icon){position:static!important;width:28px!important;height:28px!important;max-width:28px!important;max-height:28px!important;object-fit:contain!important;transform:none!important}
+.history-row-details :is(.embedded-fish-icon,.rift-loot-icon,.island-loot-icon){width:28px!important;min-width:28px!important;height:28px!important;min-height:28px!important}
+.history-row-details :is(.embedded-fish-icon,.rift-loot-icon,.island-loot-icon) img{width:28px!important;height:28px!important;object-fit:contain!important}
+.history-row-details :is(.embedded-fish-item,.rift-loot-result-item,.island-loot-result-item,.trade-item-find,.abyss-object-change){min-height:0!important;margin:0!important;padding:2px 5px!important;border-radius:7px!important;font-size:.67rem!important;line-height:1.12!important}
+.history-row-details :is(.trade-history-results,.embedded-fish-list,.rift-loot-results,.island-loot-results){gap:3px!important;margin:0!important}
+.history-row-details .gear-result{color:#62e89b!important}
+.history-row-details :is(.abyss-impact-negative,.island-danger-impact,.fish-debuff-impact,.spark-chaos-impact,.final-orca-impact.is-eaten) :is(.gear-result,.island-weight-final){color:#ff6868!important}
+.history-row-details :is(.abyss-impact-positive,.first-water-impact,.moon-shell-impact,.singularity-impact,.megalodon-impact,.message-impact,.mask-impact,.scuba-impact,.flipper-impact:not(.is-cancelled),.dice-impact,.golden-hour-impact,.leviathan-impact,.coin-impact,.luminar-impact,.singula-weight-impact,.siphonophore-impact) .gear-result{color:#62e89b!important}
+.history-item.is-compact-row>.artifact-history-category{display:none!important}
+@container (min-width:600px){
+  .history-item.is-inline-detail-row{
+    position:relative;
+    display:grid;
+    grid-template-columns:max-content minmax(0,1fr);
+    align-items:center;
+    column-gap:8px;
+  }
+  .history-item.is-inline-detail-row>.history-row-summary{
+    position:static!important;
+    display:flex!important;
+    grid-column:1;
+    grid-row:1;
+    width:max-content;
+    max-width:390px;
+    align-items:center;
+    padding-right:0!important;
+  }
+  .history-item.is-inline-detail-row>.history-row-summary .history-entity-layout{
+    width:max-content;
+    grid-template-columns:46px auto!important;
+  }
+  .history-item.is-inline-detail-row>.history-row-details{
+    grid-column:2;
+    grid-row:1;
+    display:flex;
+    min-width:0;
+    align-items:center;
+    align-content:center;
+    flex-wrap:wrap;
+    gap:2px 6px;
+    margin:0;
+    padding:0 22px 0 0;
+  }
+  .history-item.is-inline-detail-row>.history-row-details>.history-mechanic,
+  .history-item.is-inline-detail-row>.history-row-details>.history-detail,
+  .history-item.is-inline-detail-row>.history-row-details>.history-impact-note{
+    display:inline!important;
+    width:auto;
+    margin:0!important;
+  }
+  .history-item.is-inline-detail-row>.history-row-details>.history-mechanic small{
+    display:inline!important;
+    -webkit-line-clamp:unset;
+  }
+  .history-item.is-inline-detail-row .history-disclosure-chevron{
+    right:5px;
+  }
+}
+@media(max-width:520px){
+  .history-item.is-compact-row,.history-item.is-compact-row.has-extended-content{padding-inline:5px}
+  .history-row-details,.history-row-actions{margin-left:50px}
+  .history-row-summary{padding-right:20px!important}
+  .history-row-summary .fish-history-source{display:inline;font-size:.72em}
+}
+@media(prefers-reduced-motion:reduce){.history-disclosure-chevron{transition:none}}
 
-.gear-bonus-status,.scuba-bonus-status{
+/* Compact chronology v2: actions stay in the header; only real details collapse. */
+.brand-logo{display:block;width:auto;height:42px;max-width:112px;object-fit:contain}
+.header-brand h1{display:flex;min-height:42px;margin:0;align-items:center}
+.weather-copy{justify-content:center}
+
+.history-list{gap:3px}
+.history-item.is-compact-row,
+.history-item.is-compact-row.has-extended-content{padding:1px 6px!important}
+.history-row-head{
+  position:relative;
+  z-index:3;
+  display:flex;
+  min-width:0;
+  align-items:center;
+  align-content:center;
+  flex-wrap:wrap;
+  gap:2px 6px;
+}
+.history-row-head>.history-row-summary{
   display:flex!important;
-  flex-wrap:wrap;
-  gap:3px 9px;
-  margin-top:6px!important;
-  padding:7px 9px!important;
-  border:1px solid rgba(111,207,226,.18);
-  border-radius:10px;
-  background:rgba(16,74,91,.2);
-  color:#cbeaf3;
-  font-size:clamp(.7rem,2.9vw,.82rem);
-  line-height:1.2;
-}
-.gear-bonus-status>strong,.scuba-bonus-status>strong{flex:1 1 100%;color:#e9fbff}
-.carapace-current-state{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  gap:3px 10px;
-  margin-top:6px;
-  padding:8px 9px;
-  border:1px solid rgba(190,154,255,.23);
-  border-radius:10px;
-  background:linear-gradient(110deg,rgba(83,49,126,.24),rgba(21,72,87,.2));
-}
-.carapace-current-state .current-state-label{color:#bba7d6;font-size:.62rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
-.carapace-current-state>strong{grid-column:2;grid-row:1/3;align-self:center;color:var(--ui-artifact);font-size:clamp(1rem,4vw,1.25rem)}
-.carapace-current-state>span:not(.current-state-label){color:#c6dae3;font-size:clamp(.69rem,2.9vw,.82rem)}
-.carapace-current-state .carapace-targets{grid-column:1/-1;display:block;padding-top:4px;border-top:1px solid rgba(189,158,236,.15);line-height:1.35}
-.carapace-current-state .carapace-targets b{color:#e8dcfa}
-.expandable-description{margin-top:5px;border-top:1px solid rgba(175,213,229,.12)}
-.description-toggle{
-  display:flex;
-  width:100%;
-  min-height:44px;
-  padding:7px 3px;
+  min-width:0;
+  min-height:30px!important;
+  flex:0 1 auto;
   align-items:center;
-  justify-content:space-between;
-  border:0;
-  background:transparent;
-  color:#9edcea;
-  font:inherit;
-  font-size:clamp(.75rem,3.1vw,.88rem);
-  font-weight:850;
-  cursor:pointer;
+  padding:0 22px 0 0!important;
 }
-.description-toggle>span:last-child{font-size:1rem;transition:transform .18s ease}
-.description-toggle[aria-expanded="true"]>span:last-child{transform:rotate(180deg)}
-.description-panel{
-  padding:2px 3px 9px;
-  color:#a9bec9;
-  font-size:clamp(.72rem,3vw,.84rem);
-  line-height:1.4;
-}
-.description-panel[hidden]{display:none!important}
-
-.trade-item-find{
-  gap:7px!important;
-  margin-top:6px!important;
-  padding:6px 8px!important;
-}
-.trade-item-find-copy,.trade-item-find .abyss-object-source{display:flex;min-width:0;flex:1 1 auto;flex-direction:column;gap:1px}
-.trade-item-find-copy strong,.trade-item-find .abyss-object-source strong{overflow-wrap:anywhere}
-.trade-item-find-copy small,.trade-item-find .abyss-object-source small{
-  color:#a785c8!important;
-  font-size:.58rem!important;
-  font-weight:900;
-  letter-spacing:.08em;
-}
-.trash-event-chain{
+.history-item:not(.has-history-actions) .history-row-head>.history-row-summary{flex:1 1 auto}
+.history-row-head>.history-row-actions{
   display:flex;
   min-width:0;
-  flex-wrap:wrap;
+  flex:0 1 auto;
   align-items:center;
-  gap:5px 7px;
-  margin-top:4px;
+  align-content:center;
+  flex-wrap:wrap;
+  gap:3px;
+  margin:0!important;
 }
-.trash-event-step{
-  display:inline-flex;
+.history-row-actions :is(.abyss-decision,.dungeon-history-action,.radioactive-action,.dead-waters-history-action){display:flex;align-items:center;flex-wrap:wrap;gap:3px;margin:0!important}
+.history-row-actions :is(.dungeon-history-action,.dead-waters-history-action) small{display:none!important}
+.history-row-actions button,.history-item .history-row-actions button{height:24px!important;padding:1px 7px!important;font-size:.66rem!important}
+.coin-action-status{display:inline-flex;align-items:center;min-height:20px;color:#87939d;font-size:.68rem;font-weight:800;line-height:1.05}
+.coin-action-status.is-unlucky{color:#899198}
+.radioactive-countdown{padding:2px 6px;white-space:nowrap}
+
+.history-entity-layout,.history-fish-layout,.history-expedition-layout{
+  min-height:40px!important;
+  grid-template-columns:40px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:5px!important;
+}
+.history-fish-layout{width:100%!important}
+.history-entity-leading,.history-fish-leading,.history-expedition-leading{
+  width:40px!important;min-width:40px!important;max-width:40px!important;
+  height:40px!important;min-height:40px!important;max-height:40px!important;
+  align-self:center!important;
+}
+.history-row-summary :is(.history-entity-leading,.history-fish-leading,.history-expedition-leading) :is(.artifact-entity-icon,.bonus-entity-icon,.debuff-entity-icon,.trash-entity-icon,.weather-warning-icon,.abyssal-entity-icon,.expedition-item-icon,.trade-item-icon,.island-loot-icon,.dungeon-icon,.fish-skeleton-main-icon,.fish-eaten-main-icon,.fish-crystal-replaced-main-icon,.fish-category-icons),
+.history-row-summary :is(.history-entity-leading,.history-fish-leading,.history-expedition-leading) :is(img,.fish-category-icon,.fish-status-icon,.rift-relic-icon,.rift-fish-icon,.island-fish-icon){
+  width:40px!important;min-width:40px!important;max-width:40px!important;
+  height:40px!important;min-height:40px!important;max-height:40px!important;
+}
+.history-row-summary :is(.history-entity-copy,.history-expedition-copy){align-self:center!important;padding-top:0!important}
+.history-row-summary :is(.history-entity-title,.history-expedition-title,.history-fish-catch-text){line-height:1.08!important}
+.history-inline-effect{color:#ffd0d2;font-size:.82em;font-weight:700;line-height:1.08;overflow-wrap:anywhere}
+.history-fish-layout.has-category-badge{grid-template-columns:68px minmax(0,1fr)!important;gap:8px!important}
+.history-fish-layout.has-category-badge .history-fish-leading{width:68px!important;min-width:68px!important;max-width:68px!important}
+.history-fish-layout.has-category-badge .fish-category-icons.is-single-category{
+  position:relative!important;
+  display:block!important;
+  width:68px!important;min-width:68px!important;max-width:68px!important;
+  height:32px!important;min-height:32px!important;max-height:32px!important;
+  overflow:hidden!important;
+}
+.history-fish-layout.has-category-badge .fish-category-icons.is-single-category .fish-category-icon{
+  position:absolute!important;
+  top:-32px!important;left:-15px!important;
+  width:96px!important;min-width:96px!important;max-width:96px!important;
+  height:96px!important;min-height:96px!important;max-height:96px!important;
+  margin:0!important;
+  transform:none!important;
+  object-fit:contain!important;
+}
+.history-disclosure-chevron{right:0;width:17px;height:17px;font-size:14px}
+
+.history-row-details{
+  display:flex;
   min-width:0;
   align-items:center;
-  gap:4px;
-  color:#a9c0cf;
-  font-size:clamp(.68rem,2.9vw,.8rem);
-  font-weight:700;
-  line-height:1.2;
+  align-content:center;
+  flex-wrap:wrap;
+  gap:2px 4px;
+  margin:1px 0 2px!important;
+  padding:0!important;
 }
-.trash-event-step :is(.weather-icon,.artifact-entity-icon,.bonus-entity-icon){flex:0 0 24px;width:24px;height:24px}
-.trash-event-step.is-positive{color:var(--ui-positive)}
-.trash-event-step.is-negative{color:var(--ui-negative)}
-.trash-event-step>b{font-size:.82rem}
+.history-row-details>*{margin:0!important}
+.history-row-details :is(.history-detail,.history-impact-note){display:inline!important;width:auto;font-size:.67rem!important;line-height:1.08!important}
+.history-row-details>.gear-impact{
+  display:inline-flex!important;
+  width:auto;
+  min-height:26px!important;
+  flex:0 1 auto;
+  align-items:center!important;
+  grid-template-columns:none!important;
+  gap:3px!important;
+  padding:1px 3px!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  line-height:1.05!important;
+}
+.history-row-details>.gear-impact>span:last-child{display:inline-flex;min-width:0;align-items:baseline;flex-wrap:wrap;gap:0 3px;line-height:1.05!important}
+.history-row-details>.gear-impact :is(strong,small){display:inline!important;margin:0!important;line-height:1.05!important}
+.history-row-details>.gear-impact br{display:none}
+.history-row-details :is(.embedded-fish-list,.rift-loot-results,.island-history-loot-results,.island-loot-results,.trade-history-results,.dead-waters-history-loot,.angus-gift-artifact,.nautilus-summon-chain){flex:1 1 100%}
 
-html body[class] .cast-panel{padding:5px 6px max(5px,env(safe-area-inset-bottom,0px))!important}
-html body[class] .cast-panel :is(.primary-btn,.secondary-btn){min-height:44px!important}
-html body[class] .merged-weather-card .weather-copy p{
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  overflow:hidden;
+.embedded-fish-list,.rift-loot-results,.island-history-loot-results,.trade-history-results{margin:0!important;padding:0!important;gap:2px!important}
+.history-row-details .embedded-fish-item{
+  min-height:0!important;
+  padding:1px 3px!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
 }
+.history-row-details .embedded-fish-main,
+.history-item.type-rift .embedded-fish-main,
+.history-item.type-island .embedded-fish-main,
+.history-item.type-angus .embedded-fish-main{
+  display:grid!important;
+  min-height:34px!important;
+  grid-template-columns:36px minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:4px!important;
+}
+.history-row-details .embedded-fish-icon,
+.history-item.type-rift .embedded-fish-icon,
+.history-item.type-island .embedded-fish-icon,
+.history-item.type-angus .embedded-fish-icon{
+  display:grid!important;
+  width:36px!important;min-width:36px!important;height:34px!important;min-height:34px!important;
+  place-items:center;
+}
+.history-row-details .embedded-fish-icon :is(.fish-status-icon,.rift-fish-icon,.island-fish-icon){width:36px!important;height:34px!important;max-width:36px!important;max-height:34px!important;object-fit:contain!important}
+.history-row-details .embedded-fish-item.has-category-badge .embedded-fish-main{grid-template-columns:66px minmax(0,1fr) auto!important;gap:7px!important}
+.history-row-details .embedded-fish-item.has-category-badge .embedded-fish-icon{width:66px!important;min-width:66px!important;height:32px!important;min-height:32px!important}
+.history-row-details .embedded-fish-item.has-category-badge .fish-category-icons.is-single-category{
+  position:relative!important;
+  display:block!important;
+  width:66px!important;min-width:66px!important;max-width:66px!important;
+  height:30px!important;min-height:30px!important;max-height:30px!important;
+  overflow:hidden!important;
+}
+.history-row-details .embedded-fish-item.has-category-badge .fish-category-icon{
+  position:absolute!important;
+  top:-32px!important;left:-15px!important;
+  width:94px!important;min-width:94px!important;max-width:94px!important;
+  height:94px!important;min-height:94px!important;max-height:94px!important;
+  margin:0!important;
+  transform:none!important;
+  object-fit:contain!important;
+}
+.history-row-details .embedded-fish-name{line-height:1.05!important}
+.history-row-details .embedded-fish-item>.gear-impact{
+  display:inline-flex!important;
+  width:auto!important;
+  min-height:22px!important;
+  align-items:center!important;
+  gap:3px!important;
+  margin:1px 0 0!important;
+  padding:1px 3px!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  line-height:1.04!important;
+}
+.history-row-details .embedded-fish-item>.gear-impact>span:last-child{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:0 3px;line-height:1.04!important}
+.history-row-details .embedded-fish-item>.gear-impact :is(strong,small){display:inline!important;margin:0!important;line-height:1.04!important}
+.history-row-details .embedded-fish-item>.gear-impact br{display:none}
+.history-item.type-angus .embedded-fish-name .fish-size-marker{display:inline-grid;width:34px;height:30px;place-items:center;overflow:hidden;vertical-align:middle}
+.history-item.type-angus .embedded-fish-name .fish-size-marker .fish-status-icon{width:34px!important;height:34px!important;max-width:34px!important;max-height:34px!important;object-fit:contain!important}
+.history-item.type-angus .angus-gift-artifact{margin:0!important;padding:1px 3px!important;border:0!important;background:transparent!important}
+.history-item.type-angus .history-row-details{gap:0!important;margin:-7px 0 0!important}
+.history-item.type-angus .history-row-details .embedded-fish-main{min-height:30px!important}
+.history-item.type-angus .history-row-details .embedded-fish-icon{height:30px!important;min-height:30px!important}
+.history-item.type-angus .history-row-details .embedded-fish-icon :is(.fish-status-icon,.rift-fish-icon,.island-fish-icon){width:32px!important;height:30px!important;max-width:32px!important;max-height:30px!important}
+.history-item.type-angus .history-row-details .embedded-fish-name{display:flex!important;min-height:30px;align-self:center!important;align-items:center!important;line-height:1.05!important;transform:translateY(1px)}
 
-@media(max-width:430px){
-  html body[class] .topbar h1{font-size:1.15rem!important}
-  html body[class] .topbar .header-actions{gap:4px}
-  html body[class] .topbar .header-actions .icon-btn{flex:0 0 44px!important;width:44px;height:44px}
-  html body[class] .topbar .menu-exit-btn{display:grid;place-items:center;flex:0 0 44px!important;width:44px;min-width:44px;min-height:44px;padding:0}
-  html body[class] .topbar .menu-exit-btn>span:last-child{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}
+.history-item.type-rift>.rift-history-origin,
+.history-item.type-rift>.rift-history-relic{top:2px;right:27px}
+.history-item.type-rift>.history-row-head>.history-row-summary{padding-right:96px!important}
+.history-item.type-rift .history-row-details{gap:1px 3px!important;margin-block:0!important}
+.history-item.type-rift .rift-loot-result-item,
+.history-item.type-island .island-history-loot-item,
+.trade-history-results>li{
+  min-height:0!important;
+  padding:2px 4px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
 }
-@media(max-width:390px){
-  html body[class] .topbar{display:grid!important;grid-template-columns:minmax(0,1fr);gap:4px!important}
-  html body[class] .topbar .header-brand{justify-self:start}
-  html body[class] .topbar .header-actions{width:100%;justify-content:flex-end}
-}
+.trade-history-results>li{display:flex;align-items:center;flex-wrap:wrap;gap:3px}
 
-@media(max-width:420px){
-  html body[class] .app-shell{padding-inline:6px!important}
-  html body[class] .topbar{padding:6px 9px!important}
-  html body[class] .header-actions .icon-btn{width:42px;height:42px}
-  .history-fish-layout{grid-template-columns:38px minmax(0,1fr) auto!important;gap:6px!important}
-  .history-fish-layout.has-rift-fish-icon{grid-template-columns:58px minmax(0,1fr) auto!important;gap:7px!important}
-  .history-fish-layout.has-rift-fish-icon .history-fish-leading{width:58px;min-width:58px;min-height:58px}
-  .history-fish-layout.has-rift-fish-icon .rift-fish-icon,.history-fish-layout.has-rift-fish-icon .island-fish-icon{width:58px;height:58px}
-  .history-fish-leading{width:38px;min-width:38px}
-  .modifier-chain{padding-inline:6px}
+.dead-waters-cell{
+  background:radial-gradient(circle at 50% 38%,rgba(35,135,163,.18),rgba(4,42,63,.52) 60%,rgba(1,18,32,.68));
+  box-shadow:inset 0 0 22px rgba(53,211,235,.12),0 9px 20px rgba(0,0,0,.32),0 0 12px rgba(57,208,234,.12);
 }
-@media(max-width:350px){
-  .modifier-row-heading{flex-wrap:wrap;gap:3px 7px}
-  .modifier-row-delta{margin-left:auto}
-  .catch-weight-summary{gap:5px}
+.dead-waters-cell::before{display:none!important}
+.dead-waters-cell.is-open{background:linear-gradient(155deg,rgba(2,35,51,.56),rgba(1,14,27,.7))}
+.dead-waters-cell-icon>span,.dead-waters-cell-icon :is(.artifact-entity-icon,.trade-item-icon,.expedition-item-icon,.fish-category-icon,.fish-status-icon,.trash-entity-icon,.dead-waters-fish-visuals){width:88px!important;height:88px!important;min-width:88px!important;max-width:88px!important;min-height:88px!important;max-height:88px!important}
+.dead-waters-cell-icon .dead-waters-tentacle-icon{width:116px!important;height:116px!important;min-width:116px!important;max-width:116px!important;min-height:116px!important;max-height:116px!important}
+.dead-waters-cell-icon .dead-waters-fish-icon{width:88px!important;height:88px!important;max-width:88px!important;max-height:88px!important;object-fit:contain!important}
+.dead-waters-history-icon{width:40px;height:40px;min-width:40px;margin:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.dead-waters-history-icon img{width:40px;height:40px}
+.dead-waters-history-action{margin:0!important}
+.dead-waters-history-status.is-inline{display:inline-flex;width:auto;min-height:18px;margin:0 0 0 6px;padding:1px 6px;vertical-align:middle;font-size:.62rem;line-height:1}
+.dead-waters-history-loot{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px!important;margin:0!important;padding:0!important}
+.dead-waters-history-loot>li{display:flex!important;min-width:0;min-height:0!important;padding:2px!important;flex-direction:column;align-items:center;justify-content:flex-start;border-radius:6px!important;font-size:.62rem!important;line-height:1.05!important;text-align:center}
+.dead-waters-loot-main{display:flex;min-width:0;min-height:0;flex:0 0 auto;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px}
+.dead-waters-loot-main>span:nth-child(2){overflow-wrap:anywhere}
+.dead-waters-history-loot .dead-waters-loot-icon{position:relative;display:grid;width:90px!important;min-width:90px!important;height:34px!important;min-height:34px!important;place-items:center;overflow:visible}
+.dead-waters-history-loot .dead-waters-loot-icon>span{width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important}
+.dead-waters-history-loot .dead-waters-loot-icon img{width:38px!important;height:38px!important;max-width:38px!important;max-height:38px!important;object-fit:contain!important}
+.dead-waters-history-loot .dead-waters-loot-icon>.dead-waters-fish-visuals{position:relative;display:block!important;width:90px!important;min-width:90px!important;height:34px!important;min-height:34px!important;overflow:visible}
+.dead-waters-history-loot .dead-waters-fish-visuals .dead-waters-fish-icon{position:absolute;left:-14px;top:-7px;width:48px!important;height:48px!important;max-width:48px!important;max-height:48px!important}
+.dead-waters-history-loot .dead-waters-fish-category-badge{position:absolute;left:28px;top:3px;display:block;width:64px;height:27px;overflow:hidden}
+.dead-waters-history-loot .dead-waters-fish-category-badge .dead-waters-fish-category{position:absolute!important;left:-15px!important;top:-34px!important;width:94px!important;height:94px!important;min-width:94px!important;min-height:94px!important;max-width:94px!important;max-height:94px!important;margin:0!important;transform:none!important;object-fit:contain!important}
+.dead-waters-history-loot .dead-waters-tentacle-icon,.dead-waters-history-loot .dead-waters-tentacle-icon img{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;max-width:46px!important;max-height:46px!important}
+.dead-waters-history-loot>li.has-contents{grid-column:1/-1;min-height:0!important;align-items:stretch}
+.dead-waters-nested-loot{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin:2px 0 0!important;padding:0!important}
+.dead-waters-nested-loot::before{grid-column:1/-1}
+.dead-waters-nested-loot li{min-width:0;padding:2px!important;flex-direction:column;gap:1px;text-align:center}
+
+.result-card{padding:8px 10px!important;text-align:left!important}
+.result-summary-line{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 10px}
+.result-summary-line h3{margin:0!important;text-align:left!important;white-space:nowrap}
+.result-finished{display:inline-flex;justify-self:end;align-items:center;gap:3px;color:#a9c6d0;font-size:.67rem;font-weight:800;line-height:1;white-space:nowrap}
+.result-summary-line .result-date{margin:0!important;text-align:right!important;font:inherit!important;color:inherit}
+.result-final-multiplier{display:inline-flex;margin:2px 8px 0 0!important;padding:0!important;border:0!important;background:transparent!important;font-size:.69rem!important;line-height:1.08!important}
+
+@media(max-width:520px){
+  .history-row-details,.history-row-actions{margin-left:0!important}
+  .history-row-head>.history-row-summary{padding-right:19px!important}
+  .dead-waters-history-loot{gap:2px!important}
+  .dead-waters-history-loot>li{min-height:0!important;padding:2px!important;font-size:.59rem!important}
+  .result-summary-line{grid-template-columns:minmax(0,1fr) auto;gap:3px 5px}
+  .result-summary-line h3{font-size:1.05rem}
+  .result-finished{font-size:.58rem}
 }
-@media(orientation:landscape) and (max-height:560px){
-  html body[class] .app-shell{grid-template-rows:auto auto minmax(0,1fr) auto!important}
-  html body[class] .topbar .header-actions .icon-btn{width:40px;height:40px}
-  html body[class] .topbar .menu-exit-btn{min-height:40px}
-  html body[class] .inventory{min-height:0!important;max-height:64px!important;padding:4px 7px!important}
-  html body[class] .inventory .section-heading h2{font-size:.7rem!important}
-  html body[class] .inventory .chips>.chip{height:40px;min-height:40px;padding-block:2px}
-  html body[class] .inventory .chip :is(.artifact-entity-icon,.trade-item-icon,.island-loot-icon,.expedition-item-icon,.abyssal-entity-icon,.dungeon-icon,.fish-category-icon,.fish-status-icon,.rift-relic-icon).is-effect-icon,
-  html body[class] .inventory .chip .effect-symbol-icon.is-effect-icon{width:26px;min-width:26px;height:26px;flex-basis:26px}
-  html body[class] .inventory .chip.island-flare-btn .island-loot-icon.is-effect-icon img{width:26px;height:26px}
+@media(max-width:360px){
+  .dead-waters-history-loot>li{font-size:.56rem!important}
+  .dead-waters-history-loot .dead-waters-loot-icon{width:82px!important;min-width:82px!important}
+  .history-row-head{gap:2px 4px}
+  .history-row-actions button,.history-item .history-row-actions button{padding-inline:5px!important;font-size:.62rem!important}
 }
-@media(prefers-reduced-motion:reduce){.description-toggle>span:last-child{transition:none}}

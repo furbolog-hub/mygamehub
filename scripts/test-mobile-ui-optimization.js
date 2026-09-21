@@ -98,7 +98,7 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
         assert(metrics.chipWrap==='nowrap'&&metrics.chipHeight<=46,`${engineName}/${viewportName}: active effects are not a compact single row`);
         assert(metrics.chainOrder,`${engineName}/${viewportName}: modifier calculation order is wrong`);
         assert(/4,0 кг.*9,0 кг.*9,0 кг.*11,2 кг/.test(metrics.chainText),`${engineName}/${viewportName}: 4.0 → 9.0 → 11.2 chain is incomplete: ${metrics.chainText}`);
-        assert(/Исходный\s*4,0 кг.*Итоговый\s*11,2 кг/.test(metrics.catchText),`${engineName}/${viewportName}: primary weight summary is incomplete: ${metrics.catchText}`);
+        assert(/4,0 кг.*11,2 кг/.test(metrics.catchText),`${engineName}/${viewportName}: primary weight summary is incomplete: ${metrics.catchText}`);
         assert(metrics.duplicateScale===1&&!metrics.targetRepeated,`${engineName}/${viewportName}: modifier repeats source or target`);
         assert(metrics.descriptionButton,`${engineName}/${viewportName}: complex description is not progressively disclosed`);
         assert(/Финальный чистый вес.*288,8 кг.*Применено к:.*Карпиодес/.test(metrics.carapaceState)&&metrics.carapaceDescription,`${engineName}/${viewportName}: carapace state is not structured from source data`);
