@@ -6513,3 +6513,142 @@ body.reduce-motion .history-item:is(.is-radioactive-prompt,.is-radioactive-sampl
   opacity:.78;
 }
 .inventory .chips>.chip.effect-radioactive{width:max-content;min-width:0;max-width:148px;min-height:46px;height:auto;padding:5px 8px}
+
+/* DF Marine Equipment and the one-cast deep-fishing branch. */
+.deep-gear-icon,.deep-fish-icon{display:inline-grid;place-items:center;flex:0 0 auto;overflow:visible;vertical-align:middle}
+.deep-gear-icon img,.deep-fish-icon img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.42))}
+.deep-gear-icon{width:38px;height:38px}
+.deep-fish-icon{width:44px;height:42px}
+.deep-gear-icon.is-cast-icon,.deep-gear-cluster.is-cast-icon{width:38px;height:34px}
+.deep-gear-icon.is-cast-icon img{width:38px;height:38px}
+.deep-gear-cluster{position:relative;display:inline-block;flex:0 0 auto;width:46px;height:38px;vertical-align:middle}
+.deep-gear-cluster .deep-gear-icon{position:absolute;top:0;width:32px;height:32px}
+.deep-gear-cluster .deep-gear-icon:nth-child(1){left:0;transform:rotate(-7deg)}
+.deep-gear-cluster .deep-gear-icon:nth-child(2){right:0;top:5px;transform:rotate(7deg)}
+#castBtn.has-deep-gear{border-color:#62ebff;background:linear-gradient(135deg,#064d70,#231b70);box-shadow:0 0 18px rgba(67,219,255,.28),inset 0 0 15px rgba(144,112,255,.18)}
+#castBtn.has-deep-gear{color:#effcff!important;text-shadow:0 1px 5px rgba(0,0,0,.72)}
+#castBtn.has-deep-gear .deep-gear-icon img,#castBtn.has-deep-gear .deep-gear-cluster{filter:drop-shadow(0 0 7px rgba(95,235,255,.48))}
+.inventory .chip.effect-deep{border-color:rgba(96,235,255,.62);background:linear-gradient(135deg,rgba(5,66,96,.92),rgba(39,27,105,.92));color:#dffcff;box-shadow:inset 0 0 13px rgba(95,224,255,.13),0 0 12px rgba(87,170,255,.16)}
+.inventory .chip.effect-deep .deep-gear-icon,.inventory .chip.effect-deep .deep-gear-cluster{width:36px;height:34px}
+.inventory .chip.effect-deep .deep-gear-cluster .deep-gear-icon{width:29px;height:29px}
+.history-item.type-deepEquipment{border-left-color:#55dff3;background:linear-gradient(112deg,rgba(5,52,75,.88),rgba(34,23,91,.78));color:#e4fbff}
+.history-item.type-deepEquipment .history-entity-title{color:#bff8ff;text-shadow:0 0 9px rgba(90,230,255,.27)}
+.deep-equipment-detail{display:flex;width:max-content;max-width:100%;height:28px;align-items:center;gap:5px;overflow:hidden;font-size:.7rem;line-height:1;white-space:nowrap}
+.deep-equipment-rank{flex:0 0 auto;color:#88edff;font-weight:900;text-transform:uppercase;letter-spacing:.035em}
+.deep-equipment-components{display:inline-flex;min-width:0;align-items:center;gap:5px}
+.deep-equipment-component{display:inline-flex;min-width:0;align-items:center;gap:2px;color:#d9f7ff;font-size:.63rem;font-weight:750;white-space:nowrap}
+.deep-equipment-components .deep-gear-icon{flex:0 0 auto;width:27px;height:26px}
+.deep-equipment-detail>small{flex:0 0 auto;margin:0;color:#cbd8ff;font-size:.61rem;font-weight:750}
+.history-item.type-fish:has(.deep-fish-icon){border-left-color:#6ae6ff;background:linear-gradient(112deg,rgba(2,42,65,.88),rgba(26,19,78,.74));box-shadow:inset 0 0 19px rgba(64,208,255,.07)}
+.deep-fish-icon.is-history-icon{width:46px;height:40px}
+.deep-fish-icon.is-embedded{width:38px;height:34px}
+.fish-inline-status.status-deep .deep-gear-icon{width:28px;height:27px}
+.deep-fish-gradient-name{color:#b9f6ff!important;-webkit-text-fill-color:currentColor!important;font-weight:900;text-shadow:0 0 7px rgba(82,218,255,.26)}
+.fish-category-icons.is-deep-category{width:48px;height:34px}
+.fish-category-icons.is-deep-category .deep-gear-icon{width:44px;height:38px}
+.deep-fish-impacts{display:flex;max-width:100%;flex-wrap:wrap;gap:3px}
+.deep-impact{display:inline-flex;width:max-content;max-width:100%;padding:2px 6px;border-radius:7px;font-size:.66rem;font-weight:850;line-height:1.12;overflow-wrap:anywhere}
+.deep-impact.is-negative{color:#ff9ba2;background:rgba(139,22,39,.28)}
+.deep-impact.is-positive{color:#c9ff83;background:rgba(73,112,18,.27)}
+.deep-gear-icon.is-guide-icon,.deep-fish-icon.is-guide-icon{width:40px;height:40px;margin-right:4px}
+.guide-content h3.guide-deep{color:#82ebff;text-shadow:0 1px 0 #071d55,0 0 8px rgba(96,219,255,.25)}
+.deep-fish-icon.is-effect-visual{width:88px;height:88px}
+@media(max-width:520px){
+  .deep-equipment-detail{gap:3px;font-size:.63rem;letter-spacing:-.01em}
+  .deep-equipment-components{gap:3px}
+  .deep-equipment-component{gap:1px;font-size:.57rem}
+  .deep-equipment-components .deep-gear-icon{width:23px;height:23px}
+  .deep-equipment-detail>small{font-size:.56rem}
+  .deep-fish-icon.is-history-icon{width:40px;height:36px}
+}
+
+/* Individual species art for the 45-fish ordinary-cast pools. */
+.base-fish-icon{
+  display:block;
+  width:64px;
+  height:64px;
+  max-width:none;
+  flex:0 0 auto;
+  object-fit:contain;
+  filter:drop-shadow(0 3px 5px rgba(0,0,0,.42));
+}
+.base-fish-icon.is-history-icon{width:46px;height:46px}
+.base-fish-icon.is-embedded{width:42px;height:42px}
+.base-fish-icon.is-trade-icon{width:38px;height:36px}
+.base-fish-icon.is-effect-visual{width:88px;height:88px}
+.base-fish-category-badge{
+  display:inline-grid;
+  width:22px;
+  min-width:22px;
+  height:22px;
+  margin:0 3px 0 0;
+  place-items:center;
+  overflow:hidden;
+  vertical-align:middle;
+}
+.base-fish-category-badge .fish-category-icon{
+  width:38px!important;
+  min-width:38px!important;
+  max-width:38px!important;
+  height:38px!important;
+  min-height:38px!important;
+  max-height:38px!important;
+  margin:0!important;
+  object-fit:contain!important;
+  transform:none!important;
+}
+.history-row-summary .base-fish-category-badge{transform:translateY(1px)}
+.history-row-details .embedded-fish-icon .base-fish-icon,
+.history-item.type-rift .embedded-fish-icon .base-fish-icon,
+.history-item.type-island .embedded-fish-icon .base-fish-icon,
+.history-item.type-angus .embedded-fish-icon .base-fish-icon{
+  width:36px!important;
+  height:34px!important;
+  max-width:36px!important;
+  max-height:34px!important;
+}
+.trade-history-fish-visuals:has(.base-fish-icon){min-width:64px;gap:1px}
+.trade-history-fish-visuals .base-fish-category-badge{margin-right:0}
+.transmutation-result-heading .base-fish-category-badge{align-self:center}
+.dungeon-fish-visual{
+  position:relative;
+  display:grid;
+  width:68px;
+  height:64px;
+  place-items:center;
+}
+.dungeon-fish-visual .base-fish-icon,
+.dungeon-fish-visual .rift-fish-icon,
+.dungeon-fish-visual .island-fish-icon,
+.dungeon-fish-visual .deep-fish-icon{width:64px;height:60px;object-fit:contain}
+.dungeon-fish-visual .base-fish-category-badge{
+  position:absolute;
+  right:-1px;
+  bottom:0;
+  margin:0;
+}
+@media(max-width:520px){
+  .base-fish-icon.is-history-icon{width:40px;height:40px}
+  .base-fish-category-badge{width:20px;min-width:20px;height:20px}
+  .base-fish-category-badge .fish-category-icon{width:34px!important;min-width:34px!important;max-width:34px!important;height:34px!important;min-height:34px!important;max-height:34px!important}
+}
+/* Shared compactness guard stays last so the specialized deep chip cannot widen the effect row. */
+.inventory .chips>.chip.effect-deep{width:max-content;min-width:0;max-width:148px;min-height:46px;height:auto;padding:5px 8px}
+
+/* Rare non-fish ordinary-cast results. */
+.non-fish-catch-icon{display:inline-grid;width:44px;height:44px;place-items:center;flex:0 0 auto;overflow:visible;vertical-align:middle}
+.non-fish-catch-icon img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.44))}
+.non-fish-catch-icon.is-history-icon{width:46px;height:46px}
+.non-fish-catch-icon.is-effect-visual{width:88px;height:88px}
+.non-fish-catch-icon.is-guide-icon{width:40px;height:40px;margin-right:4px}
+.non-fish-catch-icon.is-debug-icon{width:28px;height:28px;margin-right:3px}
+.history-item.type-nonFishCatch{border-left-color:#62d7c6;background:linear-gradient(112deg,rgba(10,58,65,.88),rgba(26,34,71,.8));color:#e8fffb}
+.history-item.type-nonFishCatch .history-entity-title{color:#cafff5;text-shadow:0 0 8px rgba(84,226,208,.24)}
+.non-fish-catch-impacts{display:flex;max-width:100%;flex-wrap:wrap;gap:3px}
+.non-fish-impact{display:inline-flex;width:max-content;max-width:100%;padding:2px 6px;border-radius:7px;font-size:.66rem;font-weight:850;line-height:1.12;overflow-wrap:anywhere}
+.non-fish-impact.is-positive{color:#c8ffdf;background:rgba(34,116,76,.3)}
+.non-fish-impact.is-negative{color:#ffadb2;background:rgba(139,22,39,.3)}
+.guide-content h3.guide-non-fish{color:#8df2df;text-shadow:0 1px 0 #071d55,0 0 8px rgba(96,229,207,.25)}
+.history-row-summary .history-entity-leading .non-fish-catch-icon{display:grid!important;width:46px!important;min-width:46px!important;max-width:46px!important;height:46px!important;min-height:46px!important;max-height:46px!important;margin:0!important}
+.history-row-summary .history-entity-leading .non-fish-catch-icon img{position:static!important;width:46px!important;min-width:46px!important;max-width:46px!important;height:46px!important;min-height:46px!important;max-height:46px!important;object-fit:contain!important;transform:none!important}
+@media(max-width:520px){.non-fish-catch-icon.is-history-icon{width:40px;height:40px}.non-fish-impact{font-size:.62rem}}
