@@ -1,6 +1,27 @@
 {
-  "generated_at": "2026-09-14T20:10:50.373461+00:00",
+  "generated_at": "2026-09-25T20:38:15.285484+00:00",
   "nodes": {
+    "dropfish_script_destroycatchbyisotope": {
+      "code_fingerprint": "76c8f74916d38079dbd939877687a941f7ec8e9e9aeddad3519d0eaf4e6d7c65",
+      "label": "destroyCatchByIsotope()",
+      "last": "2026-09-25T20:07:18.495723+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-25T20:07:18.495723+00:00",
+          "outcome": "useful",
+          "q": "Подробно пояснить приоритет не рыбного улова и какие существующие эффекты могут на него действовать"
+        },
+        {
+          "date": "2026-09-25T20:01:17.197903+00:00",
+          "outcome": "useful",
+          "q": "Где интегрировать редкий не рыбный улов обычного заброса, его вес, эффекты и хронологию?"
+        }
+      ],
+      "score": 1.998910604,
+      "source_file": "dropfish/script.js",
+      "status": "preferred",
+      "uses": 2
+    },
     "promo_dropfish_teaser_v1_build": {
       "code_fingerprint": "6a00035e7dd1ffb822cac37bab3f054b8c11f7dadde8641ab6c1e63c8f6aec69",
       "label": "build.ps1",
@@ -12,7 +33,7 @@
           "q": "Перенести исправления Метаморфа и экспедиционного предмета в обе версии и опубликовать с полной защитой публичной сборки"
         }
       ],
-      "score": 0.494680099,
+      "score": 0.383491495,
       "source_file": "promo/dropfish-teaser-v1/build.ps1",
       "status": "tentative",
       "uses": 1
@@ -28,10 +49,33 @@
           "q": "Перенести исправления Метаморфа и экспедиционного предмета в обе версии и опубликовать с полной защитой публичной сборки"
         }
       ],
-      "score": 0.494680099,
+      "score": 0.383491495,
       "source_file": "public-release/session-guard.js",
       "status": "tentative",
       "uses": 1
+    },
+    "public_worker_worker_configuration_d_header": {
+      "code_fingerprint": "855b103720cc822e1ebf916e7d16602037c80b74e8f2376cd57ea30dedb31af2",
+      "label": "Header",
+      "last": "2026-09-21T18:07:06.143161+00:00",
+      "neg": 1,
+      "provenance": [
+        {
+          "date": "2026-09-21T18:07:06.143161+00:00",
+          "outcome": "corrected",
+          "q": "Блять, удочки не должно быть там, только логттп игры. Зафиксирую правило, что из папки C:\\Users\\ss\\Desktop\\DropFish-Rifts-v1.90\\For work ты берешь файлы и переносишь оттуда в основной проект (папку) игры. Эта папка не должна использовать пути для подключения файлов. Она создана для того чтобы ты отуда брал файлы и переносил их в рабочую папку проекта с игрой!!!!! Бестолочь!!!!!"
+        },
+        {
+          "date": "2026-09-21T17:57:49.472306+00:00",
+          "outcome": "useful",
+          "q": "Снимок29 Че за ерунда??? Где логотип игры???? Ты че блять делаешь?????? Бестолочь!"
+        }
+      ],
+      "score": -0.000135384,
+      "source_file": "public-worker/worker-configuration.d.ts",
+      "status": "contested",
+      "uses": 1,
+      "verdict": "dead end"
     },
     "scripts_test_activatable_mechanics": {
       "code_fingerprint": "f3ebe20b534b1dbc4f8804a77728ef1438cf8dfe9e148d9aaa091b3bb60e956e",
@@ -44,8 +88,24 @@
           "q": "Что за сбой панцирных чешуй - поясни что там не так?"
         }
       ],
-      "score": 0.494602036,
+      "score": 0.383430978,
       "source_file": "scripts/test-activatable-mechanics.js",
+      "status": "tentative",
+      "uses": 1
+    },
+    "scripts_test_requested_regressions_style": {
+      "code_fingerprint": "92ba84eee0c7510f5cb59afb972e79244735fec79a3775250fdea5cd1d9494e7",
+      "label": "style",
+      "last": "2026-09-18T11:52:35.122980+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-18T11:52:35.122980+00:00",
+          "outcome": "useful",
+          "q": "Как безопасно вернуть визуал DropFish до коммита оптимизации, сохранив более новые изменения другого агента?"
+        }
+      ],
+      "score": 0.843522464,
+      "source_file": "scripts/test-requested-regressions.js",
       "status": "tentative",
       "uses": 1
     }
