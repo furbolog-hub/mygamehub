@@ -6,6 +6,7 @@
     "test": "npm run test:requested && npm run test:rift-ui && npm run test:loot-sources && npm run test:ethirion && npm run test:vexinon && npm run test:temporal && npm run test:activatable && npm run test:dungeon-visuals",
     "test:radioactive": "node scripts/test-radioactive.js",
     "test:deep-gear": "node scripts/test-deep-gear.js",
+    "test:assembly-blueprints": "node scripts/test-assembly-blueprints.js",
     "test:dead-waters": "node scripts/test-dead-waters.js",
     "test:requested": "node scripts/test-requested-regressions.js",
     "test:requested-visuals": "node scripts/test-requested-visuals.js",

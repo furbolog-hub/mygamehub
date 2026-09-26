@@ -61,6 +61,7 @@ const SOUND_PATHS = {
   deadWaters: './assets/audio/events/dead-waters-vortex.ogg',
   cast: './assets/audio/fishing/cast.ogg',
   deepEquipment: './assets/audio/fishing/df-marine-equipment.ogg',
+  assemblyReady: './assets/audio/effects/assembly-ready.ogg',
   bonus: './assets/audio/effects/bonus.ogg',
   debuff: './assets/audio/effects/debuff.ogg',
   epic: './assets/audio/artifacts/epic.ogg',
@@ -99,6 +100,7 @@ const sounds = Object.fromEntries(
 );
 sounds.cast.volume = 0.55;
 sounds.deepEquipment.volume = 0.8;
+sounds.assemblyReady.volume = 0.8;
 sounds.weather.volume = 0.6;
 sounds.angus.volume = 0.9;
 sounds.achievement.volume = 0.9;
@@ -948,6 +950,33 @@ const uid = () => crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
 const DEEP_GEAR_ICON_PATH='./assets/icons/deep-gear/';
 const DEEP_FISH_ICON_PATH='./assets/icons/deep-fish/';
+const ASSEMBLY_ICON_PATH='./assets/icons/assembly-blueprints/';
+const ASSEMBLY_BLUEPRINT_CHANCE=.05;
+const ASSEMBLY_STANDALONE_CHANCE=.25;
+const ASSEMBLY_DEVICE_DEFS=Object.freeze({
+  reverseReel:Object.freeze({name:'Катушка обратного хода',file:'reverse-reel.webp',trash:2,fishCategory:'normal',trade:0,action:'Даёт 2 дополнительных заброса.'}),
+  converterXb1:Object.freeze({name:'Преобразователь Xb1',file:'converter-xb1.webp',trash:3,fishCategory:'normal',trade:0,action:'Превращает выбранную обычную рыбу в тяжеловеса со случайным новым весом.'}),
+  shipMaterializer:Object.freeze({name:'Судовой материализатор',file:'ship-materializer.webp',trash:4,fishCategory:'heavy',trade:1,action:'Расходует тяжеловеса и создаёт двух случайных рыб-гигантов.'}),
+  echoSounder:Object.freeze({name:'Эхолот',file:'three-horizons-sonar.webp',trash:2,fishCategory:null,trade:2,action:'Три следующих обычных заброса дополнительно дают рыбу: обычную 50%, тяжеловеса 30% или гиганта 20%.'}),
+  guardBuoy:Object.freeze({name:'Сторожевой буй',file:'guard-buoy.webp',trash:1,fishCategory:'normal',trade:1,action:'Отражает две следующие фактические атаки Чайки, Рака, Утки или Косатки.'}),
+  ichthyoDuplicator:Object.freeze({name:'Ихтиодубликатор',file:'ichthyo-duplicator.webp',trash:3,fishCategory:'heavy',trade:1,action:'Один раз создаёт независимую копию выбранной оставшейся рыбы с тем же названием, категорией и весом.'})
+});
+const ASSEMBLY_DEVICE_KEYS=Object.freeze(Object.keys(ASSEMBLY_DEVICE_DEFS));
+function assemblyDefinition(key){return ASSEMBLY_DEVICE_DEFS[key]||null;}
+function assemblyBlueprintIconMarkup(extraClass=''){
+  return `<span class="assembly-blueprint-icon${extraClass?` ${extraClass}`:''}" title="Сборочный чертёж DF ME"><img src="${ASSEMBLY_ICON_PATH}assembly-blueprint-df-me.webp" alt="" aria-hidden="true" decoding="async"></span>`;
+}
+function assemblyDeviceIconMarkup(key,extraClass=''){
+  const definition=assemblyDefinition(key);if(!definition)return '';
+  return `<span class="assembly-device-icon${extraClass?` ${extraClass}`:''}" title="${definition.name}"><img src="${ASSEMBLY_ICON_PATH}${definition.file}" alt="" aria-hidden="true" decoding="async"></span>`;
+}
+function assemblyRequirementText(definition){
+  if(!definition)return '';
+  const parts=[`${definition.trash} ${definition.trash===1?'хлам':definition.trash<5?'хлама':'хлама'}`];
+  if(definition.fishCategory)parts.push(definition.fishCategory==='normal'?'обычная рыба':'тяжеловес');
+  if(definition.trade)parts.push(`${definition.trade} ${definition.trade===1?'предмет для обмена':'предмета для обмена'}`);
+  return parts.join(' + ');
+}
 const DEEP_GEAR_COMPONENTS=Object.freeze([
   Object.freeze({key:'hook',name:'Титановый глубоководный крюк',shortName:'Крюк',file:'titanium-deep-hook.webp'}),
   Object.freeze({key:'line',name:'Армированная леска',shortName:'Леска',file:'reinforced-line.webp'}),
@@ -1303,6 +1332,7 @@ function initialState() {
     radioactive:{active:false,remaining:0,ms:0,rowId:null,cooldown:0,risk:.10,finalChecked:false,deferred:[],outbreakId:null,outbreakTrashIds:[],cores:[]},
     deadWaters:{active:null},
     deepGear:{pending:false,rank:0,components:[],bonusCast:false,containerHistoryId:null},
+    assembly:{blueprints:[],finalPromptShown:false},
     historyUi:{expandedIds:[],introducedKeys:[],initialized:true,compactVersion:2},
     abyssal:{entity:null},
     dungeon:{ordinaryFishSinceRoll:0,encounter:null,runs:0,rewards:[],wrath:false,leviaxarWrath:false,leviaxarWrathCasts:0,ethirionWrath:false,vexinonWrath:false,singulaFinalBonus:false,feats:[],chronoCurrentRowId:null,chronoSnapshot:null},
@@ -1317,13 +1347,14 @@ function hydrateState(raw) {
   raw=raw.replace(/к\u0430сатк/gi,word=>word[0]+(word[1]==='\u0410'?'О':'о')+word.slice(2));
   const parsed = JSON.parse(raw);
   const base=initialState();
-  const restored={...base, ...parsed, rifts:{...base.rifts,...(parsed.rifts||{})}, islands:{...base.islands,...(parsed.islands||{})}, abyssal:{...base.abyssal,...(parsed.abyssal||{})}, dungeon:{...base.dungeon,...(parsed.dungeon||{})}, mythic:{...base.mythic,...(parsed.mythic||{})}, deadWaters:{...base.deadWaters,...(parsed.deadWaters||{})}, deepGear:{...base.deepGear,...(parsed.deepGear||{})}, historyUi:{...base.historyUi,...(parsed.historyUi||{}),initialized:parsed.historyUi?.initialized===true,compactVersion:Number(parsed.historyUi?.compactVersion)||0}, disabledBonusIds:new Set(parsed.disabledBonusIds || [])};
+  const restored={...base, ...parsed, rifts:{...base.rifts,...(parsed.rifts||{})}, islands:{...base.islands,...(parsed.islands||{})}, abyssal:{...base.abyssal,...(parsed.abyssal||{})}, dungeon:{...base.dungeon,...(parsed.dungeon||{})}, mythic:{...base.mythic,...(parsed.mythic||{})}, deadWaters:{...base.deadWaters,...(parsed.deadWaters||{})}, deepGear:{...base.deepGear,...(parsed.deepGear||{})}, assembly:{...base.assembly,...(parsed.assembly||{})}, historyUi:{...base.historyUi,...(parsed.historyUi||{}),initialized:parsed.historyUi?.initialized===true,compactVersion:Number(parsed.historyUi?.compactVersion)||0}, disabledBonusIds:new Set(parsed.disabledBonusIds || [])};
   restored.nonFishCatches=Array.isArray(restored.nonFishCatches)?restored.nonFishCatches:[];
   const deepComponents=[...new Set((restored.deepGear.components||[]).filter(key=>deepGearComponent(key)))].slice(0,3);
   restored.deepGear.components=deepComponents;
   restored.deepGear.rank=deepComponents.length;
   restored.deepGear.pending=Boolean(restored.deepGear.pending&&deepComponents.length);
   if(!restored.deepGear.pending){restored.deepGear.rank=0;restored.deepGear.components=[];restored.deepGear.bonusCast=false;restored.deepGear.containerHistoryId=null;}
+  restored.assembly.blueprints=(Array.isArray(restored.assembly.blueprints)?restored.assembly.blueprints:[]).filter(item=>assemblyDefinition(item.deviceKey)).map(item=>({...item,stage:item.stage==='built'?'built':'blueprint',charges:Math.max(0,Number(item.charges)||0),ready:Boolean(item.ready),used:Boolean(item.used),skipped:Boolean(item.skipped)}));
   restored.tradeItems=(restored.tradeItems||[]).filter(item=>!(item.riftItem&&ISLAND_TRADE_KEYS.has(item.key)));
   if(Array.isArray(restored.rifts?.active?.loot))restored.rifts.active.loot=restored.rifts.active.loot.filter(item=>!(item.kind==='trade'&&ISLAND_TRADE_KEYS.has(item.key))&&!ISLAND_ONLY_REWARD_KINDS.has(item.kind));
   (restored.history||[]).forEach(row=>{if(Array.isArray(row.riftLootResults))row.riftLootResults=row.riftLootResults.filter(item=>!(item.kind==='trade'&&ISLAND_TRADE_KEYS.has(item.key))&&!ISLAND_ONLY_REWARD_KINDS.has(item.kind));});
@@ -1434,6 +1465,8 @@ function saveDailyState() {
 let state = loadDailyState();
 let primordialChaosTriggeredDuringCast=false;
 let deadWatersMergeTargetId=null;
+let assemblyDialogSelection=null;
+let assemblyBuoyProtectionActive=false;
 ;(state.trash||[]).filter(item=>!item.abyssCreated).forEach(item=>{if(item.recyclonEligible===undefined)item.recyclonEligible=true;});
 if (!Array.isArray(state.weatherSeen)) state.weatherSeen=[];
 if (!state.weatherSeen.includes(state.weather)) state.weatherSeen.push(state.weather);
@@ -1472,6 +1505,170 @@ function availableNonFishCatches(){ return state.nonFishCatches.filter(item=>!it
 function availableAbyssTrash(){ return radioactiveActive()?[]:state.trash.filter(t=>!t.converted); }
 function unusedCoins(){ return state.coins.filter(c=>!c.used&&!c.expired); }
 function availableTradeItems(){ return state.tradeItems.filter(item=>!item.exchanged); }
+function ensureAssemblyState(){
+  const base={blueprints:[],finalPromptShown:false};
+  state.assembly={...base,...(state.assembly||{})};
+  if(!Array.isArray(state.assembly.blueprints))state.assembly.blueprints=[];
+  return state.assembly;
+}
+function assemblyBlueprints(){return ensureAssemblyState().blueprints;}
+function assemblyEligibleTrash(){return (state.trash||[]).filter(item=>!item.converted&&!item.recycled&&!item.radioactiveTrash&&!item.radioactiveCreated&&!item.abyssCreated&&!item.isotopeDestroyed&&!item.radioactiveDiscarded&&!item.isotopeDestroyed);}
+function assemblyEligibleFish(category=null){return (state.fish||[]).filter(fish=>!fish.removed&&fish.source==='Заброс'&&fish.direct&&(!category||fish.category===category));}
+function assemblyEligibleTradeItems(){return (state.tradeItems||[]).filter(item=>{
+  if(item.exchanged||!item.fishId)return false;
+  const fish=state.fish.find(entry=>entry.id===item.fishId);
+  return Boolean(fish&&fish.source==='Заброс'&&fish.direct&&!item.islandTrade&&!item.riftItem&&!item.dungeonReward&&!item.corruptedPearl&&!item.darkCoal&&!item.abyssCreated);
+});}
+function assemblyBlueprintReady(blueprint){
+  if(!blueprint||blueprint.stage!=='blueprint'||blueprint.skipped)return false;
+  const definition=assemblyDefinition(blueprint.deviceKey);if(!definition)return false;
+  return assemblyEligibleTrash().length>=definition.trash&&(!definition.fishCategory||assemblyEligibleFish(definition.fishCategory).length>0)&&assemblyEligibleTradeItems().length>=definition.trade;
+}
+function updateAssemblyReadiness(announce=true){
+  let changed=false;
+  assemblyBlueprints().filter(item=>item.stage==='blueprint').forEach(blueprint=>{
+    const ready=assemblyBlueprintReady(blueprint);
+    if(ready&&!blueprint.ready&&announce)playSound('assemblyReady');
+    if(ready!==blueprint.ready){blueprint.ready=ready;changed=true;}
+  });
+  return changed;
+}
+function rollAssemblyBlueprintDrop(){
+  if(!chance(ASSEMBLY_BLUEPRINT_CHANCE))return null;
+  return {deviceKey:pick(ASSEMBLY_DEVICE_KEYS),standalone:chance(ASSEMBLY_STANDALONE_CHANCE)};
+}
+function rollOrdinaryFishDescriptor(){
+  const weights=currentWeights(),type=weightedResult({normal:weights.normal,heavy:weights.heavy,giant:weights.giant});
+  return {type,fishName:pick(type==='giant'?DATA.giants:DATA.fish),weight:type==='giant'?rand1(20,40):type==='heavy'?rand1(10,19.9):rand1(.1,9.9)};
+}
+function grantAssemblyBlueprint(deviceKey,{numbered=false,additional=false}={}){
+  const definition=assemblyDefinition(deviceKey);if(!definition)return null;
+  const blueprint={id:uid(),deviceKey,stage:'blueprint',ready:false,charges:0,used:false,skipped:false,createdCast:state.castClicks,historyRowId:null};
+  assemblyBlueprints().push(blueprint);
+  playSound('deepEquipment');
+  showVisualEffect('deep',assemblyBlueprintIconMarkup('is-effect-visual'),'СБОРОЧНЫЙ ЧЕРТЁЖ DF ME',definition.name,1250,false,false);
+  const detail=`${assemblyRequirementText(definition)} • ${definition.action}${additional?' • Дополнительно к рыбе':''}`;
+  const row=addHistory(`Сборочный чертёж DF ME: ${definition.name}`,'assemblyBlueprint',`(${detail})`,{numbered,assemblyBlueprintId:blueprint.id,assemblyDeviceKey:deviceKey,assemblyAdditional:additional});
+  blueprint.historyRowId=row.id;
+  blueprint.ready=assemblyBlueprintReady(blueprint);
+  if(blueprint.ready)playSound('assemblyReady');
+  return blueprint;
+}
+function assemblyDeviceCharges(deviceKey){return assemblyBlueprints().filter(item=>item.stage==='built'&&item.deviceKey===deviceKey).reduce((sum,item)=>sum+Math.max(0,Number(item.charges)||0),0);}
+function activeAssemblyDevice(deviceKey){return assemblyBlueprints().find(item=>item.stage==='built'&&item.deviceKey===deviceKey&&Math.max(0,Number(item.charges)||0)>0)||null;}
+function consumeAssemblyDeviceCharge(deviceKey,source,detail=''){
+  const device=activeAssemblyDevice(deviceKey);if(!device)return false;
+  device.charges=Math.max(0,device.charges-1);
+  const definition=assemblyDefinition(deviceKey);
+  addHistory(`${definition.name} сработал`,'assemblyDevice',`(${source}${detail?` • ${detail}`:''} • осталось зарядов: ${assemblyDeviceCharges(deviceKey)})`,{numbered:false,assemblyDeviceKey:deviceKey});
+  return true;
+}
+function consumeGuardBuoy(source,detail=''){return consumeAssemblyDeviceCharge('guardBuoy',`Отражена атака ${source}`,detail);}
+function activateGuardBuoyForDebuffResult(forResultRoll=false){
+  if(state.megalodon||!activeDebuff('Рак')&&!activeDebuff('Утка'))return false;
+  if(forResultRoll&&!activeDebuff('Утка'))return false;
+  const names=[activeDebuff('Рак')?'Рака':'',activeDebuff('Утка')?'Утки':''].filter(Boolean).join(' и ');
+  return consumeGuardBuoy(names,'результат заброса не ограничен');
+}
+function consumeAssemblyTrash(count,deviceName){
+  const items=assemblyEligibleTrash().slice(0,count);
+  items.forEach(item=>{item.converted=true;item.assemblyConsumed=true;item.assemblyDeviceName=deviceName;if(item.historyRowId)appendHistoryDetailById(item.historyRowId,`Использован для сборки «${deviceName}»`);});
+  return items;
+}
+function markAssemblyFishConsumed(fish,deviceName){
+  if(!fish)return;
+  fish.removed=true;fish.assemblyConsumed=true;fish.assemblyDeviceName=deviceName;
+  const row=state.history.find(item=>(item.type==='fish'&&item.fishId===fish.id)||(item.embeddedFishIds||[]).includes(fish.id));
+  if(row)appendHistoryDetailById(row.id,`Использована для сборки «${deviceName}»`);
+}
+function assembleBlueprint(blueprintId,{fishId=null,tradeIds=[]}={}){
+  const blueprint=assemblyBlueprints().find(item=>item.id===blueprintId&&item.stage==='blueprint');if(!blueprint)return false;
+  const definition=assemblyDefinition(blueprint.deviceKey);if(!definition)return false;
+  const fish=definition.fishCategory?assemblyEligibleFish(definition.fishCategory).find(item=>item.id===fishId):null;
+  const selectedTrade=[...new Set(tradeIds)].map(id=>assemblyEligibleTradeItems().find(item=>item.id===id)).filter(Boolean);
+  if(assemblyEligibleTrash().length<definition.trash||(definition.fishCategory&&!fish)||selectedTrade.length!==definition.trade){toast('Компоненты изменились — проверьте выбор');updateAssemblyReadiness(false);render();return false;}
+  consumeAssemblyTrash(definition.trash,definition.name);
+  selectedTrade.forEach(item=>{item.exchanged=true;item.exchangeReason='assembly';item.assemblyDeviceName=definition.name;if(item.historyRowId)appendHistoryDetailById(item.historyRowId,`Использован для сборки «${definition.name}»`);});
+  blueprint.stage='built';blueprint.ready=false;blueprint.builtAtCast=state.castClicks;blueprint.used=false;blueprint.skipped=false;
+  const builtRow=addHistory(`${definition.name} собран`,'assemblyDevice',`(${definition.action})`,{numbered:false,assemblyBlueprintId:blueprint.id,assemblyDeviceKey:blueprint.deviceKey});
+  blueprint.builtHistoryRowId=builtRow.id;
+  if(blueprint.deviceKey==='reverseReel'){markAssemblyFishConsumed(fish,definition.name);state.castsLeft+=2;blueprint.charges=0;appendHistoryDetailById(builtRow.id,'Добавлено 2 заброса');}
+  if(blueprint.deviceKey==='converterXb1'){
+    const before=fish.weight,after=rand1(10,19.9);fish.weight=after;fish.originalWeight=after;fish.category='heavy';fish.debuffLimited=false;delete fish.preDebuffWeight;delete fish.unrestrictedWeight;delete fish.debuffBaseWeight;delete fish.debuffSource;fish.assemblyTransform={deviceKey:blueprint.deviceKey,before,after};fish.tags=[...(fish.tags||[]),`Преобразователь Xb1: ${kg(before)} → ${kg(after)}`];blueprint.charges=0;
+    const fishRow=state.history.find(item=>(item.type==='fish'&&item.fishId===fish.id)||(item.embeddedFishIds||[]).includes(fish.id));if(fishRow)appendHistoryDetailById(fishRow.id,`Преобразователь Xb1: ${kg(before)} → ${kg(after)}`);
+    enforceOrca(fish);
+  }
+  if(blueprint.deviceKey==='shipMaterializer'){
+    markAssemblyFishConsumed(fish,definition.name);blueprint.charges=0;
+    makeFish('giant','Преобразовано Xb1',false,{parentHistoryId:builtRow.id});makeFish('giant','Преобразовано Xb1',false,{parentHistoryId:builtRow.id});
+  }
+  if(blueprint.deviceKey==='echoSounder')blueprint.charges=3;
+  if(blueprint.deviceKey==='guardBuoy'){markAssemblyFishConsumed(fish,definition.name);blueprint.charges=2;}
+  if(blueprint.deviceKey==='ichthyoDuplicator'){markAssemblyFishConsumed(fish,definition.name);blueprint.charges=1;}
+  updateAssemblyReadiness(false);
+  if($('assemblyDialog')?.open)$('assemblyDialog').close();
+  assemblyDialogSelection=null;
+  commitState();
+  if(state.castsLeft<=0)maybeFinalizeSession();
+  return true;
+}
+function applyEchoSounderAfterOrdinaryCast(parentHistoryId=null){
+  const devices=assemblyBlueprints().filter(item=>item.stage==='built'&&item.deviceKey==='echoSounder'&&item.charges>0);
+  devices.forEach(device=>{
+    device.charges--;
+    const roll=Math.random(),category=roll<.5?'normal':roll<.8?'heavy':'giant';
+    const fish=makeFish(category,'Эхолот',false,{parentHistoryId});
+    if(fish&&!fish.removed)fish.tags.push(`Эхолот: дополнительная ${fishCategoryLabel(category)}`);
+  });
+  if(devices.length&&parentHistoryId)appendHistoryDetailById(parentHistoryId,`Эхолот: дополнительная рыба ×${devices.length}`);
+  return devices.length;
+}
+function pendingIchthyoDuplicators(){return assemblyBlueprints().filter(item=>item.stage==='built'&&item.deviceKey==='ichthyoDuplicator'&&!item.used&&!item.skipped);}
+function useIchthyoDuplicator(deviceId,fishId){
+  const device=pendingIchthyoDuplicators().find(item=>item.id===deviceId),fish=(state.fish||[]).find(item=>item.id===fishId&&!item.removed);if(!device||!fish)return null;
+  const copy={id:uid(),name:fish.name,category:fish.category,rarity:fish.rarity||null,originalWeight:round1(fish.weight),weight:round1(fish.weight),source:'Ихтиодубликатор',direct:false,removed:false,tags:['Создана Ихтиодубликатором'],debuffLimited:false,duplicatedFromId:fish.id};
+  state.fish.push(copy);state.fishCaughtTotal++;state.hadAnyFish=true;if(copy.category==='heavy')state.heavyCaughtTotal++;if(copy.category==='giant')state.giantCaughtTotal++;
+  const row=addFishHistory(copy,'Ихтиодубликатор');device.used=true;device.charges=0;device.targetFishId=fish.id;device.copyFishId=copy.id;
+  appendHistoryDetailById(row.id,`Копия рыбы «${capitalize(fish.name)}» создана без повторного запуска события поимки`);
+  enforceOrca(copy);
+  if($('assemblyDialog')?.open)$('assemblyDialog').close();assemblyDialogSelection=null;commitState();if(state.castsLeft<=0)maybeFinalizeSession();return copy;
+}
+function skipIchthyoDuplicator(deviceId){const device=pendingIchthyoDuplicators().find(item=>item.id===deviceId);if(!device)return false;device.skipped=true;device.charges=0;addHistory('Ихтиодубликатор не использован','assemblyDevice','(Игрок отказался от копирования до прибытия торгового судна)',{numbered:false,assemblyDeviceKey:'ichthyoDuplicator'});if($('assemblyDialog')?.open)$('assemblyDialog').close();assemblyDialogSelection=null;commitState();maybeFinalizeSession();return true;}
+function skipAssemblyBlueprint(blueprintId){const blueprint=assemblyBlueprints().find(item=>item.id===blueprintId&&item.stage==='blueprint'&&!item.skipped);if(!blueprint)return false;blueprint.skipped=true;blueprint.ready=false;const definition=assemblyDefinition(blueprint.deviceKey);addHistory(`Сборка «${definition.name}» пропущена`,'assemblyBlueprint','(Чертёж остался неиспользованным до конца сессии)',{numbered:false,assemblyBlueprintId:blueprint.id,assemblyDeviceKey:blueprint.deviceKey});if($('assemblyDialog')?.open)$('assemblyDialog').close();assemblyDialogSelection=null;commitState();maybeFinalizeSession();return true;}
+function assemblyChoiceFishMarkup(fishes,selectedId){
+  if(!fishes.length)return '<p class="assembly-choice-empty">Подходящей рыбы пока нет.</p>';
+  return `<div class="assembly-choice-list">${fishes.map(fish=>`<label class="assembly-choice${selectedId===fish.id?' is-selected':''}"><input type="radio" name="assemblyFish" value="${fish.id}"${selectedId===fish.id?' checked':''}><span>${capitalize(fish.name)} <small>${fishCategoryLabel(fish.category)} · ${kg(fish.weight)}</small></span></label>`).join('')}</div>`;
+}
+function assemblyChoiceTradeMarkup(items,selectedIds,needed){
+  if(!items.length)return '<p class="assembly-choice-empty">Подходящих предметов обмена пока нет.</p>';
+  return `<div class="assembly-choice-list">${items.map(item=>`<label class="assembly-choice${selectedIds.has(item.id)?' is-selected':''}"><input type="checkbox" name="assemblyTrade" value="${item.id}"${selectedIds.has(item.id)?' checked':''}><span>${item.name}</span></label>`).join('')}</div><small class="assembly-choice-limit">Выберите: ${needed}</small>`;
+}
+function refreshAssemblyDialog(){
+  const selection=assemblyDialogSelection,dialog=$('assemblyDialog');if(!selection||!dialog)return;
+  if(selection.mode==='assemble'){
+    const blueprint=assemblyBlueprints().find(item=>item.id===selection.blueprintId&&item.stage==='blueprint'),definition=assemblyDefinition(blueprint?.deviceKey);if(!blueprint||!definition){dialog.close();assemblyDialogSelection=null;return;}
+    const fishes=definition.fishCategory?assemblyEligibleFish(definition.fishCategory):[],trades=assemblyEligibleTradeItems(),trashCount=assemblyEligibleTrash().length;
+    $('assemblyDialogIcon').innerHTML=assemblyBlueprintIconMarkup('is-dialog-icon');$('assemblyDialogKicker').textContent='Сборочный чертёж DF ME';$('assemblyDialogTitle').textContent=definition.name;$('assemblyDialogAction').textContent=definition.action;
+    $('assemblyDialogRequirements').innerHTML=`<span class="${trashCount>=definition.trash?'is-ready':'is-missing'}">Хлам: ${trashCount}/${definition.trash}</span>${definition.fishCategory?`<span class="${fishes.length?'is-ready':'is-missing'}">${definition.fishCategory==='normal'?'Обычная рыба':'Тяжеловес'}: ${fishes.length?'есть':'нет'}</span>`:''}${definition.trade?`<span class="${trades.length>=definition.trade?'is-ready':'is-missing'}">Предметы обмена: ${trades.length}/${definition.trade}</span>`:''}`;
+    $('assemblyDialogChoices').innerHTML=`${definition.fishCategory?`<section><h3>Рыба-компонент</h3>${assemblyChoiceFishMarkup(fishes,selection.fishId)}</section>`:''}${definition.trade?`<section><h3>Предметы для обмена</h3>${assemblyChoiceTradeMarkup(trades,selection.tradeIds,definition.trade)}</section>`:''}`;
+    const valid=trashCount>=definition.trash&&(!definition.fishCategory||fishes.some(item=>item.id===selection.fishId))&&selection.tradeIds.size===definition.trade&&[...selection.tradeIds].every(id=>trades.some(item=>item.id===id));
+    $('assemblyConfirmBtn').textContent='Собрать';$('assemblyConfirmBtn').disabled=!valid;$('assemblySkipBtn').classList.toggle('hidden',state.castsLeft>0||state.tradeShipChecked);$('assemblySkipBtn').dataset.assemblySkip=blueprint.id;
+  }else{
+    const device=pendingIchthyoDuplicators().find(item=>item.id===selection.deviceId);if(!device){dialog.close();assemblyDialogSelection=null;return;}
+    const fishes=state.fish.filter(item=>!item.removed);
+    $('assemblyDialogIcon').innerHTML=assemblyDeviceIconMarkup('ichthyoDuplicator','is-dialog-icon');$('assemblyDialogKicker').textContent='Собранное устройство';$('assemblyDialogTitle').textContent='Ихтиодубликатор';$('assemblyDialogAction').textContent=ASSEMBLY_DEVICE_DEFS.ichthyoDuplicator.action;$('assemblyDialogRequirements').innerHTML='<span class="is-ready">Остался 1 запуск</span>';
+    $('assemblyDialogChoices').innerHTML=`<section><h3>Рыба для копирования</h3>${assemblyChoiceFishMarkup(fishes,selection.fishId)}</section>`;
+    $('assemblyConfirmBtn').textContent='Создать копию';$('assemblyConfirmBtn').disabled=!fishes.some(item=>item.id===selection.fishId);$('assemblySkipBtn').classList.toggle('hidden',state.castsLeft>0||state.tradeShipChecked);$('assemblySkipBtn').dataset.assemblySkip=device.id;
+  }
+}
+function openAssemblyDialog(blueprintId){
+  const blueprint=assemblyBlueprints().find(item=>item.id===blueprintId&&item.stage==='blueprint'&&!item.skipped);if(!blueprint)return;
+  assemblyDialogSelection={mode:'assemble',blueprintId,fishId:null,tradeIds:new Set()};refreshAssemblyDialog();$('assemblyDialog').showModal();
+}
+function openIchthyoDuplicatorDialog(deviceId){
+  const device=pendingIchthyoDuplicators().find(item=>item.id===deviceId);if(!device)return;
+  assemblyDialogSelection={mode:'duplicate',deviceId,fishId:null,tradeIds:new Set()};refreshAssemblyDialog();$('assemblyDialog').showModal();
+}
 function abyssSample(items,min,max=min){ return sampleUnique(items,Math.min(items.length,Math.floor(rand(min,max+1)))); }
 function abyssPercent(value){ return Math.round(value*100); }
 function abyssFishLabel(f){ return `${capitalize(f.name)} — ${kg(f.weight)}`; }
@@ -2764,7 +2961,7 @@ function currentWeights() {
     w.bonus=weatherBalance.storm.bonusWeight;
     w.trash*=weatherBalance.storm.trashMultiplier;
   }
-  if (activeDebuff('Утка')) w.trash*=BALANCE.debuffs.duckTrashMultiplier;
+  if (activeDebuff('Утка')&&!assemblyBuoyProtectionActive) w.trash*=BALANCE.debuffs.duckTrashMultiplier;
   if (state.megalodon) w.giant*=BALANCE.artifacts.megalodonGiantMultiplier;
   const luminars=state.artifacts.filter(a=>a.name==='Люминар Удильщика'&&!a.traded).length;
   if(luminars){w.giant*=1+luminars*.3;w.trash=0;}
@@ -2953,7 +3150,8 @@ function makeFish(category='normal', source='Заброс', direct=true, options
   if (original===40) state.exactFortyCaught=true;
   if (state.weather==='golden') state.goldenHourFishCount++;
   if (state.weather==='thunder' && category==='heavy') state.thunderHeavyCaught=true;
-  if (!state.megalodon && (activeDebuff('Рак') || activeDebuff('Утка'))) {
+  const buoyProtectedFromDebuffs=assemblyBuoyProtectionActive||activateGuardBuoyForDebuffResult();
+  if (!state.megalodon && !buoyProtectedFromDebuffs && (activeDebuff('Рак') || activeDebuff('Утка'))) {
     const max=activeDebuff('Рак')?2.5:3;
     f.preDebuffWeight=f.weight;f.unrestrictedWeight=f.weight;
     const originalTenths=Math.max(1,Math.round(f.weight*10));
@@ -2992,6 +3190,7 @@ function makeFish(category='normal', source='Заброс', direct=true, options
   if (activeDebuff('Косатка') && f.weight>=5.5 && !state.megalodon) {
     const carapaces=(state.dungeon?.rewards||[]).filter(item=>item.key==='carapace'&&!item.used);carapaces.forEach(item=>item.orcaChecks=(item.orcaChecks||0)+1);const protectingCarapaces=carapaces.filter(item=>item.orcaChecks%2===0),carapaceProtected=protectingCarapaces.length>0;
     if(carapaceProtected){protectingCarapaces.forEach(item=>item.protectedFish=(item.protectedFish||0)+1);if(carapaces.some(item=>(item.protectedFish||0)>=2))addDungeonFeat('borrowedCarapace');const before=f.weight;f.weight=round1(f.weight*2);f.carapaceImpact={before,after:f.weight,count:protectingCarapaces.length};f.tags.push('Панцирная чешуя защитила рыбу от Косатки и удвоила её вес');}
+    else if (consumeGuardBuoy('Косатки',`сохранена ${capitalize(f.name)} после появления Косатки`)) { f.tags.push('защищена Сторожевым буем'); }
     else if (consumeProtection('косаткой',f)) { f.tags.push('защищена Фантомным осколком'); }
     else { f.removed=true; state.eaten.push(f); state.fishLostToDebuffs=true; }
     if (f.removed) {
@@ -3110,6 +3309,7 @@ function showDebuffEffect(name) {
 function resolvePendingSeagullWithFish(fish) {
   if (!fish || fish.radioactiveSample || fish.deepSea || fish.removed || fish.islandColossus || fish.islandMoray || fish.islandGraniteCatfish || fish.islandEchoRay || !Array.isArray(state.pendingSeagulls) || !state.pendingSeagulls.length) return false;
   const pending=state.pendingSeagulls.shift();
+  if (consumeGuardBuoy('Чайки',`сохранена ${capitalize(fish.name)}`)) { const row=state.history.find(item=>item.id===pending.historyRowId);if(row)row.detail=`(Сторожевой буй отразил фактическую попытку кражи ${capitalize(fish.name)})`;renderHistory();return false; }
   if (consumeProtection('чайкой',fish)) { const row=state.history.find(item=>item.id===pending.historyRowId);if(row)row.detail=`(Фантомный осколок отпугнул Чайку от ${capitalize(fish.name)})`;renderHistory();return false; }
   fish.removed=true;
   const debuff=state.debuffs.find(item=>item.id===pending.debuffId);if(debuff)debuff.affectedFishIds=[fish.id];
@@ -3167,7 +3367,8 @@ function processDebuff(forcedName=null, options={}) {
     } else {
       const maxWeight=Math.max(...candidates.map(f=>f.weight));
       const victim=pick(candidates);
-      if (consumeProtection('чайкой',victim)) { detail=`Фантомный осколок не позволил украсть ${capitalize(victim.name)}`; }
+      if (consumeGuardBuoy('Чайки',`сохранена ${capitalize(victim.name)}`)) { detail=`Сторожевой буй не позволил украсть ${capitalize(victim.name)}`; }
+      else if (consumeProtection('чайкой',victim)) { detail=`Фантомный осколок не позволил украсть ${capitalize(victim.name)}`; }
       else { victim.removed=true; state.stolen.push(victim);d.affectedFishIds=[victim.id]; state.fishLostToDebuffs=true;
       setFishHistoryStolen(victim,true);
       const originalWeight=Number.isFinite(victim.originalWeight)?victim.originalWeight:victim.weight;
@@ -3203,8 +3404,8 @@ function processDebuff(forcedName=null, options={}) {
   }
   if (name==='Косатка') {
     const colossi=state.fish.filter(f=>!f.removed&&f.islandColossus);
-    if(colossi.length){const target=[...colossi].sort((a,b)=>b.weight-a.weight)[0];target.orcaChecked=true;if(chance(.5)){target.removed=true;state.eaten.push(target);d.affectedFishIds=[target.id];state.fishLostToDebuffs=true;setFishHistoryEaten(target,true);const unstableRemains=refreshUnstablePresence();detail=`Съедает исполина ${target.name} — ${kg(target.weight)} (проверка 50%)${unstableRemains?'':' • «Нестабильное присутствие» прекращено'}`;}else detail=`Не смогла съесть исполина ${target.name} и ушла, не тронув другую рыбу`;}
-    else {const victims=state.fish.filter(f=>!f.removed&&!f.radioactiveSample&&!f.deepSea&&f.weight>=5.5),affected=[];victims.forEach((f,index)=>{if(index===0&&consumeProtection('косаткой',f))return;f.removed=true;affected.push(f.id);state.eaten.push(f);state.fishLostToDebuffs=true;setFishHistoryEaten(f,true);});d.affectedFishIds=affected;detail=`Съедает всю рыбу весом от 5,5 кг${victims.length?` — ${victims.length} шт.`:'; подходящей рыбы не было'}`;}
+    if(colossi.length){const target=[...colossi].sort((a,b)=>b.weight-a.weight)[0];target.orcaChecked=true;if(chance(.5)){if(consumeGuardBuoy('Косатки',`сохранён исполин ${target.name}`))detail=`Сторожевой буй сохранил исполина ${target.name} — ${kg(target.weight)}`;else{target.removed=true;state.eaten.push(target);d.affectedFishIds=[target.id];state.fishLostToDebuffs=true;setFishHistoryEaten(target,true);const unstableRemains=refreshUnstablePresence();detail=`Съедает исполина ${target.name} — ${kg(target.weight)} (проверка 50%)${unstableRemains?'':' • «Нестабильное присутствие» прекращено'}`;}}else detail=`Не смогла съесть исполина ${target.name} и ушла, не тронув другую рыбу`;}
+    else {const victims=state.fish.filter(f=>!f.removed&&!f.radioactiveSample&&!f.deepSea&&f.weight>=5.5),affected=[];if(victims.length&&consumeGuardBuoy('Косатки',`сохранена вся уязвимая рыба: ${victims.length}`))detail=`Сторожевой буй сохранил всю рыбу весом от 5,5 кг — ${victims.length} шт.`;else{victims.forEach((f,index)=>{if(index===0&&consumeProtection('косаткой',f))return;f.removed=true;affected.push(f.id);state.eaten.push(f);state.fishLostToDebuffs=true;setFishHistoryEaten(f,true);});d.affectedFishIds=affected;detail=`Съедает всю рыбу весом от 5,5 кг${victims.length?` — ${victims.length} шт.`:'; подходящей рыбы не было'}`;}}
   }
   const debuffRow=addHistory(name,'debuff',`(${detail})`,{numbered:Boolean(arcadeCatch),arcadeCatch:Boolean(arcadeCatch),debuffId:d.id});
   d.historyRowId=debuffRow.id;
@@ -3300,7 +3501,7 @@ function resolveEssencesAtFinish() {
   state.essencePending=false;
   renderHistory();
 }
-function enforceOrca(f){ if(f.radioactiveSample||f.deepSea)return; if(activeDebuff('Косатка')&&!state.megalodon&&f.weight>=5.5&&!f.removed){if(f.islandColossus&&!chance(.5))return;f.removed=true;state.eaten.push(f);state.fishLostToDebuffs=true;setFishHistoryEaten(f,true);if(f.islandColossus)refreshUnstablePresence();} }
+function enforceOrca(f){ if(f.radioactiveSample||f.deepSea)return; if(activeDebuff('Косатка')&&!state.megalodon&&f.weight>=5.5&&!f.removed){if(f.islandColossus&&!chance(.5))return;if(consumeGuardBuoy('Косатки',`сохранена ${capitalize(f.name)} после изменения веса`)){f.tags=[...(f.tags||[]),'защищена Сторожевым буем'];return;}f.removed=true;state.eaten.push(f);state.fishLostToDebuffs=true;setFishHistoryEaten(f,true);if(f.islandColossus)refreshUnstablePresence();} }
 
 function processLegendary(name=pick(DATA.legendary), fromAngus=false) {
   playSound('legendary');
@@ -4569,10 +4770,11 @@ function resolveDeepFishingCast(){
 }
 
 function castLine() {
-  if (state.finished || state.castsLeft<=0 || deadWatersBlocksCasting() || $('choiceDialog').open || $('riftDialog')?.open || $('dungeonDialog')?.open || state.islands?.active || hasPendingAbyssalDecision()) return;
+  if (state.finished || state.castsLeft<=0 || deadWatersBlocksCasting() || $('choiceDialog').open || $('assemblyDialog')?.open || $('riftDialog')?.open || $('dungeonDialog')?.open || state.islands?.active || hasPendingAbyssalDecision()) return;
   if(radioactiveActive())return castRadioactiveLine();
   if(deepGearPending())return resolveDeepFishingCast();
   if(ordinaryCastCanFindDeepGear()&&chance(deepGearContainerChance()))return resolveDeepEquipmentCast();
+  assemblyBuoyProtectionActive=false;
   expireDungeonEncounterBeforeCast();
   state.dungeon.chronoCurrentRowId=null;state.dungeon.chronoSnapshot=null;const chronoSnapshot=activeChronocrystal()?createChronoSnapshot():null;
   primordialChaosTriggeredDuringCast=false;
@@ -4588,28 +4790,31 @@ function castLine() {
   applyLeviaxarWrathBeforeCast();
   const fishStart=state.fish.length;
   const prepared=ballistierEyeFullSet?null:state.rifts?.preparedCatch;
-  const eyeDescriptor=!ballistierEyeFullSet&&!prepared?nextEyeDescriptor():null;
-  const nonFishDescriptor=!ballistierEyeFullSet&&!prepared&&!eyeDescriptor?maybeNonFishCatchDescriptor():null;
-  const mythicName=!ballistierEyeFullSet&&!prepared&&!eyeDescriptor&&!nonFishDescriptor?rollMythicName(state.weather):null;
+  const assemblyDrop=!ballistierEyeFullSet&&!prepared?rollAssemblyBlueprintDrop():null;
+  const historyStart=state.history.length;
+  if(!assemblyDrop?.standalone&&!ballistierEyeFullSet&&!prepared)assemblyBuoyProtectionActive=activateGuardBuoyForDebuffResult(true);
+  const eyeDescriptor=!assemblyDrop&&!ballistierEyeFullSet&&!prepared?nextEyeDescriptor():null;
+  const nonFishDescriptor=!assemblyDrop&&!ballistierEyeFullSet&&!prepared&&!eyeDescriptor?maybeNonFishCatchDescriptor():null;
+  const mythicName=!assemblyDrop&&!ballistierEyeFullSet&&!prepared&&!eyeDescriptor&&!nonFishDescriptor?rollMythicName(state.weather):null;
   const rageCycles=(state.mythic.eyeCycles||[]).filter(x=>x.mode==='rage'&&x.remaining>=0&&x.step>0&&x.step<=4);
   const rageAbyssBoost=rageCycles.reduce((sum,x)=>sum+.10+(x.step-1)*.02,0);
-  const abyssalCatch=!ballistierEyeFullSet&&!prepared&&!eyeDescriptor&&!nonFishDescriptor&&!mythicName&&!abyssalEntity()&&ABYSSAL_WEATHERS.includes(state.weather)&&chance(Math.min(1,BALANCE.abyssal.castChance+rageAbyssBoost));
-  const descriptor=ballistierEyeFullSet?null:eyeDescriptor||nonFishDescriptor||(mythicName?{type:'mythic',name:mythicName}:(!prepared&&!abyssalCatch?mythicCatchDescriptor(state.weather,false,false):null));
-  const type=ballistierEyeFullSet?'ballistierEyeSet':prepared?'prepared':abyssalCatch?'abyssal':descriptor?.type;
+  const abyssalCatch=!assemblyDrop&&!ballistierEyeFullSet&&!prepared&&!eyeDescriptor&&!nonFishDescriptor&&!mythicName&&!abyssalEntity()&&ABYSSAL_WEATHERS.includes(state.weather)&&chance(Math.min(1,BALANCE.abyssal.castChance+rageAbyssBoost));
+  const descriptor=assemblyDrop?(assemblyDrop.standalone?null:rollOrdinaryFishDescriptor()):ballistierEyeFullSet?null:eyeDescriptor||nonFishDescriptor||(mythicName?{type:'mythic',name:mythicName}:(!prepared&&!abyssalCatch?mythicCatchDescriptor(state.weather,false,false):null));
+  const type=assemblyDrop?(assemblyDrop.standalone?'assemblyBlueprint':'assemblyFish'):ballistierEyeFullSet?'ballistierEyeSet':prepared?'prepared':abyssalCatch?'abyssal':descriptor?.type;
   if (prepared) state.rifts.preparedCatch=null;
   if (!ballistierEyeFullSet&&prepared) {
     if (prepared==='normal'||prepared==='heavy'||prepared==='giant') makeFish(prepared,'Заброс',true);
     else if(prepared==='trash')processTrash();else if(prepared==='bonus')processBonus();else if(prepared==='coin')processCoinCatch();else if(prepared==='epic')processEpic();else if(prepared==='legendary')processLegendary();
   }
-  const historyStart=state.history.length;
   if(ballistierEyeFullSet)makeFish('normal','Заброс',true);
   else if(descriptor)executeCatchDescriptor(descriptor);
+  if(assemblyDrop)grantAssemblyBlueprint(assemblyDrop.deviceKey,{numbered:assemblyDrop.standalone,additional:!assemblyDrop.standalone});
   if (type==='abyssal') catchAbyssalLife('cast');
   if(eyeDescriptor&&!abyssalEntity()){
     const extraAbyssChance=rageAbyssBoost+(ABYSSAL_WEATHERS.includes(state.weather)?BALANCE.abyssal.castChance:0);
     if(extraAbyssChance&&chance(Math.min(1,extraAbyssChance)))catchAbyssalLife('cast');
   }
-  if(primordialChaosTriggeredDuringCast){primordialChaosTriggeredDuringCast=false;commitState();return;}
+  if(primordialChaosTriggeredDuringCast){primordialChaosTriggeredDuringCast=false;assemblyBuoyProtectionActive=false;commitState();return;}
   maybeTriggerDebuffEvent();
   rollPearlArtifact();
   const angusTrailActive=(state.angusTrailCasts||0)>0,angusAppeared=chance(angusTrailActive ? .05 : BALANCE.events.angusChance);if(angusTrailActive)state.angusTrailCasts--;if(angusAppeared){if(angusTrailActive)state.angusTrailCasts=0;encounterAngus(angusTrailActive);}else rollPearlAngus();
@@ -4618,6 +4823,7 @@ function castLine() {
   if(type!=='abyssal')advanceAbyssalAfterCast();
   const mainRow=state.history.slice(historyStart).find(row=>row.numbered)||null;
   grantPearlTradeItems(mainRow);
+  applyEchoSounderAfterOrdinaryCast(mainRow?.id||null);
   if(ballistierEyeFullSet){for(let index=0;index<ballistierEyeFullSetCount;index++){if(index>0)makeFish('normal','Око Балистьера',false,{parentHistoryId:mainRow?.id||null});makeFish('heavy','Око Балистьера',false,{parentHistoryId:mainRow?.id||null});makeFish('giant','Око Балистьера',false,{parentHistoryId:mainRow?.id||null});}if(mainRow)appendHistoryDetailById(mainRow.id,`Око Балистьера: четвёртый дополнительный заброс дал полный набор — обычная рыба, тяжеловес и гигант${ballistierEyeFullSetCount>1?` ×${ballistierEyeFullSetCount}`:''}`);}
   const castFish=state.fish.slice(fishStart).find(f=>f.source==='Заброс'&&!f.removed&&['normal','heavy','giant'].includes(f.category)),echoRay=state.fish.find(f=>f.islandEchoRay&&!f.removed);if(castFish&&echoRay&&chance(.2)){const echo=makeFish(castFish.category,'Эхо улова',false,{parentHistoryId:mainRow?.id||null});echo.tags.push(`Эхо улова создано ${echoRay.name}`);echoRay.echoCatches=(echoRay.echoCatches||0)+1;addIslandFeat('waterMemory');if(mainRow){const categoryLabel={normal:'обычная рыба',heavy:'тяжеловес',giant:'рыба-гигант'}[castFish.category];appendHistoryDetailById(mainRow.id,`Память течения создала дополнительную рыбу категории «${categoryLabel}»`);}}
   const sparkRift=advanceMythicAfterCast(mainRow);
@@ -4635,6 +4841,7 @@ function castLine() {
   advanceRadioactiveAfterOrdinaryCast();
   maybeSpawnDeadWatersAfterCast();
   advanceIsotopeCoresAfterCast();
+  assemblyBuoyProtectionActive=false;
   if (state.castsLeft<=0 && !$('choiceDialog').open) maybeFinalizeSession();
   commitState();
 }
@@ -5094,6 +5301,8 @@ function maybeFinalizeSession() {
   if(goldenGearReward()?.pending)return;
   if(prepareGoldenGearAlternatives()){render();return;}
   if(hasRetainedAbyssal()&&!abyssalEntity().manifested)performAbyssalManifestation(true);
+  {const readyBlueprint=assemblyBlueprints().find(item=>assemblyBlueprintReady(item));if(readyBlueprint){render();if(!$('assemblyDialog')?.open)openAssemblyDialog(readyBlueprint.id);toast('Готовый чертёж можно собрать или пропустить до прибытия торгового судна');return;}}
+  {const pending=pendingIchthyoDuplicators();if(pending.length){const available=state.fish.filter(fish=>!fish.removed);if(!available.length){pending.forEach(device=>{device.skipped=true;device.charges=0;});addHistory('Ихтиодубликатор не использован','assemblyDevice','(К концу сессии не осталось рыбы для копирования)',{numbered:false,assemblyDeviceKey:'ichthyoDuplicator'});}else{render();if(!$('assemblyDialog')?.open)openIchthyoDuplicatorDialog(pending[0].id);toast('До прибытия торгового судна решите, использовать ли Ихтиодубликатор');return;}}}
   if (state.tradeShipArrived && !state.tradeShipCompleted) { render(); return; }
   if (!state.tradeShipChecked) {
     state.tradeShipChecked=true;
@@ -5186,6 +5395,8 @@ function scrollResultCardAfterToggle(expanded){
 
 function render() {
   ensureIslands();
+  ensureAssemblyState();
+  updateAssemblyReadiness(true);
   document.body.classList.toggle('test-build', BUILD_CONFIG.unlimitedSessions);
   document.body.classList.toggle('game-finished', Boolean(state.finished));
   document.body.classList.toggle('has-vexinon-wrath',Boolean(state.dungeon?.vexinonWrath));
@@ -5215,6 +5426,14 @@ function render() {
     const grouped={...effect,groupKey,count:1};effects.push(grouped);return grouped;
   };
   if(deepCastReady)effects.push({label:effectMarkup(deepGearRodMarkup(state.deepGear.components,'is-effect-icon'),deepGearRankLabel(state.deepGear.rank)),kind:'deep'});
+  assemblyBlueprints().forEach(item=>{
+    const definition=assemblyDefinition(item.deviceKey);if(!definition)return;
+    if(item.stage==='blueprint')effects.push({label:effectMarkup(assemblyBlueprintIconMarkup('is-effect-icon'),`${definition.name}${item.skipped?' · пропущен':''}`),kind:'assembly',assemblyBlueprintId:item.skipped?null:item.id,assemblySkipped:item.skipped,assemblyReady:item.ready,actionHint:item.skipped?'':item.ready?'собрать':'компоненты'});
+    else{
+      const charges=Math.max(0,Number(item.charges)||0),suffix=charges?` · ${charges} зар.`:item.used?' · использован':item.skipped?' · пропущен':'';
+      effects.push({label:effectMarkup(assemblyDeviceIconMarkup(item.deviceKey,'is-effect-icon'),`${definition.name}${suffix}`),kind:'assembly',assemblyDeviceId:item.id,assemblyDeviceKey:item.deviceKey,assemblyDuplicator:item.deviceKey==='ichthyoDuplicator'&&!item.used&&!item.skipped?item.id:null,actionHint:item.deviceKey==='ichthyoDuplicator'&&!item.used&&!item.skipped?'использовать':''});
+    }
+  });
   activeBonuses('').forEach(()=>{});
   state.bonuses.filter(b=>!b.isotopeDestroyed).forEach(b=>{const disabled=state.disabledBonusIds.has(b.id),enhanced=Boolean(b.abyssEnhanced);pushGroupedEffect({label:effectMarkup(bonusIconMarkup(b.name,'is-effect-icon'),b.name),kind:'bonus',exhausted:disabled},`${b.name}:${enhanced?'enhanced':'base'}:${disabled?'disabled':'active'}`);});
   state.artifacts.filter(a=>!a.traded).forEach(a=>{const exhausted=a.eyeStatus==='exhausted'||(a.name==='Искра Хаоса'&&a.used),usable=a.name==='Око Шторма'&&!a.used,visualName=artifactVisualName(a);pushGroupedEffect({label:effectMarkup(artifactIconMarkup(visualName,a.tier,'is-effect-icon'),visualName),kind:a.tier,artifactId:a.id,usable,noActionHint:a.name==='Око Шторма',exhausted},`${visualName}:${usable?'usable':exhausted?'exhausted':'active'}`);});
@@ -5253,7 +5472,7 @@ function render() {
   if(state.islands.flares>0)effects.push({label:effectMarkup(islandLootIconMarkup({kind:'flare',name:'Руническая сигнальная ракета'},'is-effect-icon'),`Руническая сигнальная ракета ×${state.islands.flares}`),kind:'island',flare:true});
   const effectLabel=e=>{const count=(e.count||1)>1?` ×${e.count}`:'';return count&&/effect-chip-copy/.test(e.label)?e.label.replace(/(<span class="effect-chip-copy">[^<]*)(<\/span>)/,`$1${count}$2`):`${e.label}${count}`;};
   const actionHint=text=>text?`<small class="effect-chip-action">${text}</small>`:'';
-  $('effectsList').innerHTML=effects.length?effects.map(e=>e.flare?`<button type="button" class="chip effect-island island-flare-btn" data-island-flare>${effectLabel(e)}${actionHint('запустить')}</button>`:e.usableDungeon?`<button type="button" class="chip effect-dungeon dungeon-reward-use-btn${e.dungeonRewardKey?` dungeon-reward-${e.dungeonRewardKey}`:''}" data-dungeon-reward="${e.dungeonRewardId}">${effectLabel(e)}${actionHint(e.noActionHint?'':'использовать')}</button>`:e.usableTradeKey?`<button type="button" class="chip effect-trade island-item-use-btn" data-island-item-use="${e.usableTradeKey}" aria-label="Использовать: ${e.usableTradeKey}">${effectLabel(e)}${actionHint('использовать')}</button>`:e.relicId?`<button type="button" class="chip effect-${e.kind} rift-relic-btn" data-rift-relic="${e.relicId}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.usable?`<button type="button" class="chip effect-${e.kind} mythic-use-btn" data-mythic-use="${e.artifactId}">${effectLabel(e)}${actionHint(e.noActionHint?'':'использовать')}</button>`:`<span class="chip effect-${e.kind}${e.dungeonRewardKey?` dungeon-reward-${e.dungeonRewardKey}`:''}${e.dungeonEncounter?' dungeon-encounter-effect':''}${e.leviaxarWrathEffect?' leviaxar-wrath-effect':''}${e.negative?' island-negative-effect':''}${e.exhausted?' is-exhausted':''}">${effectLabel(e)}</span>`).join(''):'<span class="muted">Пока нет</span>';
+  $('effectsList').innerHTML=effects.length?effects.map(e=>e.assemblyBlueprintId?`<button type="button" class="chip effect-assembly assembly-blueprint-btn${e.assemblyReady?' is-ready':''}" data-assembly-blueprint="${e.assemblyBlueprintId}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.assemblySkipped?`<span class="chip effect-assembly assembly-blueprint-btn is-skipped">${effectLabel(e)}</span>`:e.assemblyDuplicator?`<button type="button" class="chip effect-assembly assembly-device-btn" data-assembly-duplicator="${e.assemblyDuplicator}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.assemblyDeviceId?`<span class="chip effect-assembly assembly-device-chip">${effectLabel(e)}</span>`:e.flare?`<button type="button" class="chip effect-island island-flare-btn" data-island-flare>${effectLabel(e)}${actionHint('запустить')}</button>`:e.usableDungeon?`<button type="button" class="chip effect-dungeon dungeon-reward-use-btn${e.dungeonRewardKey?` dungeon-reward-${e.dungeonRewardKey}`:''}" data-dungeon-reward="${e.dungeonRewardId}">${effectLabel(e)}${actionHint(e.noActionHint?'':'использовать')}</button>`:e.usableTradeKey?`<button type="button" class="chip effect-trade island-item-use-btn" data-island-item-use="${e.usableTradeKey}" aria-label="Использовать: ${e.usableTradeKey}">${effectLabel(e)}${actionHint('использовать')}</button>`:e.relicId?`<button type="button" class="chip effect-${e.kind} rift-relic-btn" data-rift-relic="${e.relicId}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.usable?`<button type="button" class="chip effect-${e.kind} mythic-use-btn" data-mythic-use="${e.artifactId}">${effectLabel(e)}${actionHint(e.noActionHint?'':'использовать')}</button>`:`<span class="chip effect-${e.kind}${e.dungeonRewardKey?` dungeon-reward-${e.dungeonRewardKey}`:''}${e.dungeonEncounter?' dungeon-encounter-effect':''}${e.leviaxarWrathEffect?' leviaxar-wrath-effect':''}${e.negative?' island-negative-effect':''}${e.exhausted?' is-exhausted':''}">${effectLabel(e)}</span>`).join(''):'<span class="muted">Пока нет</span>';
   $('effectCount').textContent=effects.filter(effect=>!effect.exhausted).reduce((sum,effect)=>sum+(effect.count||1),0);
   const inventory=document.querySelector('.inventory');
   const kinds=new Set(effects.map(e=>e.kind));
@@ -5380,7 +5599,7 @@ function renderHistory() {
     const expeditionItem=h.expeditionItemId?state.islands?.items?.find(item=>item.id===h.expeditionItemId):null;
     const isPrimordialChaos=h.type==='mythic'&&(/первобытн(?:ый|ого)\s+хаос/i.test(String(h.text||''))||historyArtifact?.name==='Первобытный хаос');
     const historyArtifactVisualName=h.type==='mythic'?(historyArtifact?artifactVisualName(historyArtifact):isPrimordialChaos?'Первобытный хаос':h.text):h.text;
-     const entityBasedIcon=['epic','legendary','mythic'].includes(h.type)?artifactIconMarkup(historyArtifactVisualName,h.type,'is-history-icon'):h.type==='bonus'?bonusIconMarkup(h.text,'is-history-icon'):h.type==='trash'?(h.radioactiveTrash?radioactiveTrashIconMarkup('is-history-icon'):trashIconMarkup('is-history-icon')):h.type==='radioactiveCore'?isotopeCoreIconMarkup('is-history-icon'):h.type==='deepEquipment'?deepGearIconMarkup('container','is-history-icon'):h.type==='nonFishCatch'&&nonFishCatch?nonFishCatchIconMarkup(nonFishCatch,'is-history-icon'):h.type==='debuff'?debuffIconMarkup(h.text,'is-history-icon'):null;
+     const entityBasedIcon=['epic','legendary','mythic'].includes(h.type)?artifactIconMarkup(historyArtifactVisualName,h.type,'is-history-icon'):h.type==='bonus'?bonusIconMarkup(h.text,'is-history-icon'):h.type==='trash'?(h.radioactiveTrash?radioactiveTrashIconMarkup('is-history-icon'):trashIconMarkup('is-history-icon')):h.type==='radioactiveCore'?isotopeCoreIconMarkup('is-history-icon'):h.type==='deepEquipment'?deepGearIconMarkup('container','is-history-icon'):h.type==='assemblyBlueprint'?assemblyBlueprintIconMarkup('is-history-icon'):h.type==='assemblyDevice'?assemblyDeviceIconMarkup(h.assemblyDeviceKey,'is-history-icon'):h.type==='nonFishCatch'&&nonFishCatch?nonFishCatchIconMarkup(nonFishCatch,'is-history-icon'):h.type==='debuff'?debuffIconMarkup(h.text,'is-history-icon'):null;
     const coinForRow=h.type==='coin'&&h.coinId?state.coins.find(item=>item.id===h.coinId):null;
     const currentAbyss=abyssalEntity();
     const abyssPersonality=h.type==='abyssal'?historyAbyssalPersonality(h,currentAbyss):null;
@@ -5467,7 +5686,7 @@ function renderHistory() {
     const hasUnstableBadge=fish?.islandColossus&&/Нестабильное присутствие/i.test(historyDetailText);
     if(hasUnstableBadge)historyDetailText=historyDetailText.replace(/<span class="island-negative-hint">\s*Нестабильное присутствие\s*<\/span>\s*(?:•\s*)?/i,'').trim();
     const negativeHistoryDetail=/Нестабильное присутствие|вытеснен/i.test(historyDetailText)&&!historyDetailText.includes('island-negative-hint');
-     const compactEntityHeader=(['bonus','debuff','epic','legendary','mythic','trash','radioactiveCore','deepEquipment','nonFishCatch'].includes(h.type)&&Boolean(entityBasedIcon))||(['dungeon','deadWaters'].includes(h.type)&&Boolean(icon))||(h.type==='abyssal'&&Boolean(abyssEntityIcon))||h.type==='angus'||h.type==='tradeShip'||h.type==='coin'||h.type==='weather';
+     const compactEntityHeader=(['bonus','debuff','epic','legendary','mythic','trash','radioactiveCore','deepEquipment','assemblyBlueprint','assemblyDevice','nonFishCatch'].includes(h.type)&&Boolean(entityBasedIcon))||(['dungeon','deadWaters'].includes(h.type)&&Boolean(icon))||(h.type==='abyssal'&&Boolean(abyssEntityIcon))||h.type==='angus'||h.type==='tradeShip'||h.type==='coin'||h.type==='weather';
     const compactFishHeader=h.type==='fish'&&Boolean(fish);
     const compactExpeditionHeader=Boolean(expeditionItem);
     const debuffName=h.type==='debuff'?(historyDebuff?.name||debuffNameForText(h.text)):'';
@@ -5989,7 +6208,19 @@ $('resultCard').addEventListener('click',event=>{
   renderResultCard();
   scrollResultCardAfterToggle(!expanded);
 });
-$('effectsList').addEventListener('click',event=>{const dungeonReward=event.target.closest('[data-dungeon-reward]');if(dungeonReward){useDungeonReward(dungeonReward.dataset.dungeonReward);return;}if(event.target.closest('[data-island-flare]')){useRunicFlare();return;}const islandItem=event.target.closest('[data-island-item-use]');if(islandItem){if(islandItem.dataset.islandItemUse==='moonTideShell')useMoonTideShell();else if(islandItem.dataset.islandItemUse==='firstWaterFlask')useFirstWaterFlask();return;}const mythic=event.target.closest('[data-mythic-use]');if(mythic){useStormEye(mythic.dataset.mythicUse);return;}const button=event.target.closest('[data-rift-relic]');if(button)useRiftRelic(button.dataset.riftRelic);});
+$('effectsList').addEventListener('click',event=>{const blueprint=event.target.closest('[data-assembly-blueprint]');if(blueprint){openAssemblyDialog(blueprint.dataset.assemblyBlueprint);return;}const duplicator=event.target.closest('[data-assembly-duplicator]');if(duplicator){openIchthyoDuplicatorDialog(duplicator.dataset.assemblyDuplicator);return;}const dungeonReward=event.target.closest('[data-dungeon-reward]');if(dungeonReward){useDungeonReward(dungeonReward.dataset.dungeonReward);return;}if(event.target.closest('[data-island-flare]')){useRunicFlare();return;}const islandItem=event.target.closest('[data-island-item-use]');if(islandItem){if(islandItem.dataset.islandItemUse==='moonTideShell')useMoonTideShell();else if(islandItem.dataset.islandItemUse==='firstWaterFlask')useFirstWaterFlask();return;}const mythic=event.target.closest('[data-mythic-use]');if(mythic){useStormEye(mythic.dataset.mythicUse);return;}const button=event.target.closest('[data-rift-relic]');if(button)useRiftRelic(button.dataset.riftRelic);});
+$('assemblyDialogChoices').addEventListener('change',event=>{
+  if(!assemblyDialogSelection)return;
+  if(event.target.name==='assemblyFish')assemblyDialogSelection.fishId=event.target.value;
+  if(event.target.name==='assemblyTrade'){
+    const blueprint=assemblyBlueprints().find(item=>item.id===assemblyDialogSelection.blueprintId),needed=assemblyDefinition(blueprint?.deviceKey)?.trade||0;
+    if(event.target.checked){if(assemblyDialogSelection.tradeIds.size>=needed){event.target.checked=false;toast(`Можно выбрать только ${needed}`);}else assemblyDialogSelection.tradeIds.add(event.target.value);}
+    else assemblyDialogSelection.tradeIds.delete(event.target.value);
+  }
+  refreshAssemblyDialog();
+});
+$('assemblyConfirmBtn').addEventListener('click',()=>{const selection=assemblyDialogSelection;if(!selection)return;if(selection.mode==='assemble')assembleBlueprint(selection.blueprintId,{fishId:selection.fishId,tradeIds:[...selection.tradeIds]});else useIchthyoDuplicator(selection.deviceId,selection.fishId);});
+$('assemblySkipBtn').addEventListener('click',event=>{if(assemblyDialogSelection?.mode==='assemble')skipAssemblyBlueprint(event.currentTarget.dataset.assemblySkip);else skipIchthyoDuplicator(event.currentTarget.dataset.assemblySkip);});
 $('effectsList').addEventListener('wheel',event=>{
   const list=event.currentTarget;
   if(list.scrollWidth<=list.clientWidth||Math.abs(event.deltaX)>=Math.abs(event.deltaY))return;
@@ -6051,6 +6282,17 @@ GUIDE[DEAD_WATERS_NAME]=[
  ['Содержимое','Возможны рыба, обычные предметы обмена, бонусы, дебафы, артефакты, экспедиционные предметы и хлам. Они показываются сразу, но применяются только после успешного выхода. Экспедиционные предметы расшифровываются штатно с вероятностью 50%.'],
  ['Щупальце','Гигантское щупальце немедленно обнуляет оставшиеся забросы и завершает сессию. Все ещё не вынесенные из текущей воронки награды теряются.']
 ];
+GUIDE['Сборочные чертежи']=[
+ ['Сборочный чертёж DF ME','Шанс в обычном забросе — 5%. При выпадении в 75% случаев сохраняется обычная рыба и добавляется чертёж, в 25% чертёж становится самостоятельным результатом. Все шесть устройств выпадают с равными шансами; повторения разрешены.'],
+ ['Сборка','Чертёж действует до конца текущей сессии. Подходят только обычный нерадиоактивный хлам, рыба из прямого обычного заброса и стандартные предметы обмена, найденные вместе с такой рыбой. Компоненты расходуются только после нажатия «Собрать».'],
+ ['Катушка обратного хода','2 хлама + обычная рыба. После сборки добавляет 2 заброса.'],
+ ['Преобразователь Xb1','3 хлама + обычная рыба. Выбранная рыба сохраняется, становится тяжеловесом и получает новый случайный вес 10,0–19,9 кг.'],
+ ['Судовой материализатор','4 хлама + тяжеловес + стандартный предмет обмена. Создаёт двух случайных гигантов с источником «Преобразовано Xb1».'],
+ ['Эхолот','2 хлама + 2 стандартных предмета обмена. В трёх следующих обычных забросах каждый экземпляр добавляет по рыбе: обычная 50%, тяжеловес 30%, гигант 20%. События не тратят заряды.'],
+ ['Сторожевой буй','1 хлам + обычная рыба + стандартный предмет обмена. Каждый экземпляр даёт 2 заряда. Чайка тратит заряд только при фактической краже; Косатка — при фактической попытке съесть рыбу; Рак и Утка — при защищённом результате.'],
+ ['Ихтиодубликатор','3 хлама + тяжеловес + стандартный предмет обмена. Один раз копирует выбранную оставшуюся рыбу с текущими названием, категорией и весом, не повторяя событие её поимки. Его можно применить перед прибытием торгового судна.']
+];
 /* PUBLIC_STRIP_DEBUG_START */
 if(BUILD_CONFIG.unlimitedSessions){const grid=$('dropfishDebugGrid');if(grid){const group=document.createElement('div');group.className='debug-group';group.innerHTML='<h3>Радиоактивный выброс</h3><button type="button" data-radio-debug="start">Выброс</button><button type="button" data-radio-debug="sample">Образец</button><button type="button" data-radio-debug="octopus">Осьминог</button><button type="button" data-radio-debug="infect">Заражение 100%</button>';grid.append(group);group.addEventListener('click',e=>{const action=e.target.dataset.radioDebug;if(!action)return;if(action==='start')startRadioactiveOutbreak();if(action==='sample'||action==='octopus'){const f=createRadioactiveCatch(action==='octopus');addFishHistory(f,'Заброс');}if(action==='infect'){radioactiveState().risk=1;checkRadioactiveContamination();}commitState();});}}
+if(BUILD_CONFIG.unlimitedSessions){const grid=$('dropfishDebugGrid');if(grid){const group=document.createElement('div');group.className='debug-group';group.innerHTML=`<h3>Сборочные чертежи DF ME</h3>${ASSEMBLY_DEVICE_KEYS.map(key=>`<button type="button" data-assembly-debug="${key}">${ASSEMBLY_DEVICE_DEFS[key].name}</button>`).join('')}<button type="button" data-assembly-debug="components">Добавить компоненты</button>`;grid.append(group);group.addEventListener('click',event=>{const action=event.target.dataset.assemblyDebug;if(!action)return;if(action==='components'){for(let i=0;i<12;i++)processTrash();for(let i=0;i<4;i++)makeFish(i<2?'normal':'heavy','Заброс',true);const fish=state.fish.filter(item=>item.source==='Заброс'&&item.direct&&!item.removed);fish.forEach((item,index)=>{const definition=TRADE_ITEMS[index%TRADE_ITEMS.length];state.tradeItems.push({id:uid(),key:definition.key,name:definition.name,icon:definition.icon,fishId:item.id,historyRowId:null,exchanged:false});});}else grantAssemblyBlueprint(action,{numbered:false});commitState();});}}
 /* PUBLIC_STRIP_DEBUG_END */

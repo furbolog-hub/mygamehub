@@ -6652,3 +6652,47 @@ body.reduce-motion .history-item:is(.is-radioactive-prompt,.is-radioactive-sampl
 .history-row-summary .history-entity-leading .non-fish-catch-icon{display:grid!important;width:46px!important;min-width:46px!important;max-width:46px!important;height:46px!important;min-height:46px!important;max-height:46px!important;margin:0!important}
 .history-row-summary .history-entity-leading .non-fish-catch-icon img{position:static!important;width:46px!important;min-width:46px!important;max-width:46px!important;height:46px!important;min-height:46px!important;max-height:46px!important;object-fit:contain!important;transform:none!important}
 @media(max-width:520px){.non-fish-catch-icon.is-history-icon{width:40px;height:40px}.non-fish-impact{font-size:.62rem}}
+
+/* DF ME assembly blueprints and built devices. */
+.assembly-blueprint-icon,.assembly-device-icon{display:inline-grid;place-items:center;flex:0 0 auto;overflow:visible;vertical-align:middle}
+.assembly-blueprint-icon img,.assembly-device-icon img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.45))}
+.assembly-blueprint-icon.is-effect-icon,.assembly-device-icon.is-effect-icon{width:32px;height:32px}
+.assembly-blueprint-icon.is-history-icon,.assembly-device-icon.is-history-icon{width:46px;height:46px}
+.assembly-blueprint-icon.is-effect-visual,.assembly-device-icon.is-effect-visual{width:88px;height:88px}
+.assembly-blueprint-icon.is-dialog-icon,.assembly-device-icon.is-dialog-icon{width:68px;height:68px}
+.inventory .chip.effect-assembly{border-color:rgba(87,210,235,.42);background:linear-gradient(135deg,rgba(9,49,68,.91),rgba(30,31,74,.9));color:#e5fbff;box-shadow:inset 0 0 12px rgba(76,211,238,.09),0 0 10px rgba(69,185,232,.1)}
+.inventory .assembly-blueprint-btn:not(.is-ready) .assembly-blueprint-icon img{filter:grayscale(1) saturate(0) brightness(.72) drop-shadow(0 2px 4px rgba(0,0,0,.45));opacity:.78}
+.inventory .assembly-blueprint-btn.is-skipped{opacity:.68}
+.inventory .assembly-blueprint-btn.is-ready{border-color:#7ff0bc;box-shadow:inset 0 0 13px rgba(91,239,168,.14),0 0 12px rgba(83,222,165,.2)}
+.inventory .assembly-blueprint-btn.is-ready .effect-chip-action{color:#9dffd1}
+.history-item.type-assemblyBlueprint{border-left-color:#67dbea;background:linear-gradient(112deg,rgba(7,57,75,.9),rgba(36,29,88,.8));color:#e8fcff}
+.history-item.type-assemblyDevice{border-left-color:#75efb6;background:linear-gradient(112deg,rgba(8,65,57,.88),rgba(25,42,80,.82));color:#eafff4}
+.history-item:is(.type-assemblyBlueprint,.type-assemblyDevice) .history-entity-title{color:#c8faff;text-shadow:0 0 8px rgba(92,224,239,.25)}
+.assembly-card{width:min(680px,calc(100vw - 24px));max-height:min(86vh,760px);overflow:auto}
+.assembly-dialog-heading{display:flex;align-items:center;gap:12px;padding-right:32px}
+.assembly-dialog-icon{display:grid;place-items:center;flex:0 0 72px;width:72px;height:72px}
+.assembly-dialog-kicker{display:block;color:#71ddeb;font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.assembly-dialog-heading h2{margin:3px 0 0;overflow-wrap:anywhere}
+.assembly-dialog-action{margin:10px 0;padding:8px 10px;border:1px solid rgba(92,218,235,.24);border-radius:10px;background:rgba(9,45,67,.45);line-height:1.35}
+.assembly-dialog-requirements{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.assembly-dialog-requirements span{display:inline-flex;width:max-content;max-width:100%;padding:4px 8px;border-radius:999px;font-size:.72rem;font-weight:850;overflow-wrap:anywhere}
+.assembly-dialog-requirements .is-ready{color:#a8ffd4;background:rgba(38,131,91,.28);border:1px solid rgba(105,240,173,.28)}
+.assembly-dialog-requirements .is-missing{color:#ffb1b8;background:rgba(139,38,58,.28);border:1px solid rgba(255,126,145,.25)}
+.assembly-dialog-choices{display:grid;gap:10px}
+.assembly-dialog-choices section{display:grid;gap:6px;min-width:0}
+.assembly-dialog-choices h3{margin:0;color:#b9eff6;font-size:.78rem}
+.assembly-choice-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:5px;max-height:220px;overflow:auto}
+.assembly-choice{display:flex;min-width:0;align-items:center;gap:7px;padding:7px 8px;border:1px solid rgba(117,189,214,.2);border-radius:9px;background:rgba(5,26,46,.62);cursor:pointer}
+.assembly-choice.is-selected{border-color:rgba(112,239,181,.58);background:rgba(23,91,76,.54)}
+.assembly-choice input{flex:0 0 auto;margin:0;accent-color:#68e8b0}
+.assembly-choice span{min-width:0;font-size:.76rem;font-weight:800;overflow-wrap:anywhere}
+.assembly-choice small{display:block;margin-top:2px;color:#a9c9d4;font-size:.65rem;font-weight:650}
+.assembly-choice-empty,.assembly-choice-limit{margin:0;color:#aebec8;font-size:.7rem}
+.assembly-dialog-actions{margin-top:12px}
+.assembly-dialog-actions button:disabled{cursor:not-allowed;filter:grayscale(.55);opacity:.48}
+@media(max-width:520px){.assembly-blueprint-icon.is-history-icon,.assembly-device-icon.is-history-icon{width:40px;height:40px}.assembly-card{width:calc(100vw - 14px);padding:12px}.assembly-dialog-heading{gap:8px}.assembly-dialog-icon{flex-basis:58px;width:58px;height:58px}.assembly-blueprint-icon.is-dialog-icon,.assembly-device-icon.is-dialog-icon{width:56px;height:56px}.assembly-choice-list{grid-template-columns:1fr;max-height:168px}}
+
+/* Shared compactness guards stay last so future device variants cannot widen chips or chronology actions. */
+.inventory .chips>.chip.effect-assembly{width:max-content!important;min-width:0!important;max-width:148px!important;min-height:46px!important;height:auto!important;padding:5px 8px!important}
+.inventory .chip.effect-assembly .effect-chip-copy{min-width:0;max-width:96px;white-space:normal;overflow-wrap:anywhere;line-height:1.08}
+.history-item :is(.assembly-history-action,.assembly-dialog-actions) button{min-height:0;height:28px;padding-block:3px;line-height:1}

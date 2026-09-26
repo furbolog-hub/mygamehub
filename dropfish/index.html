@@ -20,7 +20,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=3.33-random-row-fish" />
+  <link rel="stylesheet" href="style.css?v=3.34-assembly-blueprints" />
   <script>
   /* Telegram SDK грузим ТОЛЬКО внутри Telegram. В обычном браузере он не нужен,
      а его синхронная загрузка блокировала отрисовку страницы на минуты, если
@@ -154,6 +154,26 @@
     </div>
   </dialog>
 
+  <dialog id="assemblyDialog" class="modal assembly-modal" aria-labelledby="assemblyDialogTitle">
+    <div class="modal-card assembly-card ui-dialog-panel">
+      <button class="close-btn" data-close="assemblyDialog" aria-label="Закрыть">×</button>
+      <header class="assembly-dialog-heading">
+        <span id="assemblyDialogIcon" class="assembly-dialog-icon" aria-hidden="true"></span>
+        <div>
+          <span id="assemblyDialogKicker" class="assembly-dialog-kicker">Сборочный чертёж DF ME</span>
+          <h2 id="assemblyDialogTitle">Устройство</h2>
+        </div>
+      </header>
+      <p id="assemblyDialogAction" class="assembly-dialog-action"></p>
+      <div id="assemblyDialogRequirements" class="assembly-dialog-requirements"></div>
+      <div id="assemblyDialogChoices" class="assembly-dialog-choices"></div>
+      <div class="assembly-dialog-actions ui-action-grid">
+        <button id="assemblyConfirmBtn" type="button" class="primary-btn">Собрать</button>
+        <button id="assemblySkipBtn" type="button" class="secondary-btn hidden">Не использовать</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="riftDialog" class="modal rift-modal">
     <div class="modal-card wide rift-card ui-dialog-panel">
       <div id="riftScene" class="rift-monitor">
@@ -241,6 +261,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="ui-enhancements.js?v=1.90-rift-media"></script>
-<script src="script.js?v=19.52-random-row-fish"></script>
+<script src="script.js?v=19.53-assembly-blueprints"></script>
 </body>
 </html>
