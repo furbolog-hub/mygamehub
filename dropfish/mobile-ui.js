@@ -48,6 +48,28 @@
       fitFrame = requestAnimationFrame(fitScene);
     };
 
+    const refreshViewportLayout = () => {
+      const scroller = document.getElementById('historyScroll');
+      const previousTop = scroller?.scrollTop || 0;
+      const bottomDistance = scroller
+        ? Math.max(0, scroller.scrollHeight - scroller.clientHeight - previousTop)
+        : 0;
+      const wasAtBottom = bottomDistance <= 24;
+
+      window.syncDropfishViewport?.();
+      scheduleSceneFit();
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (!scroller?.isConnected) return;
+        void scroller.offsetHeight;
+        const maxTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+        scroller.scrollTop = wasAtBottom ? maxTop : Math.min(previousTop, maxTop);
+      }));
+    };
+
+    const refreshAfterOrientationChange = () => {
+      [0, 100, 300, 650].forEach(delay => setTimeout(refreshViewportLayout, delay));
+    };
+
     const setInactive = (element, inactive) => {
       element.hidden = inactive;
       element.setAttribute('aria-hidden', String(inactive));
@@ -105,9 +127,9 @@
       ? new ResizeObserver(scheduleSceneFit)
       : null;
     observer?.observe(scene);
-    window.addEventListener('resize', scheduleSceneFit, { passive: true });
-    window.addEventListener('orientationchange', scheduleSceneFit, { passive: true });
-    window.visualViewport?.addEventListener('resize', scheduleSceneFit, { passive: true });
+    window.addEventListener('resize', refreshViewportLayout, { passive: true });
+    window.addEventListener('orientationchange', refreshAfterOrientationChange, { passive: true });
+    window.visualViewport?.addEventListener('resize', refreshViewportLayout, { passive: true });
 
     navButtons.forEach(button => {
       button.addEventListener('click', () => setSection(button.dataset.mobileNav));
@@ -122,6 +144,7 @@
     });
 
     setSection('fishing');
+    refreshViewportLayout();
   };
 
   if (document.readyState === 'loading') {

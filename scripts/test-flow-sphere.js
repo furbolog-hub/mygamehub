@@ -33,6 +33,9 @@ async function prepare(page){
 }
 
 async function mountSphere(page,reward){
+  // Let the initial viewport-fit resize cycle settle before creating a sphere.
+  // A real resize intentionally interrupts and requeues an active sphere.
+  await page.waitForTimeout(220);
   await page.evaluate(nextReward=>{
     interruptFlowSphere({requeue:false});
     clearTimeout(flowSphereTimer);
@@ -92,6 +95,9 @@ function verifyMetrics(metrics,label){
 }
 
 async function verifyDebugModalGuard(page,label,screenshotPath){
+  if(!await page.locator('.flow-sphere').count()){
+    await mountSphere(page,{id:`debug-${label}`,kind:'casts',count:2});
+  }
   const immediate=await page.evaluate(()=>{
     const dialog=$('dropfishDebugDialog'),layer=$('flowSphereLayer'),sphere=document.querySelector('.flow-sphere');
     dialog.showModal();

@@ -18,7 +18,7 @@
     "test:dropfish-shell": "node scripts/test-dropfish-mobile-shell.js",
     "test:dropfish-scene": "node scripts/test-dropfish-hud-scene.js",
     "test:dropfish-weather": "node scripts/test-dropfish-weather-artwork.js",
-    "test:dropfish-arcade": "node scripts/test-arcade-creatures.js",
+    "test:dropfish-arcade": "node scripts/test-arcade-creatures.js && node scripts/test-snapshot-85-arcade-mobile.js",
     "test:dropfish-flow-sphere": "node scripts/test-flow-sphere.js",
     "test:angus-weight-category": "node scripts/test-angus-weight-category.js",
     "test:dropfish-navigation": "node scripts/test-dropfish-bottom-navigation.js",

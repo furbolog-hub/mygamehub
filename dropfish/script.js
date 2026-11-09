@@ -1753,11 +1753,21 @@ let ordinaryCastContext=null;
 let viaxaliorAttackRuntime=false;
 let viaxaliorAttackQueued=false;
 let viaxaliorFocusBeforeAttack=null;
+let sessionFinalizationTimer=0;
+let sessionFinalizationInProgress=false;
+let sessionFinalizationRetryCount=0;
 ;(state.trash||[]).filter(item=>!item.abyssCreated).forEach(item=>{if(item.recyclonEligible===undefined)item.recyclonEligible=true;});
 if (!Array.isArray(state.weatherSeen)) state.weatherSeen=[];
 if (!state.weatherSeen.includes(state.weather)) state.weatherSeen.push(state.weather);
 if (state.weather==='storm') state.stormSeen=true;
-function commitState(){render();saveDailyState();maybeScheduleViaxaliorAttack();}
+function scheduleSessionFinalization(delay=0){
+  if(state.finished||state.castsLeft>0||sessionFinalizationTimer)return;
+  sessionFinalizationTimer=setTimeout(()=>{
+    sessionFinalizationTimer=0;
+    if(!state.finished&&state.castsLeft<=0)maybeFinalizeSession();
+  },Math.max(0,Number(delay)||0));
+}
+function commitState(){render();saveDailyState();maybeScheduleViaxaliorAttack();scheduleSessionFinalization();}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveDailyState();});
 window.addEventListener('pagehide',saveDailyState);
 
@@ -4838,7 +4848,7 @@ function spawnArcadeCreature() {
   el.innerHTML=isOrca
     ? '<span class="arcade-creature-shape"><span class="arcade-orca-body"><span class="arcade-orca-fin"></span><span class="arcade-orca-tail"></span><span class="arcade-orca-pectoral"></span></span></span>'
     : '<span class="arcade-creature-shape"><span class="arcade-fish-body"><span class="arcade-fish-eye"></span><span class="arcade-fish-tail"></span><span class="arcade-fish-pectoral"></span></span></span>';
-  el.style.setProperty('--arcade-y','50%');
+  el.style.setProperty('--arcade-y','calc(50% + 26px)');
   el.style.setProperty('--arcade-duration',`${duration.toFixed(2)}s`);
   const token={el,category,isOrca,caught:false,courseReversed:false,turnTimer:null,expiryTimer:null};
   activeArcadeFish=token;
@@ -6229,17 +6239,7 @@ function maybeFinalizeSession() {
   finishGame();
 }
 
-function finishGame() {
-  if(viaxaliorAttackRuntime||viaxaliorAttackDue()){maybeScheduleViaxaliorAttack();return;}
-  endRadioactiveOutbreak();
-  forceResolveIsotopeCores();
-  checkRadioactiveContamination(true);
-  state.finished=true;
-  (state.mythic.threadPendingBoosts||[]).forEach(boost=>appendHistoryDetailById(boost.rowId,`усиление +${boost.plus} кг не успело примениться`));state.mythic.threadPendingBoosts=[];
-  finalizePendingSeagulls();
-  expireUnusedCoins();
-  resolveEssencesAtFinish();
-  const carapaces=(state.dungeon?.rewards||[]).filter(item=>item.key==='carapace'&&!item.used),carapaceAvailable=state.fish.filter(f=>!f.removed),carapaceCleanWeight=round1(carapaceAvailable.reduce((sum,f)=>sum+f.weight,0));carapaces.forEach(item=>{const targets=sampleUnique(carapaceAvailable,Math.min(3,carapaceAvailable.length));targets.forEach(f=>{const before=f.weight;f.weight=carapaceCleanWeight;f.carapaceFinalImpact={before,after:carapaceCleanWeight};});item.used=true;item.finalTargets=targets.map(f=>f.id);item.finalWeight=carapaceCleanWeight;const row=state.history.find(h=>h.id===item.historyRowId);if(row)row.detail=`(Финальный чистый вес ${kg(carapaceCleanWeight)} установлен для рыб: ${targets.map(f=>capitalize(f.name)).join(', ')||'нет доступных рыб'})`;});
+function calculateFinalSessionResult(finishedAt=new Date().toISOString()) {
   const finalFish=finalFishSnapshot();
   state.nonFishCatches.forEach(item=>{delete item.finalWeight;});
   const finalNonFishCatches=state.nonFishCatches.filter(item=>!item.removed);finalNonFishCatches.forEach(item=>{item.finalWeight=item.weight;});
@@ -6262,16 +6262,64 @@ function finishGame() {
   sphereState.multipliers.forEach(item=>{const row=state.history.find(entry=>entry.id===item.rowId);if(row)row.detail=`(Множитель ×${Number(item.factor).toFixed(1).replace('.',',')} применён в финальной формуле Сферы течений)`;});
   const spikeWeight=Math.max(0,Number(viaxaliorState().spike?.weight)||0),spikeBefore=total;if(spikeWeight)total=round1(total+spikeWeight);const viaxaliorSpikeImpact=spikeWeight?{before:spikeBefore,added:spikeWeight,after:total}:null;
   const earned=achievements(finalFish,total);
-  const ended=new Date();
-  state.finalResult={total,earned,finishedAt:ended.toISOString(),diceImpact,singulaImpact,sphereImpact,viaxaliorSpikeImpact};
-  renderResultCard();
-  if (earned.length) playSound('achievement');
-  addHistory('Игровая сессия завершена','event');
-  TelegramApp?.HapticFeedback?.notificationOccurred?.('success');
-  const payload={game:'dropfish',totalWeight:total,achievements:earned,finishedAt:ended.toISOString(),casts:state.castClicks};
-  try { if (TelegramApp?.initData && typeof TelegramApp.sendData==='function') TelegramApp.sendData(JSON.stringify(payload)); } catch(e){ console.warn('sendData недоступен для этого способа запуска',e); }
-  void window.PublicSession?.finish?.(payload);
-  saveDailyState();
+  return {total,earned,finishedAt,diceImpact,singulaImpact,sphereImpact,viaxaliorSpikeImpact};
+}
+
+function recalculateFinishedSessionResult() {
+  if(!state.finished||!state.finalResult)return false;
+  try{
+    state.finalResult=calculateFinalSessionResult(state.finalResult.finishedAt||new Date().toISOString());
+    renderResultCard();
+    saveDailyState();
+    return true;
+  }catch(error){
+    console.error('Не удалось пересчитать завершённую сессию',error);
+    toast('Не удалось обновить итог. Повторите действие.');
+    return false;
+  }
+}
+
+function finishGame() {
+  if(state.finished&&state.finalResult)return true;
+  if(sessionFinalizationInProgress)return false;
+  if(viaxaliorAttackRuntime||viaxaliorAttackDue()){maybeScheduleViaxaliorAttack();return false;}
+  sessionFinalizationInProgress=true;
+  try{
+    endRadioactiveOutbreak();
+    forceResolveIsotopeCores();
+    checkRadioactiveContamination(true);
+    (state.mythic.threadPendingBoosts||[]).forEach(boost=>appendHistoryDetailById(boost.rowId,`усиление +${boost.plus} кг не успело примениться`));state.mythic.threadPendingBoosts=[];
+    finalizePendingSeagulls();
+    expireUnusedCoins();
+    resolveEssencesAtFinish();
+    const carapaces=(state.dungeon?.rewards||[]).filter(item=>item.key==='carapace'&&!item.used),carapaceAvailable=state.fish.filter(f=>!f.removed),carapaceCleanWeight=round1(carapaceAvailable.reduce((sum,f)=>sum+f.weight,0));carapaces.forEach(item=>{const targets=sampleUnique(carapaceAvailable,Math.min(3,carapaceAvailable.length));targets.forEach(f=>{const before=f.weight;f.weight=carapaceCleanWeight;f.carapaceFinalImpact={before,after:carapaceCleanWeight};});item.used=true;item.finalTargets=targets.map(f=>f.id);item.finalWeight=carapaceCleanWeight;const row=state.history.find(h=>h.id===item.historyRowId);if(row)row.detail=`(Финальный чистый вес ${kg(carapaceCleanWeight)} установлен для рыб: ${targets.map(f=>capitalize(f.name)).join(', ')||'нет доступных рыб'})`;});
+    const ended=new Date();
+    const finalResult=calculateFinalSessionResult(ended.toISOString());
+    state.finalResult=finalResult;
+    state.finished=true;
+    sessionFinalizationRetryCount=0;
+    renderResultCard();
+    if (finalResult.earned.length) playSound('achievement');
+    addHistory('Игровая сессия завершена','event');
+    TelegramApp?.HapticFeedback?.notificationOccurred?.('success');
+    const payload={game:'dropfish',totalWeight:finalResult.total,achievements:finalResult.earned,finishedAt:finalResult.finishedAt,casts:state.castClicks};
+    try { if (TelegramApp?.initData && typeof TelegramApp.sendData==='function') TelegramApp.sendData(JSON.stringify(payload)); } catch(e){ console.warn('sendData недоступен для этого способа запуска',e); }
+    void window.PublicSession?.finish?.(payload);
+    saveDailyState();
+    return true;
+  }catch(error){
+    state.finished=false;
+    state.finalResult=null;
+    sessionFinalizationRetryCount++;
+    console.error('Финальный расчёт не завершён; сессия будет повторно проверена',error);
+    renderResultCard();
+    try{render();}catch(renderError){console.error('Не удалось обновить интерфейс после ошибки финального расчёта',renderError);}
+    toast('Финальный расчёт повторяется — сессия не потеряна.');
+    if(sessionFinalizationRetryCount<=3)scheduleSessionFinalization(120*sessionFinalizationRetryCount);
+    return false;
+  }finally{
+    sessionFinalizationInProgress=false;
+  }
 }
 
 function renderResultCard() {
@@ -6338,6 +6386,7 @@ function scrollResultCardAfterToggle(expanded,targetKind='summary'){
 }
 
 function render() {
+  if(state.finished&&!state.finalResult){state.finished=false;scheduleSessionFinalization();}
   ensureIslands();
   ensureAssemblyState();
   updateAssemblyReadiness(true);
@@ -6423,8 +6472,9 @@ function render() {
   if(state.islands.flares>0)effects.push({label:effectMarkup(islandLootIconMarkup({kind:'flare',name:'Руническая сигнальная ракета'},'is-effect-icon'),`Руническая сигнальная ракета ×${state.islands.flares}`),kind:'island',flare:true});
   const effectLabel=e=>{const count=(e.count||1)>1?` ×${e.count}`:'';return count&&/effect-chip-copy/.test(e.label)?e.label.replace(/(<span class="effect-chip-copy">[^<]*)(<\/span>)/,`$1${count}$2`):`${e.label}${count}`;};
   const actionHint=text=>text?`<small class="effect-chip-action">${text}</small>`:'';
-  $('effectsList').innerHTML=effects.length?effects.map(e=>e.assemblyBlueprintId?`<button type="button" class="chip effect-assembly assembly-blueprint-btn${e.assemblyReady?' is-ready':''}" data-assembly-blueprint="${e.assemblyBlueprintId}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.assemblySkipped?`<span class="chip effect-assembly assembly-blueprint-btn is-skipped">${effectLabel(e)}</span>`:e.assemblyDuplicator?`<button type="button" class="chip effect-assembly assembly-device-btn" data-assembly-duplicator="${e.assemblyDuplicator}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.assemblyDeviceId?`<span class="chip effect-assembly assembly-device-chip">${effectLabel(e)}</span>`:e.flare?`<button type="button" class="chip effect-island island-flare-btn" data-island-flare>${effectLabel(e)}${actionHint('запустить')}</button>`:e.usableDungeon?`<button type="button" class="chip effect-dungeon dungeon-reward-use-btn${e.dungeonRewardKey?` dungeon-reward-${e.dungeonRewardKey}`:''}" data-dungeon-reward="${e.dungeonRewardId}">${effectLabel(e)}${actionHint(e.noActionHint?'':'использовать')}</button>`:e.usableTradeKey?`<button type="button" class="chip effect-trade island-item-use-btn" data-island-item-use="${e.usableTradeKey}" aria-label="Использовать: ${e.usableTradeKey}">${effectLabel(e)}${actionHint('использовать')}</button>`:e.relicId?`<button type="button" class="chip effect-${e.kind} rift-relic-btn" data-rift-relic="${e.relicId}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.usable?`<button type="button" class="chip effect-${e.kind} mythic-use-btn" data-mythic-use="${e.artifactId}">${effectLabel(e)}${actionHint(e.noActionHint?'':'использовать')}</button>`:`<span class="chip effect-${e.kind}${e.dungeonRewardKey?` dungeon-reward-${e.dungeonRewardKey}`:''}${e.dungeonEncounter?' dungeon-encounter-effect':''}${e.leviaxarWrathEffect?' leviaxar-wrath-effect':''}${e.negative?' island-negative-effect':''}${e.exhausted?' is-exhausted':''}">${effectLabel(e)}</span>`).join(''):'<span class="muted">Пока нет</span>';
-  $('effectCount').textContent=effects.filter(effect=>!effect.exhausted).reduce((sum,effect)=>sum+(effect.count||1),0);
+  $('effectsList').innerHTML=effects.length?effects.map(e=>e.assemblyBlueprintId?`<button type="button" class="chip effect-assembly assembly-blueprint-btn${e.assemblyReady?' is-ready':''}" data-assembly-blueprint="${e.assemblyBlueprintId}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.assemblySkipped?`<span class="chip effect-assembly assembly-blueprint-btn is-skipped">${effectLabel(e)}</span>`:e.assemblyDuplicator?`<button type="button" class="chip effect-assembly assembly-device-btn" data-assembly-duplicator="${e.assemblyDuplicator}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.assemblyDeviceId?`<span class="chip effect-assembly assembly-device-chip">${effectLabel(e)}</span>`:e.flare?`<button type="button" class="chip effect-island island-flare-btn" data-island-flare>${effectLabel(e)}${actionHint('запустить')}</button>`:e.usableDungeon?`<button type="button" class="chip effect-dungeon dungeon-reward-use-btn${e.dungeonRewardKey?` dungeon-reward-${e.dungeonRewardKey}`:''}" data-dungeon-reward="${e.dungeonRewardId}">${effectLabel(e)}${actionHint(e.noActionHint?'':'использовать')}</button>`:e.usableTradeKey?`<button type="button" class="chip effect-trade island-item-use-btn" data-island-item-use="${e.usableTradeKey}" aria-label="Использовать: ${e.usableTradeKey}">${effectLabel(e)}${actionHint('использовать')}</button>`:e.relicId?`<button type="button" class="chip effect-${e.kind} rift-relic-btn" data-rift-relic="${e.relicId}">${effectLabel(e)}${actionHint(e.actionHint)}</button>`:e.usable?`<button type="button" class="chip effect-${e.kind} mythic-use-btn" data-mythic-use="${e.artifactId}">${effectLabel(e)}${actionHint(e.noActionHint?'':'использовать')}</button>`:`<span class="chip effect-${e.kind}${e.dungeonRewardKey?` dungeon-reward-${e.dungeonRewardKey}`:''}${e.dungeonEncounter?' dungeon-encounter-effect':''}${e.leviaxarWrathEffect?' leviaxar-wrath-effect':''}${e.negative?' island-negative-effect':''}${e.exhausted?' is-exhausted':''}">${effectLabel(e)}</span>`).join(''):'<span class="active-effects-empty">Эффекты: Пока нет</span>';
+  const activeEffectCount=effects.filter(effect=>!effect.exhausted).reduce((sum,effect)=>sum+(effect.count||1),0);
+  $('effectCount').textContent=activeEffectCount;
   const inventory=document.querySelector('.inventory');
   const kinds=new Set(effects.map(e=>e.kind));
   inventory.classList.toggle('has-effects',effects.length>0);
@@ -6688,8 +6738,10 @@ function syncHistoryFiltersDisclosure(){
   const toggle=$('historyFiltersToggle'),panel=$('historyFiltersPanel');
   if(!toggle||!panel)return;
   toggle.setAttribute('aria-expanded',String(historyFiltersExpanded));
-  toggle.setAttribute('aria-label',historyFiltersExpanded?'Скрыть фильтры хронологии':'Показать фильтры хронологии');
+  const effectCount=$('effectCount')?.textContent||'0';
+  toggle.setAttribute('aria-label',`${historyFiltersExpanded?'Скрыть':'Показать'} фильтры хронологии. Эффекты: ${effectCount}.`);
   panel.classList.toggle('is-expanded',historyFiltersExpanded);
+  toggle.closest('.history')?.classList.toggle('has-expanded-filters',historyFiltersExpanded);
   panel.setAttribute('aria-hidden',String(!historyFiltersExpanded));
   if(historyFiltersExpanded)panel.removeAttribute('inert');else panel.setAttribute('inert','');
 }
@@ -7238,7 +7290,7 @@ function riftLightningMarkup(row) {
 
 function showChoice(title,text,options,onSelect) {
   $('choiceTitle').textContent=title; $('choiceText').textContent=text;$('choiceText').classList.remove('colossus-trade-warning','island-negative-choice');$('choiceText').classList.toggle('island-negative-choice',String(text).includes('Нестабильное присутствие')); const box=$('choiceButtons'); box.innerHTML='';
-  options.forEach(option=>{const data=typeof option==='object'?option:{label:option,value:option};const b=document.createElement('button');b.textContent=data.label;if(data.className)b.className=data.className;b.onclick=()=>{$('choiceDialog').close();onSelect(data.value);if(state.castsLeft<=0&&!state.finished)maybeFinalizeSession();commitState();setTimeout(resolveFadedRelicFragment,0);setTimeout(resumeGoldenGearApplication,0);};box.appendChild(b);});
+  options.forEach(option=>{const data=typeof option==='object'?option:{label:option,value:option};const b=document.createElement('button');b.textContent=data.label;if(data.className)b.className=data.className;b.onclick=()=>{$('choiceDialog').close();onSelect(data.value);if(state.finished&&state.finalResult)recalculateFinishedSessionResult();if(state.castsLeft<=0&&!state.finished)maybeFinalizeSession();commitState();setTimeout(resolveFadedRelicFragment,0);setTimeout(resumeGoldenGearApplication,0);};box.appendChild(b);});
   $('choiceDialog').showModal();
 }
 

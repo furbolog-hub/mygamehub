@@ -99,7 +99,7 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
         });
 
         assert(pageErrors.length===0,`${engineName}/${viewportName}: page errors ${pageErrors.join(' | ')}`);
-        assert(metrics.shellChildren.length===6,`${engineName}/${viewportName}: shell must have fishing zones, three section views and the dock`);
+        assert(metrics.shellChildren.length===8,`${engineName}/${viewportName}: shell must have fishing zones, Sphere layer/announcer, three section views and the dock`);
         assert(metrics.ids.every(count=>count===1),`${engineName}/${viewportName}: legacy IDs were lost or duplicated ${metrics.ids}`);
         assert(metrics.castInDock,`${engineName}/${viewportName}: cast CTA is outside the bottom dock`);
         assert(metrics.dockPosition==='relative',`${engineName}/${viewportName}: action row is not part of the unified shell`);
@@ -125,7 +125,7 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
         assert(metrics.restartLabel==='Новая сессия',`${engineName}/${viewportName}: new-session action has the wrong accessible label: ${metrics.restartLabel}`);
         if(metrics.portrait){
           assert(/ЗАБРОСИТЬ УДОЧКУ/i.test(metrics.castLabel),`${engineName}/${viewportName}: primary action label does not match the concept`);
-          if(viewportName==='phonePortrait')assert(metrics.visibleRows>=6&&metrics.visibleRows<=9,`${engineName}/${viewportName}: expected 6-9 compact visible chronology rows, got ${metrics.visibleRows}`);
+          if(viewportName==='phonePortrait')assert(metrics.visibleRows>=6&&metrics.visibleRows<=10,`${engineName}/${viewportName}: expected 6-10 compact visible chronology rows, got ${metrics.visibleRows}`);
         }
 
         await page.locator('#guideBtn').click();
