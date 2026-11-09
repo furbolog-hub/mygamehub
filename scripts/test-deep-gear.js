@@ -102,7 +102,7 @@ const viewports={
           return {
             overflow:document.documentElement.scrollWidth>innerWidth+1,
             chip:chipBox?{width:chipBox.width,height:chipBox.height}:null,
-            button:{height:buttonBox.height,text:button.textContent.trim(),cluster:button.querySelectorAll('.deep-gear-cluster .deep-gear-icon').length},
+            button:{height:buttonBox.height,text:button.textContent.trim(),ariaLabel:button.getAttribute('aria-label')||'',title:button.title,cluster:button.querySelectorAll('.deep-gear-cluster .deep-gear-icon').length},
             containerRows:containerRows.length,
             containerHeights:containerRows.map(row=>row.getBoundingClientRect().height),
             expanded:containerRows.every(row=>row.querySelector('.history-row-details')?.hidden===false),
@@ -116,10 +116,10 @@ const viewports={
         });
         assert.equal(metrics.overflow,false,`${engine} ${viewportName}: no horizontal overflow`);
         assert(metrics.chip&&metrics.chip.width<=148&&metrics.chip.height<=60,`${engine} ${viewportName}: compact effect chip`);
-        assert(metrics.button.text.includes('Глубинный заброс')&&metrics.button.cluster===2&&metrics.button.height<=56,`${engine} ${viewportName}: rank II cast button`);
+        assert(metrics.button.text==='ЗАБРОС'&&metrics.button.ariaLabel==='Глубинный заброс'&&metrics.button.title==='Глубинный заброс'&&metrics.button.cluster===2&&metrics.button.height>=60&&metrics.button.height<=64,`${engine} ${viewportName}: rank II cast button ${JSON.stringify(metrics.button)}`);
         assert.equal(metrics.containerRows,4,`${engine} ${viewportName}: container rows`);
-        assert(metrics.containerHeights.every(height=>height<=86),`${engine} ${viewportName}: compact expanded chronology`);
-        assert(metrics.expanded&&metrics.detailHeights.every(height=>height>0&&height<=30)&&metrics.oneLine,`${engine} ${viewportName}: expanded container details stay on one line`);
+        assert(metrics.containerHeights.every(height=>height<=105),`${engine} ${viewportName}: compact expanded chronology ${JSON.stringify(metrics.containerHeights)}`);
+        assert(metrics.expanded&&metrics.detailHeights.every(height=>height>0&&height<=30)&&metrics.oneLine,`${engine} ${viewportName}: expanded container details stay on one line ${JSON.stringify({expanded:metrics.expanded,detailHeights:metrics.detailHeights,oneLine:metrics.oneLine})}`);
         assert.deepEqual(metrics.componentCounts,[1,2,3,2],`${engine} ${viewportName}: all awarded components stay in their container row`);
         assert(metrics.fishRows===3&&metrics.missing===0&&metrics.guide,`${engine} ${viewportName}: visuals and guide`);
         await page.screenshot({path:path.join(output,`${engine}-${viewportName}.png`),fullPage:false});

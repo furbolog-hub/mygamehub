@@ -14,7 +14,12 @@
   const render = () => {
     const button = document.getElementById('soundToggleBtn');
     if (!button) return;
-    button.innerHTML = `<span class="ui-icon"><img src="./assets/icons/ui/${enabled?'sound-on.webp':'sound-off.webp'}" alt="" aria-hidden="true" decoding="async"></span>`;
+    const iconHost = button.querySelector('[data-sound-icon]');
+    const label = button.querySelector('[data-sound-label]');
+    const iconMarkup = `<span class="ui-icon"><img src="./assets/icons/ui/${enabled?'sound-on.webp':'sound-off.webp'}" alt="" aria-hidden="true" decoding="async"></span>`;
+    if (iconHost) iconHost.innerHTML = iconMarkup;
+    else button.innerHTML = iconMarkup;
+    if (label) label.textContent = enabled ? 'Звуки включены' : 'Звуки выключены';
     button.title = enabled ? 'Отключить звуки' : 'Включить звуки';
     button.setAttribute('aria-label', button.title);
     button.setAttribute('aria-pressed', String(!enabled));

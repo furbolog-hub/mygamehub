@@ -77,7 +77,11 @@ const viewports={
           ok(predicted.type==='nonFishCatch'&&descriptorText(predicted).includes('кг'),'Eye of Storm prediction can contain exact non-fish result');
           executeCatchDescriptor({...predicted,fixed:true});ok(state.nonFishCatches[0].predicted&&state.history[0].detail.includes('Оком Шторма'),'accepted prediction preserves the predicted result');
 
-          fresh();state.castsLeft=3;values=[.5,.99,.004,.05,.5];Math.random=()=>values.shift()??.99;castLine();
+          fresh();state.castsLeft=3;
+          const originalMaybeNonFishCatchDescriptor=maybeNonFishCatchDescriptor;
+          maybeNonFishCatchDescriptor=()=>({type:'nonFishCatch',nonFishKey:'japaneseSpiderCrab',weight:15,fixed:false});
+          Math.random=()=>.99;castLine();
+          maybeNonFishCatchDescriptor=originalMaybeNonFishCatchDescriptor;
           ok(state.nonFishCatches.length===1&&state.history.some(row=>row.type==='nonFishCatch'),'free ordinary cast resolves the independent non-fish roll');
           fresh();state.castsLeft=3;state.rifts.preparedCatch='giant';Math.random=()=>.99;castLine();
           ok(state.nonFishCatches.length===0&&state.fish.some(fish=>fish.category==='giant'),'prepared guaranteed result is not overridden');

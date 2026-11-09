@@ -47,7 +47,7 @@ function assert(value,message){if(!value)throw new Error(message);}
     assert(result.singula.original===13&&result.singula.weight===13,'Singula must add 30% to future original weight');
     assert(result.etherUse.removed&&result.etherUse.rowRemoved&&result.etherUse.castsLeft===11&&result.etherUse.charges===4,'Dark Ether must remove result and return one cast');
     assert(result.coalUse.used&&result.coalUse.converted.every(Boolean)&&result.coalUse.tradeItems===2,'Dark Coal must transform ordinary cast and arcade fish');
-    assert(result.coalUse.rows.every(row=>row.changed&&row.html.includes('dark-coal-transform-line')&&row.html.includes('trade-item-icon')&&row.html.includes('dark-coal-note')),'Dark Coal rows must render a compact three-line source/result/note chain');
+    assert(result.coalUse.rows.every(row=>row.changed&&row.html.includes('dark-coal-transform-line')&&row.html.includes('history-transform-source')&&row.html.includes('trade-item-icon')),'Dark Coal rows must render the compact source/result transform chain');
     assert(!result.resultMarkup.includes('data-dungeon-use-reward'),'Dungeon result must not contain a Dark Coal action button');
     assert(result.trail==='Алый след','Astral piranhas must create the shared Scarlet Trail');
     assert(errors.length===0,errors.join('; '));

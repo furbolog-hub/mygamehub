@@ -112,7 +112,7 @@ const assert=(value,message)=>{if(!value)throw new Error(message);};
       const stackedPearls={items:state.tradeItems.length-pearlItemsBefore,artifacts:state.artifacts.length-pearlArtifactsBefore,counters:[pearlA.bonusArtifacts,pearlB.bonusArtifacts]};
 
       fresh();
-      state.tradeShipChecked=true;state.castsLeft=0;for(let i=0;i<4;i++)makeFish('normal','Заброс',true,{initialWeight:10,fishName:`панцирная рыба ${i+1}`});
+      state.weather='sunny';state.weatherSeen=['sunny'];state.tradeShipChecked=true;state.castsLeft=0;for(let i=0;i<4;i++)makeFish('normal','Заброс',true,{initialWeight:10,fishName:`панцирная рыба ${i+1}`});
       const carapaceA={id:uid(),key:'carapace',name:'Панцирная чешуя',used:false},carapaceB={id:uid(),key:'carapace',name:'Панцирная чешуя',used:false};state.dungeon.rewards.push(carapaceA,carapaceB);finishGame();
       const stackedCarapaces={weights:[carapaceA.finalWeight,carapaceB.finalWeight],maxFishWeight:Math.max(...state.fish.map(f=>f.weight))};
 

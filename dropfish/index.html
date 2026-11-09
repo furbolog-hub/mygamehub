@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#071b2d" />
+  <link rel="icon" type="image/png" href="./assets/branding/dropfish-logo.png" />
   <title>DropFish</title>
   <script>
     // Раннее определение обычного Safari на iPhone до построения интерфейса.
@@ -20,7 +21,8 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=3.34-assembly-blueprints" />
+  <link rel="stylesheet" href="style.css?v=3.43-viaxalior" />
+  <link rel="stylesheet" href="mobile-ui.css?v=17.41-snapshot78-hud-filters" />
   <script>
   /* Telegram SDK грузим ТОЛЬКО внутри Telegram. В обычном браузере он не нужен,
      а его синхронная загрузка блокировала отрисовку страницы на минуты, если
@@ -37,10 +39,12 @@
     }
   })();
   </script>
-  <script src="viewport-fit.js?v=1.85-dead-waters"></script>
+  <script src="viewport-fit.js?v=2.1-webkit-resize"></script>
 </head>
 <body>
-  <main class="app-shell">
+  <main class="app-shell mobile-game-shell" data-mobile-game-shell>
+    <section id="mobileFishingScene" class="mobile-game-shell__fishing" aria-label="Рыбалка">
+    <div class="mobile-scene-artboard" data-scene-artboard>
     <header class="topbar glass ui-surface">
       <div class="header-depth-presence" aria-hidden="true">
         <span class="header-sonar-sweep"></span>
@@ -53,16 +57,19 @@
         <p class="eyebrow">Telegram Mini App • Browser</p>
         <h1><img class="brand-logo" src="./assets/branding/dropfish-logo.png" alt="DropFish"></h1>
       </div>
-      <div class="header-actions">
-        <a class="menu-exit-btn" href="../" aria-label="Выйти в игровое меню"><span class="ui-icon is-menu-icon"><img src="./assets/icons/ui/menu.webp" alt="" aria-hidden="true"></span><span>Меню</span></a>
-        <button id="dropfishDebugBtn" class="icon-btn debug-toggle-btn" aria-label="Открыть тестовую панель" title="Тестовая панель"><span class="ui-icon"><img src="./assets/icons/ui/debug-panel.webp" alt="" aria-hidden="true"></span></button>
-        <button id="soundToggleBtn" class="icon-btn sound-toggle-btn" aria-label="Отключить звуки" title="Отключить звуки" aria-pressed="false"><span class="ui-icon"><img src="./assets/icons/ui/sound-on.webp" alt="" aria-hidden="true"></span></button>
-        <button id="motionBtn" class="icon-btn motion-btn" aria-label="Уменьшить анимации" title="Уменьшить анимации"><span class="ui-icon"><img src="./assets/icons/ui/animation-on.webp" alt="" aria-hidden="true"></span></button>
-        <button id="guideBtn" class="icon-btn" aria-label="Открыть справочник" title="Открыть справочник"><span class="ui-icon"><img src="./assets/icons/ui/guide.webp" alt="" aria-hidden="true"></span></button>
+      <div class="header-actions header-system-actions" aria-label="Системные настройки">
+        <button id="sceneMenuBtn" class="icon-btn scene-menu-btn menu-exit-btn" type="button" aria-label="Открыть меню DropFish" title="Открыть меню DropFish" aria-controls="mobileMenuView" aria-expanded="false"><span class="ui-icon is-menu-icon"><img src="./assets/icons/ui/menu.webp" alt="" aria-hidden="true"></span><span class="visually-hidden">Меню DropFish</span></button>
+        <button id="dropfishDebugBtn" class="icon-btn header-debug-action debug-toggle-btn" type="button" aria-label="Открыть тестовую панель" title="Открыть тестовую панель"><span class="ui-icon"><img src="./assets/icons/ui/debug-panel.webp" alt="" aria-hidden="true"></span></button>
+        <button id="soundToggleBtn" class="icon-btn sound-toggle-btn" type="button" aria-label="Отключить звуки" title="Отключить звуки" aria-pressed="false"><span data-sound-icon><span class="ui-icon"><img src="./assets/icons/ui/sound-on.webp" alt="" aria-hidden="true"></span></span><span class="mobile-menu-action__copy"><small data-sound-label>Звуки включены</small></span></button>
+        <button id="motionBtn" class="icon-btn motion-btn" type="button" aria-label="Уменьшить анимации" title="Уменьшить анимации"><span data-motion-icon><span class="ui-icon"><img src="./assets/icons/ui/animation-on.webp" alt="" aria-hidden="true"></span></span><span class="mobile-menu-action__copy"><small data-motion-label>Полные анимации</small></span></button>
+        <button id="guideBtn" class="icon-btn" type="button" aria-label="Открыть справочник" title="Открыть справочник"><span class="ui-icon"><img src="./assets/icons/ui/guide.webp" alt="" aria-hidden="true"></span></button>
       </div>
     </header>
 
     <section id="lakeCard" class="lake-card glass merged-weather-card ui-surface">
+      <div class="scene-artwork" aria-hidden="true">
+        <img id="weatherArtwork" class="scene-artwork__weather-image" data-weather-artwork="sunny" src="./assets/scene/weather/sunny.png" alt="" decoding="async" fetchpriority="high">
+      </div>
       <div class="ambient-layer" aria-hidden="true">
         <span class="bubble bubble-1"></span><span class="bubble bubble-2"></span><span class="bubble bubble-3"></span>
         <span class="fish-shadow fish-shadow-1">◆</span><span class="fish-shadow fish-shadow-2">◆</span>
@@ -70,8 +77,8 @@
       <div id="castArc" class="cast-arc" aria-hidden="true"><span class="cast-lure"></span></div>
       <div id="splash" class="splash" aria-hidden="true"><span class="splash-core"></span><span class="splash-ring splash-ring-a"></span><span class="splash-ring splash-ring-b"></span><span class="splash-drop splash-drop-a"></span><span class="splash-drop splash-drop-b"></span><span class="splash-drop splash-drop-c"></span></div>
       <div class="lake-stat-strip" aria-label="Статистика игровой сессии">
-        <div class="lake-stat lake-stat-casts"><span>Забросы</span><strong id="castsLabel">10</strong></div>
-        <div class="lake-stat lake-stat-weight"><span>Вес сейчас</span><strong id="weightLabel">0,0 кг</strong></div>
+        <div class="lake-stat lake-stat-weight"><strong id="weightLabel">0,0 кг</strong><span class="lake-stat__label">Вес</span></div>
+        <div class="lake-stat lake-stat-casts"><strong id="castsLabel">10</strong><span class="lake-stat__label">Забросов</span></div>
       </div>
       <div class="weather-main">
         <div id="weatherScene" class="weather-scene" aria-hidden="true"></div>
@@ -87,37 +94,124 @@
       <span id="weatherLabel" class="visually-hidden">—</span>
     </section>
 
-    <section class="actions cast-panel ui-action-grid">
-      <button id="castBtn" class="primary-btn"><span class="ui-icon is-cast-icon"><img src="./assets/icons/ui/fishing-rod.webp" alt="" aria-hidden="true"></span><span>Забросить удочку</span></button>
-      <button id="restartBtn" class="secondary-btn">↻ Новая игра</button>
-    </section>
-
-    <section class="inventory glass ui-surface ui-panel">
-      <div class="section-heading ui-panel-heading">
-        <h2>Активные эффекты</h2>
+    <section class="inventory active-effects-rail glass ui-surface ui-panel" aria-labelledby="activeEffectsTitle">
+      <div class="section-heading active-effects-rail__heading ui-panel-heading">
+        <h2 id="activeEffectsTitle" class="visually-hidden">Активные эффекты</h2>
+        <span class="active-effects-rail__label" aria-hidden="true">Эффекты</span>
         <span id="effectCount">0</span>
       </div>
       <div id="effectsList" class="chips"><span class="muted">Пока нет</span></div>
     </section>
+    </div>
+    </section>
 
+    <section id="mobileFishingChronology" class="mobile-game-shell__chronology" aria-label="Хронология">
     <section class="history glass ui-surface ui-panel">
       <div class="section-heading ui-panel-heading">
         <h2>Хронология улова</h2>
-        <span id="historyCount">0</span>
+        <button id="historyFiltersToggle" class="chronology-filter-toggle" type="button" aria-expanded="false" aria-controls="historyFiltersPanel" aria-label="Показать фильтры хронологии">
+          <span id="historyFilterSummary" class="chronology-filter-toggle__summary" hidden>Все</span>
+          <span id="historyCount">0</span>
+          <span class="chronology-filter-toggle__chevron" aria-hidden="true">›</span>
+        </button>
       </div>
-      <div id="historyScroll" class="history-scroll ui-scroll-region">
+      <div id="historyFiltersPanel" class="chronology-filter-disclosure" aria-hidden="true" inert>
+        <div class="chronology-filter-disclosure__inner">
+          <div class="chronology-toolbar">
+            <div id="historyFilters" class="chronology-filter-rail" role="toolbar" aria-label="Фильтр хронологии"></div>
+          </div>
+        </div>
+      </div>
+      <div id="historyScroll" class="history-scroll ui-scroll-region" role="region" aria-label="Записи хронологии улова" tabindex="0">
         <ol id="historyList" class="history-list"></ol>
         <div id="emptyHistory" class="empty-state">Первый заброс ждёт вас.</div>
         <div id="resultCard" class="result-card hidden"></div>
       </div>
+      <button id="historyNewEntries" class="chronology-new-events" type="button" aria-live="polite" aria-label="Новых событий нет" hidden>
+        <span aria-hidden="true">↓</span> <span id="historyNewEntriesCount">0</span> новых
+      </button>
     </section>
+    </section>
+
+    <div id="flowSphereLayer" class="flow-sphere-layer" aria-hidden="true"></div>
+    <span id="flowSphereAnnouncer" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></span>
+
+    <section id="mobileJournalView" class="mobile-game-shell__section-view" data-mobile-section-view="journal" aria-labelledby="mobileJournalTitle" hidden>
+      <div class="mobile-section-scroll ui-scroll-region" tabindex="0">
+        <header class="mobile-section-heading">
+          <span class="mobile-section-kicker">История и статистика</span>
+          <h2 id="mobileJournalTitle">Журнал</h2>
+          <p>Здесь будет собрана расширенная статистика сессий. Текущая хронология полностью сохранена на экране рыбалки.</p>
+        </header>
+        <div class="mobile-placeholder-grid">
+          <article class="mobile-placeholder-card"><strong id="journalHistorySummary">0</strong><span>записей в текущей сессии</span></article>
+          <article class="mobile-placeholder-card"><strong id="journalWeightSummary">0,0 кг</strong><span>текущий вес улова</span></article>
+          <article class="mobile-placeholder-card is-wide"><h3>Подробный журнал</h3><p>Статистика категорий, достижений и прошлых сессий будет подключена без изменения механики улова.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="mobileCollectionView" class="mobile-game-shell__section-view" data-mobile-section-view="collection" aria-labelledby="mobileCollectionTitle" hidden>
+      <div class="mobile-section-scroll ui-scroll-region" tabindex="0">
+        <header class="mobile-section-heading">
+          <span class="mobile-section-kicker">Открытые находки</span>
+          <h2 id="mobileCollectionTitle">Коллекция</h2>
+          <p>Раздел подготовлен для рыб, артефактов, реликвий и трофеев. Существующие данные игры остаются источником истины.</p>
+        </header>
+        <div class="mobile-collection-placeholder" aria-label="Коллекционный контент появится на следующем этапе">
+          <img src="./assets/icons/artifacts/epic/epic.webp" alt="" aria-hidden="true">
+          <strong>Коллекция готовится</strong>
+          <span>Все найденные предметы продолжают учитываться игровой логикой.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="mobileMenuView" class="mobile-game-shell__section-view" data-mobile-section-view="menu" aria-labelledby="mobileMenuTitle" hidden>
+      <div class="mobile-section-scroll ui-scroll-region" tabindex="0">
+        <div class="mobile-menu-sheet">
+          <header class="mobile-section-heading">
+            <span class="mobile-section-kicker">Настройки и системы</span>
+            <h2 id="mobileMenuTitle">Меню</h2>
+          </header>
+          <div class="mobile-menu-actions">
+            <button id="restartBtn" class="mobile-menu-action" type="button">
+              <span class="mobile-menu-action__symbol" aria-hidden="true">↻</span>
+              <span class="mobile-menu-action__copy"><strong>Новая сессия</strong><small>Начать тестовую сессию заново</small></span>
+            </button>
+            <a class="mobile-menu-action mobile-menu-link" href="../index.html">
+              <span class="mobile-menu-action__icon" aria-hidden="true"><span class="ui-icon"><img src="./assets/icons/ui/menu.webp" alt="" aria-hidden="true"></span></span>
+              <span class="mobile-menu-action__copy"><strong>Игровой центр</strong><small>Выбрать другую игру</small></span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <nav id="bottomNavigation" class="mobile-game-shell__dock" aria-label="Основная навигация">
+      <button class="mobile-nav-item is-active" type="button" data-mobile-nav="fishing" aria-controls="mobileFishingScene mobileFishingChronology" aria-current="page">
+        <span class="mobile-nav-item__icon"><img src="./assets/icons/navigation/fishing.webp" data-fallback="./assets/icons/fish-categories/normal.webp" alt="" aria-hidden="true" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;this.dataset.fallback=''}"></span><span>Рыбалка</span>
+      </button>
+      <button class="mobile-nav-item" type="button" data-mobile-nav="journal" aria-controls="mobileJournalView">
+        <span class="mobile-nav-item__icon"><img src="./assets/icons/navigation/journal.webp" data-fallback="./assets/icons/ui/guide.webp" alt="" aria-hidden="true" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;this.dataset.fallback=''}"></span><span>Журнал</span>
+      </button>
+      <div class="cast-action-slot">
+        <button id="castBtn" class="primary-btn cast-action" type="button" data-cast-state="ready" aria-label="Забросить удочку"><span class="ui-icon is-cast-icon"><img src="./assets/icons/ui/fishing-rod.webp" alt="" aria-hidden="true"></span><span class="cast-action__label">ЗАБРОСИТЬ УДОЧКУ</span></button>
+      </div>
+      <div id="portraitRestartSlot" class="portrait-restart-slot"></div>
+      <button class="mobile-nav-item" type="button" data-mobile-nav="collection" aria-controls="mobileCollectionView">
+        <span class="mobile-nav-item__icon"><img src="./assets/icons/navigation/collection.webp" data-fallback="./assets/icons/artifacts/epic/epic.webp" alt="" aria-hidden="true" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;this.dataset.fallback=''}"></span><span>Коллекция</span>
+      </button>
+      <button class="mobile-nav-item" type="button" data-mobile-nav="menu" aria-controls="mobileMenuView">
+        <span class="mobile-nav-item__icon"><img src="./assets/icons/navigation/menu.webp" data-fallback="./assets/icons/ui/menu.webp" alt="" aria-hidden="true" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;this.dataset.fallback=''}"></span><span>Меню</span>
+      </button>
+    </nav>
   </main>
 
 
-  <dialog id="guideDialog" class="modal">
+  <dialog id="guideDialog" class="modal" aria-labelledby="guideDialogTitle">
     <div class="modal-card wide ui-dialog-panel">
       <button class="close-btn" data-close="guideDialog" aria-label="Закрыть">×</button>
-      <h2 class="ui-dialog-title"><span class="ui-icon is-title-icon"><img src="./assets/icons/ui/guide.webp" alt="" aria-hidden="true"></span><span>Справочник</span></h2>
+      <h2 id="guideDialogTitle" class="ui-dialog-title"><span class="ui-icon is-title-icon"><img src="./assets/icons/ui/guide.webp" alt="" aria-hidden="true"></span><span>Справочник</span></h2>
       <nav id="guideTabs" class="tabs"></nav>
       <div id="guideContent" class="guide-content"></div>
     </div>
@@ -236,7 +330,7 @@
       <section class="dead-waters-scene">
         <header class="dead-waters-heading">
           <span>Опасное событие</span>
-          <h2 id="deadWatersTitle">Воронка мёртвых вод</h2>
+          <h2 id="deadWatersTitle">Пучина мёртвых вод</h2>
           <p>Откройте минимум три ячейки. Каждый следующий шаг может отрезать путь назад.</p>
         </header>
         <div id="deadWatersGrid" class="dead-waters-grid" role="grid" aria-label="Закрытое поле три на три"></div>
@@ -260,7 +354,8 @@
   <div id="weatherFx" class="weather-fx" aria-hidden="true"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="ui-enhancements.js?v=1.90-rift-media"></script>
-<script src="script.js?v=19.53-assembly-blueprints"></script>
+  <script src="mobile-ui.js?v=8.0-ui-audit"></script>
+  <script src="ui-enhancements.js?v=2.0-menu-sheet"></script>
+  <script src="script.js?v=31.38-snapshot78-hud-filters"></script>
 </body>
 </html>

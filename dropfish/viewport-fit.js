@@ -40,14 +40,29 @@
   // размера, поэтому единственный корректный источник — стабильная высота окна.
   const measureHeight = () => {
     let h = 0;
+    let source = 'innerHeight';
+    const innerHeightValue = Number.isFinite(window.innerHeight) ? Number(window.innerHeight) : 0;
+    const visualHeight = window.visualViewport && Number.isFinite(window.visualViewport.height)
+      ? Number(window.visualViewport.height)
+      : 0;
     if (isTelegram && tg) {
-      h = Number(tg.viewportStableHeight) || Number(tg.viewportHeight) || 0;
+      const stableHeight = Number(tg.viewportStableHeight) || 0;
+      const viewportHeight = Number(tg.viewportHeight) || 0;
+      h = stableHeight || viewportHeight;
+      source = stableHeight > 0 ? 'telegramStable' : 'telegramViewport';
+      // The on-screen keyboard may make visualViewport smaller than Telegram's
+      // stable rectangle. In that case the actually visible height wins.
+      if (visualHeight > 0 && (!(h > 0) || visualHeight < h - 1)) {
+        h = visualHeight;
+        source = 'visualViewport';
+      }
     }
-    if (!(h > 0) && window.visualViewport && Number.isFinite(window.visualViewport.height)) {
-      h = window.visualViewport.height;
+    if (!(h > 0) && visualHeight > 0 && (!(innerHeightValue > 0) || visualHeight <= innerHeightValue + 1)) {
+      h = visualHeight;
+      source = 'visualViewport';
     }
-    if (!(h > 0)) h = window.innerHeight;
-    return (h > 0) ? Math.round(h) : 0;
+    if (!(h > 0)) h = innerHeightValue;
+    return { height: (h > 0) ? Math.round(h) : 0, source };
   };
 
   // Безопасные зоны Telegram. В полноэкранном режиме env(safe-area-inset-*)
@@ -72,12 +87,21 @@
   const apply = () => {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
-      const h = measureHeight();
-      if (h > 0) root.style.setProperty('--fit-height', `${h}px`);
+      const measurement = measureHeight();
+      const h = measurement.height;
+      if (h > 0) {
+        root.style.setProperty('--fit-height', `${h}px`);
+        root.style.setProperty('--app-height', `${h}px`);
+        if (isTelegram) root.style.setProperty('--tg-viewport-stable-height', `${h}px`);
+        root.dataset.viewportHeight = String(h);
+        root.dataset.viewportHeightSource = measurement.source;
+      }
       applyInsets();
       setBodyClasses();
     });
   };
+
+  window.syncDropfishViewport = apply;
 
   apply();
   [60, 200, 500, 1000, 1800].forEach(t => setTimeout(apply, t));
@@ -203,7 +227,7 @@
     [0, 60, 200, 500].forEach(function (t) { setTimeout(fitDungeonStage, t); });
   }
 
-  /* Воронка использует ту же фиксированную систему 720x1280. Безопасные
+  /* Пучина использует ту же фиксированную систему 720x1280. Безопасные
      зоны меняют только доступный внешний прямоугольник и общий масштаб. */
   function fitDeadWatersStage() {
     var modal = document.getElementById('deadWatersDialog');

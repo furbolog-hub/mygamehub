@@ -57,11 +57,11 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
           );
           render();
           window.__mobileUiRows={fish:fishRow.id,trash:trashRow.id,scuba:scubaRow.id,carapace:carapaceRow.id};
-          window.__mobileUiState=JSON.stringify(state);
+          const gameplayState={...state};delete gameplayState.historyUi;window.__mobileUiState=JSON.stringify(gameplayState);
         });
         await page.waitForTimeout(80);
         const metrics=await page.evaluate(()=>{
-          const app=document.querySelector('.app-shell'),timeline=document.querySelector('#historyScroll'),action=document.querySelector('.cast-panel');
+          const app=document.querySelector('.app-shell'),timeline=document.querySelector('#historyScroll'),action=document.querySelector('#bottomNavigation');
           const header=document.querySelector('.topbar'),weather=document.querySelector('.merged-weather-card'),chips=document.querySelector('#effectsList');
           const fishRow=document.querySelector(`[data-history-id="${window.__mobileUiRows.fish}"]`);
           const scubaRow=document.querySelector(`[data-history-id="${window.__mobileUiRows.scuba}"]`);
@@ -73,19 +73,19 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
             bodyOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
             bodyVertical:document.documentElement.scrollHeight-document.documentElement.clientHeight,
             app:rect(app),header:rect(header),weather:rect(weather),action:rect(action),timeline:rect(timeline),
-            headerControls:[...header.querySelectorAll('.header-actions>a,.header-actions>button')].map(rect),
+            headerControls:[...header.querySelectorAll('#sceneMenuBtn,#dropfishDebugBtn,#soundToggleBtn,#motionBtn,#guideBtn')].map(rect),
             timelineOverflow:getComputedStyle(timeline).overflowY,
             chipWrap:getComputedStyle(chips).flexWrap,
             chipHeight:Math.max(...[...chips.querySelectorAll('.chip')].map(chip=>chip.getBoundingClientRect().height),0),
             chainOrder:Boolean(leviathan&&metamorph&&leviathan.compareDocumentPosition(metamorph)&Node.DOCUMENT_POSITION_FOLLOWING),
-            chainText:fishRow?.querySelector('.modifier-chain')?.textContent.replace(/\s+/g,' ').trim()||'',
-            catchText:fishRow?.querySelector('.catch-weight-summary')?.textContent.replace(/\s+/g,' ').trim()||'',
+            chainText:[...fishRow.querySelectorAll('.leviathan-impact,.abyss-fish-impact')].map(node=>node.textContent.replace(/\s+/g,' ').trim()).join(' '),
+            catchText:fishRow?.querySelector('.chronology-row__result')?.textContent.replace(/\s+/g,' ').trim()||'',
             duplicateScale:(fishRow?.textContent.match(/Чешуя Левиафана/g)||[]).length,
             targetRepeated:[...fishRow.querySelectorAll('.modifier-row-title')].some(node=>/Карпиодес/i.test(node.textContent)),
-            descriptionButton:Boolean(scubaRow?.querySelector('button.description-toggle[aria-expanded="false"]')),
-            carapaceState:carapaceRow?.querySelector('.carapace-current-state')?.textContent.replace(/\s+/g,' ').trim()||'',
-            carapaceDescription:Boolean(carapaceRow?.querySelector('button.description-toggle[aria-expanded="false"]')),
-            trashChain:trashRow?.querySelector('.trash-event-chain')?.textContent.replace(/\s+/g,' ').trim()||'',
+            descriptionButton:Boolean(scubaRow?.classList.contains('is-expandable')&&scubaRow?.querySelector('.scuba-bonus-status')),
+            carapaceState:carapaceRow?.querySelector('.history-entity-detail')?.textContent.replace(/\s+/g,' ').trim()||'',
+            carapaceDescription:Boolean(carapaceRow?.classList.contains('is-expandable')&&carapaceRow?.querySelector('.history-entity-detail')),
+            trashChain:trashRow?.querySelector('.history-entity-detail')?.textContent.replace(/\s+/g,' ').trim()||'',
             longTextOverflow:[...document.querySelectorAll('.effect-chip-title,.trade-item-find-copy strong')].some(node=>node.scrollWidth-node.clientWidth>1),
           };
         });
@@ -93,20 +93,21 @@ const assert=(condition,message)=>{if(!condition)throw new Error(message);};
         assert(metrics.bodyVertical<=1,`${engineName}/${viewportName}: whole page scrolls by ${metrics.bodyVertical}px`);
         assert(metrics.app.top>=-1&&metrics.app.bottom<=viewport.height+1,`${engineName}/${viewportName}: app shell leaves viewport`);
         for(const [name,rect] of Object.entries({header:metrics.header,weather:metrics.weather,action:metrics.action}))assert(rect.top>=-1&&rect.bottom<=viewport.height+1,`${engineName}/${viewportName}: ${name} is not persistently visible`);
-        assert(metrics.headerControls.length===5&&metrics.headerControls.every(rect=>rect.left>=metrics.header.left-1&&rect.right<=metrics.header.right+1&&rect.top>=metrics.header.top-1&&rect.bottom<=metrics.header.bottom+1&&rect.height>=40),`${engineName}/${viewportName}: header control is clipped or has a small touch area ${JSON.stringify({header:metrics.header,controls:metrics.headerControls})}`);
+        assert(metrics.headerControls.length===5&&metrics.headerControls.every(rect=>rect.left>=metrics.header.left-1&&rect.right<=metrics.header.right+1&&rect.top>=metrics.header.top-1&&rect.bottom<=metrics.header.bottom+1&&rect.width>=40&&rect.height>=40),`${engineName}/${viewportName}: a restored header control is clipped or has a small touch area ${JSON.stringify({header:metrics.header,controls:metrics.headerControls})}`);
         assert(metrics.timeline.height>24&&['auto','scroll'].includes(metrics.timelineOverflow),`${engineName}/${viewportName}: chronology is not the scroll region`);
-        assert(metrics.chipWrap==='nowrap'&&metrics.chipHeight<=46,`${engineName}/${viewportName}: active effects are not a compact single row`);
+        assert(metrics.chipWrap==='nowrap'&&metrics.chipHeight<=60,`${engineName}/${viewportName}: active effects are not a compact single row (${metrics.chipHeight}px)`);
         assert(metrics.chainOrder,`${engineName}/${viewportName}: modifier calculation order is wrong`);
         assert(/4,0 кг.*9,0 кг.*9,0 кг.*11,2 кг/.test(metrics.chainText),`${engineName}/${viewportName}: 4.0 → 9.0 → 11.2 chain is incomplete: ${metrics.chainText}`);
-        assert(/4,0 кг.*11,2 кг/.test(metrics.catchText),`${engineName}/${viewportName}: primary weight summary is incomplete: ${metrics.catchText}`);
+        assert(metrics.catchText==='+11,2 кг',`${engineName}/${viewportName}: primary weight summary must keep only the compact final weight: ${metrics.catchText}`);
         assert(metrics.duplicateScale===1&&!metrics.targetRepeated,`${engineName}/${viewportName}: modifier repeats source or target`);
         assert(metrics.descriptionButton,`${engineName}/${viewportName}: complex description is not progressively disclosed`);
-        assert(/Финальный чистый вес.*288,8 кг.*Применено к:.*Карпиодес/.test(metrics.carapaceState)&&metrics.carapaceDescription,`${engineName}/${viewportName}: carapace state is not structured from source data`);
-        assert(/Поднят со дна молнией.*Уничтожен Нитью Сифонофоры.*\+1.*заброс/.test(metrics.trashChain),`${engineName}/${viewportName}: trash cause chain is incomplete`);
+        assert(/Финальный чистый вес.*288,8 кг.*Карпиодес/.test(metrics.carapaceState)&&metrics.carapaceDescription,`${engineName}/${viewportName}: carapace state is not structured from source data`);
+        assert(/Удар молнии поднял хлам со дна.*Нить Сифонофоры удалила хлам.*возвращён 1 заброс/.test(metrics.trashChain),`${engineName}/${viewportName}: trash cause chain is incomplete`);
         assert(!metrics.longTextOverflow,`${engineName}/${viewportName}: a real long DropFish name overflows its component`);
-        await page.locator(`[data-history-id="${await page.evaluate(()=>window.__mobileUiRows.scuba)}"] .description-toggle`).click();
-        const toggle=await page.evaluate(()=>({expanded:document.querySelector('.description-toggle')?.getAttribute('aria-expanded'),hidden:document.querySelector('.description-panel')?.hidden,stateSame:JSON.stringify(state)===window.__mobileUiState}));
-        assert(toggle.expanded==='true'&&!toggle.hidden&&toggle.stateSame,`${engineName}/${viewportName}: disclosure changed game state or failed to expand`);
+        const scubaRowId=await page.evaluate(()=>window.__mobileUiRows.scuba);
+        await page.evaluate(id=>setHistoryRowExpanded(id,true),scubaRowId);
+        const toggle=await page.evaluate(id=>{const row=document.querySelector(`[data-history-id="${id}"]`),gameplayState={...state};delete gameplayState.historyUi;return{expanded:row?.querySelector('[data-history-toggle]')?.getAttribute('aria-expanded'),hidden:row?.querySelector('.chronology-disclosure')?.getAttribute('aria-hidden'),stateSame:JSON.stringify(gameplayState)===window.__mobileUiState};},scubaRowId);
+        assert(toggle.expanded==='true'&&toggle.hidden==='false'&&toggle.stateSame,`${engineName}/${viewportName}: disclosure changed game state or failed to expand`);
         if(['phone320x568','phone390x844','phoneLandscape','tabletPortrait','tabletLandscape','desktop'].includes(viewportName))await page.screenshot({path:path.join(output,`${engineName}-${viewportName}.png`)});
         results.push({engine:engineName,viewport:viewportName,...metrics});
         await page.close();

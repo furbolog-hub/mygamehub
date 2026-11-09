@@ -106,11 +106,16 @@ const viewports={
           overflow:document.documentElement.scrollWidth>innerWidth+1,
           chips:[...document.querySelectorAll('#effectsList .effect-assembly')].map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height})),
           rows:[...document.querySelectorAll('.history-item.type-assemblyBlueprint')].map(el=>el.getBoundingClientRect().height),
-          missing:[...document.querySelectorAll('.assembly-blueprint-icon img,.assembly-device-icon img')].filter(img=>!img.complete||!img.naturalWidth).map(img=>img.getAttribute('src'))
+          artwork:[...document.querySelectorAll('.history-item.type-assemblyBlueprint')].map(el=>{
+            const row=state.history.find(item=>String(item.id)===el.dataset.historyId),definition=assemblyDefinition(row?.assemblyDeviceKey);
+            return {key:row?.assemblyDeviceKey,src:el.querySelector('.chronology-row__art img')?.getAttribute('src')||'',expected:definition?`${ASSEMBLY_ICON_PATH}${definition.file}`:''};
+          }),
+          missing:[...document.querySelectorAll('.assembly-blueprint-icon img,.assembly-device-icon img,.history-item.type-assemblyBlueprint .chronology-row__art img')].filter(img=>!img.complete||!img.naturalWidth).map(img=>img.getAttribute('src'))
         }));
         assert(!metrics.overflow,`${engine} ${name}: horizontal overflow`);
         assert(metrics.chips.length===6&&metrics.chips.every(chip=>chip.width<=148&&chip.height<=60),`${engine} ${name}: compact chips ${JSON.stringify(metrics.chips)}`);
         assert(metrics.rows.length===6&&metrics.rows.every(height=>height<=92),`${engine} ${name}: compact chronology ${JSON.stringify(metrics.rows)}`);
+        assert(metrics.artwork.length===6&&metrics.artwork.every(item=>item.src===item.expected&&!/(?:orca|diver-equipment)\.webp$/i.test(item.src)),`${engine} ${name}: assembly chronology artwork ${JSON.stringify(metrics.artwork)}`);
         assert(metrics.missing.length===0,`${engine} ${name}: missing images ${JSON.stringify(metrics.missing)}`);
         await page.screenshot({path:path.join(output,`${engine}-${name}.png`),fullPage:false});
         await page.evaluate(()=>{const blueprint=state.assembly.blueprints.find(item=>item.deviceKey==='ichthyoDuplicator');openAssemblyDialog(blueprint.id);});

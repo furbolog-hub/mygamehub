@@ -4,6 +4,10 @@ const path=require('path');
 const fs=require('fs');
 const assert=require('assert/strict');
 
+const tentacleSoundPath=path.resolve('dropfish/assets/audio/events/dead-waters-tentacle-attack.ogg');
+assert(fs.existsSync(tentacleSoundPath),'tentacle attack sound asset is missing');
+assert.equal(fs.readFileSync(tentacleSoundPath).subarray(0,4).toString('ascii'),'OggS','tentacle attack sound asset is not an OGG stream');
+
 const viewports=[
   ['desktop',1280,800],
   ['phone-portrait',390,844],
@@ -51,6 +55,7 @@ const viewports=[
         const nativeRandom=Math.random;
         try{
           reset();
+          ok(DEAD_WATERS_NAME==='Пучина мёртвых вод'&&$('deadWatersTitle').textContent.trim()===DEAD_WATERS_NAME,'Dead Waters uses the renamed title everywhere');
           ok(BALANCE.deadWaters.defaultChance===.03,'sunny chance configured at 3%');
           for(const weather of ['fog','thunder','storm']){state.weather=weather;ok(deadWatersSpawnChance()===.04,`${weather} chance configured at 4%`);}
           for(const weather of ['sunny','rain','calm','golden','eclipse']){state.weather=weather;ok(deadWatersSpawnChance()===.03,`${weather} chance configured at 3%`);}
@@ -81,6 +86,11 @@ const viewports=[
           ok(timed.status==='available'&&!deadWatersBlocksCasting(),'fishing remains available while the entry waits');
           ok(timed.expiresAt-Date.now()>19500&&timed.expiresAt-Date.now()<=20000,'entry stores an absolute 20 second deadline');
           ok(document.querySelector(`[data-open-dead-waters="${timed.rowId}"]`),'chronology row contains entry action');
+          const timedRow=document.querySelector(`[data-history-id="${timed.rowId}"]`),timedStatus=timedRow?.querySelector('.chronology-row__meta .chronology-live-countdown'),timedValue=timedStatus?.querySelector('[data-dead-waters-time]'),timedResult=timedStatus?.closest('.chronology-row__result');
+          const timedBox=timedValue?.getBoundingClientRect(),timedResultBox=timedResult?.getBoundingClientRect(),initialTimedValue=Number(timedValue?.textContent);
+          ok(Boolean(timedBox&&timedResultBox&&timedBox.width>0&&timedBox.left>=timedResultBox.left-1&&timedBox.right<=timedResultBox.right+1&&timedStatus.scrollWidth<=timedResult.clientWidth+1&&getComputedStyle(timedValue).visibility==='visible'&&Number(getComputedStyle(timedValue).opacity)>0),'Dead Waters countdown number is fully visible in the chronology header');
+          await wait(150);deadWatersTick();
+          ok(Number(timedValue.textContent)<initialTimedValue,'Dead Waters visible countdown advances');
           const saved=hydrateState(serializeState(state));
           ok(saved.deadWaters.active.cells.length===9&&saved.deadWaters.active.cells.filter(cell=>cell.kind==='tentacle').length===1,'active vortex survives hydration');
           timed.expiresAt=Date.now()-1;deadWatersTick();
@@ -133,7 +143,10 @@ const viewports=[
           ok(!state.dungeon.encounter,'vortex fish do not trigger cast-only dungeon events');
           renderHistory();
           const parentElement=document.querySelector(`[data-history-id="${parentId}"]`);
+          const safeStatus=parentElement.querySelector('.chronology-row__title .dead-waters-history-status'),safeStatusStyle=getComputedStyle(safeStatus);
           ok(parentElement.querySelector('.dead-waters-history-icon img[src*="icons/events/dead-waters-vortex.webp"]'),'chronology uses the vortex image instead of an emoji placeholder');
+          ok(parentElement.querySelector('.chronology-row__title-text').textContent.trim()===DEAD_WATERS_NAME&&safeStatus?.textContent.trim()==='Успешный выход','successful outcome is shown directly below the renamed collapsed-row title');
+          ok(safeStatusStyle.backgroundColor==='rgba(0, 0, 0, 0)'&&safeStatusStyle.borderTopWidth==='0px'&&safeStatus.classList.contains('is-safe'),'successful outcome is plain green text without a backplate');
           ok(parentElement.querySelectorAll('.dead-waters-history-loot li').length===8,'all rewards are grouped under one chronology row');
           ok(parentElement.querySelector('[data-expedition-study]'),'expedition reward exposes the standard decode action');
           ok(state.history.filter(row=>row.mergedIntoHistoryId===parentId).length>=7,'generated reward rows are merged into the vortex row');
@@ -148,11 +161,17 @@ const viewports=[
           ok(chestSourceRow.bottomlessExpeditionItemId&&chestElement.querySelector('.dead-waters-nested-loot [data-expedition-study]'),'bottomless chest expedition document keeps its standard decode action');
 
           reset();
+          let tentacleSoundPlays=0;
+          const originalTentacleClone=sounds.deadWatersTentacleAttack.cloneNode;
+          sounds.deadWatersTentacleAttack.cloneNode=()=>({preload:'',volume:0,play(){tentacleSoundPlays++;return Promise.resolve();}});
           active=spawn(grid(['trade','tentacle','fish','trash','bonus','debuff','artifact','expedition','fish']));const deathRowId=active.rowId;openDeadWaters(deathRowId);
           revealDeadWatersCell(active.cells[0].id);
-          ok(state.tradeItems.length===0,'safe find is still staged before tentacle');
+          ok(state.tradeItems.length===0&&tentacleSoundPlays===0,'safe find is still staged and does not play the tentacle attack');
           revealDeadWatersCell(active.cells[1].id);
-          ok(activeDeadWaters()?.status==='tentacle'&&$('deadWatersDialog').open&&!state.finished,'tentacle remains revealed for its impact beat');
+          ok(activeDeadWaters()?.status==='tentacle'&&$('deadWatersDialog').open&&!state.finished&&tentacleSoundPlays===1,'tentacle remains revealed for its impact beat and plays its attack once');
+          renderDeadWaters();renderDeadWaters();
+          ok(tentacleSoundPlays===1,'tentacle attack does not replay during interface renders');
+          sounds.deadWatersTentacleAttack.cloneNode=originalTentacleClone;
           ok($('deadWatersCard').classList.contains('is-tentacle-impact')&&document.querySelector('.dead-waters-cell.is-tentacle'),'tentacle impact and red vignette are visible');
           const tentacleCell=document.querySelector('.dead-waters-cell.is-tentacle'),tentacleLabel=tentacleCell.querySelector('.dead-waters-cell-label'),tentacleCellBox=tentacleCell.getBoundingClientRect(),tentacleLabelBox=tentacleLabel.getBoundingClientRect();
           ok(tentacleLabel.textContent.trim()==='Гигантское щупальце'&&tentacleLabel.scrollHeight<=tentacleLabel.clientHeight+1&&tentacleLabelBox.top>=tentacleCellBox.top&&tentacleLabelBox.bottom<=tentacleCellBox.bottom,'full tentacle label is visibly contained inside its cell');
@@ -162,6 +181,9 @@ const viewports=[
           ok(state.tradeItems.length===0&&deathRow.deadWatersRewards.filter(item=>item.kind!=='tentacle').every(item=>item.lost),'tentacle discards every staged reward');
           ok(deathRow.deadWatersStatus==='dead','tentacle outcome remains visible in chronology');
           renderHistory();
+          const failedStatus=document.querySelector(`[data-history-id="${deathRowId}"] .chronology-row__title .dead-waters-history-status`),failedStatusStyle=getComputedStyle(failedStatus);
+          ok(failedStatus?.textContent.trim()==='Неуспешный выход'&&failedStatus.classList.contains('is-dead'),'failed outcome is shown directly below the collapsed-row title');
+          ok(failedStatusStyle.backgroundColor==='rgba(0, 0, 0, 0)'&&failedStatusStyle.borderTopWidth==='0px','failed outcome is plain red text without a backplate');
           const lostRows=[...document.querySelectorAll(`[data-history-id="${deathRowId}"] .dead-waters-history-loot li.is-lost`)];
           const tentacleRow=document.querySelector(`[data-history-id="${deathRowId}"] .dead-waters-history-loot li.type-tentacle`);
           ok(lostRows.every(item=>getComputedStyle(item).textDecorationLine==='none'&&getComputedStyle(item).filter.includes('grayscale')),'lost rewards are gray without strikethrough');
@@ -178,6 +200,24 @@ const viewports=[
       const normalized=[];
       for(const [label,width,height] of viewports){
         await page.setViewportSize({width,height});
+        await page.evaluate(()=>{
+          document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
+          state=initialState();state.weather='storm';state.weatherSeen=['storm'];
+          maybeSpawnDeadWatersAfterCast(true);render();
+        });
+        await page.waitForTimeout(120);
+        const activeCountdown=await page.evaluate(()=>{
+          const row=document.querySelector('.type-deadWaters.has-live-countdown'),status=row?.querySelector('.chronology-live-countdown'),timer=status?.querySelector('[data-dead-waters-time]'),result=status?.closest('.chronology-row__result'),title=row?.querySelector('.chronology-row__title'),titleText=title?.querySelector('.chronology-row__title-text');
+          const timerBox=timer?.getBoundingClientRect(),resultBox=result?.getBoundingClientRect(),titleBox=title?.getBoundingClientRect(),titleRange=document.createRange();if(titleText)titleRange.selectNodeContents(titleText);const titleInk=titleText?titleRange.getBoundingClientRect():null;
+          return {value:Number(timer?.textContent),timerVisible:Boolean(timerBox&&resultBox&&timerBox.width>0&&timerBox.left>=resultBox.left-1&&timerBox.right<=resultBox.right+1&&status.scrollWidth<=result.clientWidth+1),titleVisible:Boolean(titleBox&&titleInk&&titleInk.left>=titleBox.left-1&&titleInk.right<=titleBox.right+1&&titleInk.top>=titleBox.top-3&&titleInk.bottom<=titleBox.bottom+3),pageOverflow:document.documentElement.scrollWidth>innerWidth+1};
+        });
+        await page.waitForTimeout(250);
+        const laterCountdown=await page.evaluate(()=>Number(document.querySelector('.type-deadWaters [data-dead-waters-time]')?.textContent));
+        assert(activeCountdown.timerVisible,`${engine} ${label}: Dead Waters countdown number is fully visible`);
+        assert(activeCountdown.titleVisible,`${engine} ${label}: Dead Waters title remains fully visible beside its countdown`);
+        assert(laterCountdown<activeCountdown.value,`${engine} ${label}: Dead Waters countdown visibly advances`);
+        assert.equal(activeCountdown.pageOverflow,false,`${engine} ${label}: active Dead Waters row does not cause page overflow`);
+        await page.locator('.type-deadWaters.has-live-countdown').screenshot({path:path.join(output,`${engine}-${label}-active-countdown.png`)});
         await page.evaluate(()=>{
           document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
           state=initialState();state.weather='storm';state.weatherSeen=['storm'];
@@ -237,15 +277,18 @@ const viewports=[
           const active=activeDeadWaters(),row=deadWatersHistoryRow(active);
           row.deadWatersRewards=deadWatersOpenedCells(active).map(item=>({...item,lost:item.kind!=='tentacle'}));
           row.deadWatersStatus='dead';row.detail='(Гигантское щупальце завершило сессию • найденные награды потеряны)';
-          stopDeadWatersSound();deadWatersState().active=null;$('deadWatersDialog').close();$('deadWatersCard').classList.remove('is-tentacle-impact');renderHistory();
+          stopDeadWatersSound();deadWatersState().active=null;$('deadWatersDialog').close();$('deadWatersCard').classList.remove('is-tentacle-impact');renderHistory();setHistoryRowExpanded(row.id,true);
         });
         await page.waitForFunction(()=>[...document.querySelectorAll('.dead-waters-history-icon img,.dead-waters-history-loot img')].every(image=>image.complete&&image.naturalWidth>0));
         const historyAppearance=await page.evaluate(()=>{
-          const row=document.querySelector('.history-item.type-deadWaters'),lost=[...row.querySelectorAll('.dead-waters-history-loot li.is-lost')],tentacle=row.querySelector('.dead-waters-history-loot li.type-tentacle');
-          return {overflow:row.scrollWidth>row.clientWidth+1,icon:!!row.querySelector('.dead-waters-history-icon img[src*="icons/events/dead-waters-vortex.webp"]'),lost:lost.map(item=>({decoration:getComputedStyle(item).textDecorationLine,filter:getComputedStyle(item).filter,color:getComputedStyle(item).color})),tentacle:{lost:tentacle.classList.contains('is-lost'),filter:getComputedStyle(tentacle).filter,animation:getComputedStyle(tentacle).animationName}};
+          const row=document.querySelector('.history-item.type-deadWaters'),lost=[...row.querySelectorAll('.dead-waters-history-loot li.is-lost')],tentacle=row.querySelector('.dead-waters-history-loot li.type-tentacle'),status=row.querySelector('.chronology-row__title .dead-waters-history-status'),statusStyle=getComputedStyle(status),loot=[...row.querySelectorAll('.dead-waters-history-loot>li')].map(item=>{const style=getComputedStyle(item),box=item.getBoundingClientRect();return {height:box.height,border:style.borderTopWidth,background:style.backgroundColor,shadow:style.boxShadow};});
+          return {overflow:row.scrollWidth>row.clientWidth+1,icon:!!row.querySelector('.dead-waters-history-icon img[src*="icons/events/dead-waters-vortex.webp"]'),title:row.querySelector('.chronology-row__title-text').textContent.trim(),status:{text:status.textContent.trim(),parent:status.parentElement.className,color:statusStyle.color,border:statusStyle.borderTopWidth,background:statusStyle.backgroundColor},loot,lost:lost.map(item=>({decoration:getComputedStyle(item).textDecorationLine,filter:getComputedStyle(item).filter,color:getComputedStyle(item).color})),tentacle:{lost:tentacle.classList.contains('is-lost'),filter:getComputedStyle(tentacle).filter,animation:getComputedStyle(tentacle).animationName}};
         });
         assert.equal(historyAppearance.overflow,false,`${engine} ${label}: chronology row does not overflow`);
         assert.equal(historyAppearance.icon,true,`${engine} ${label}: chronology vortex image`);
+        assert.equal(historyAppearance.title,'Пучина мёртвых вод',`${engine} ${label}: renamed chronology title`);
+        assert(historyAppearance.status.text==='Неуспешный выход'&&historyAppearance.status.parent.includes('chronology-row__title')&&historyAppearance.status.border==='0px'&&historyAppearance.status.background==='rgba(0, 0, 0, 0)'&&historyAppearance.status.color==='rgb(255, 111, 125)',`${engine} ${label}: plain red failed outcome under title`);
+        assert(historyAppearance.loot.every(item=>item.border==='0px'&&item.background==='rgba(0, 0, 0, 0)'&&item.shadow==='none'&&item.height<=48),`${engine} ${label}: expanded loot still uses card backplates or excess height ${JSON.stringify(historyAppearance.loot)}`);
         assert(historyAppearance.lost.every(item=>item.decoration==='none'&&item.filter.includes('grayscale')),`${engine} ${label}: chronology losses are gray without strikethrough`);
         assert.equal(historyAppearance.tentacle.lost,false,`${engine} ${label}: chronology tentacle remains colored`);
         assert.equal(historyAppearance.tentacle.animation,'deadWatersDangerRow',`${engine} ${label}: chronology tentacle danger animation`);
