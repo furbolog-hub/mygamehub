@@ -1753,11 +1753,21 @@ let ordinaryCastContext=null;
 let viaxaliorAttackRuntime=false;
 let viaxaliorAttackQueued=false;
 let viaxaliorFocusBeforeAttack=null;
+let sessionFinalizationTimer=0;
+let sessionFinalizationInProgress=false;
+let sessionFinalizationRetryCount=0;
 ;(state.trash||[]).filter(item=>!item.abyssCreated).forEach(item=>{if(item.recyclonEligible===undefined)item.recyclonEligible=true;});
 if (!Array.isArray(state.weatherSeen)) state.weatherSeen=[];
 if (!state.weatherSeen.includes(state.weather)) state.weatherSeen.push(state.weather);
 if (state.weather==='storm') state.stormSeen=true;
-function commitState(){render();saveDailyState();maybeScheduleViaxaliorAttack();}
+function scheduleSessionFinalization(delay=0){
+  if(state.finished||state.castsLeft>0||sessionFinalizationTimer)return;
+  sessionFinalizationTimer=setTimeout(()=>{
+    sessionFinalizationTimer=0;
+    if(!state.finished&&state.castsLeft<=0)maybeFinalizeSession();
+  },Math.max(0,Number(delay)||0));
+}
+function commitState(){render();saveDailyState();maybeScheduleViaxaliorAttack();scheduleSessionFinalization();}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveDailyState();});
 window.addEventListener('pagehide',saveDailyState);
 
@@ -6229,17 +6239,7 @@ function maybeFinalizeSession() {
   finishGame();
 }
 
-function finishGame() {
-  if(viaxaliorAttackRuntime||viaxaliorAttackDue()){maybeScheduleViaxaliorAttack();return;}
-  endRadioactiveOutbreak();
-  forceResolveIsotopeCores();
-  checkRadioactiveContamination(true);
-  state.finished=true;
-  (state.mythic.threadPendingBoosts||[]).forEach(boost=>appendHistoryDetailById(boost.rowId,`усиление +${boost.plus} кг не успело примениться`));state.mythic.threadPendingBoosts=[];
-  finalizePendingSeagulls();
-  expireUnusedCoins();
-  resolveEssencesAtFinish();
-  const carapaces=(state.dungeon?.rewards||[]).filter(item=>item.key==='carapace'&&!item.used),carapaceAvailable=state.fish.filter(f=>!f.removed),carapaceCleanWeight=round1(carapaceAvailable.reduce((sum,f)=>sum+f.weight,0));carapaces.forEach(item=>{const targets=sampleUnique(carapaceAvailable,Math.min(3,carapaceAvailable.length));targets.forEach(f=>{const before=f.weight;f.weight=carapaceCleanWeight;f.carapaceFinalImpact={before,after:carapaceCleanWeight};});item.used=true;item.finalTargets=targets.map(f=>f.id);item.finalWeight=carapaceCleanWeight;const row=state.history.find(h=>h.id===item.historyRowId);if(row)row.detail=`(Финальный чистый вес ${kg(carapaceCleanWeight)} установлен для рыб: ${targets.map(f=>capitalize(f.name)).join(', ')||'нет доступных рыб'})`;});
+function calculateFinalSessionResult(finishedAt=new Date().toISOString()) {
   const finalFish=finalFishSnapshot();
   state.nonFishCatches.forEach(item=>{delete item.finalWeight;});
   const finalNonFishCatches=state.nonFishCatches.filter(item=>!item.removed);finalNonFishCatches.forEach(item=>{item.finalWeight=item.weight;});
@@ -6262,16 +6262,64 @@ function finishGame() {
   sphereState.multipliers.forEach(item=>{const row=state.history.find(entry=>entry.id===item.rowId);if(row)row.detail=`(Множитель ×${Number(item.factor).toFixed(1).replace('.',',')} применён в финальной формуле Сферы течений)`;});
   const spikeWeight=Math.max(0,Number(viaxaliorState().spike?.weight)||0),spikeBefore=total;if(spikeWeight)total=round1(total+spikeWeight);const viaxaliorSpikeImpact=spikeWeight?{before:spikeBefore,added:spikeWeight,after:total}:null;
   const earned=achievements(finalFish,total);
-  const ended=new Date();
-  state.finalResult={total,earned,finishedAt:ended.toISOString(),diceImpact,singulaImpact,sphereImpact,viaxaliorSpikeImpact};
-  renderResultCard();
-  if (earned.length) playSound('achievement');
-  addHistory('Игровая сессия завершена','event');
-  TelegramApp?.HapticFeedback?.notificationOccurred?.('success');
-  const payload={game:'dropfish',totalWeight:total,achievements:earned,finishedAt:ended.toISOString(),casts:state.castClicks};
-  try { if (TelegramApp?.initData && typeof TelegramApp.sendData==='function') TelegramApp.sendData(JSON.stringify(payload)); } catch(e){ console.warn('sendData недоступен для этого способа запуска',e); }
-  void window.PublicSession?.finish?.(payload);
-  saveDailyState();
+  return {total,earned,finishedAt,diceImpact,singulaImpact,sphereImpact,viaxaliorSpikeImpact};
+}
+
+function recalculateFinishedSessionResult() {
+  if(!state.finished||!state.finalResult)return false;
+  try{
+    state.finalResult=calculateFinalSessionResult(state.finalResult.finishedAt||new Date().toISOString());
+    renderResultCard();
+    saveDailyState();
+    return true;
+  }catch(error){
+    console.error('Не удалось пересчитать завершённую сессию',error);
+    toast('Не удалось обновить итог. Повторите действие.');
+    return false;
+  }
+}
+
+function finishGame() {
+  if(state.finished&&state.finalResult)return true;
+  if(sessionFinalizationInProgress)return false;
+  if(viaxaliorAttackRuntime||viaxaliorAttackDue()){maybeScheduleViaxaliorAttack();return false;}
+  sessionFinalizationInProgress=true;
+  try{
+    endRadioactiveOutbreak();
+    forceResolveIsotopeCores();
+    checkRadioactiveContamination(true);
+    (state.mythic.threadPendingBoosts||[]).forEach(boost=>appendHistoryDetailById(boost.rowId,`усиление +${boost.plus} кг не успело примениться`));state.mythic.threadPendingBoosts=[];
+    finalizePendingSeagulls();
+    expireUnusedCoins();
+    resolveEssencesAtFinish();
+    const carapaces=(state.dungeon?.rewards||[]).filter(item=>item.key==='carapace'&&!item.used),carapaceAvailable=state.fish.filter(f=>!f.removed),carapaceCleanWeight=round1(carapaceAvailable.reduce((sum,f)=>sum+f.weight,0));carapaces.forEach(item=>{const targets=sampleUnique(carapaceAvailable,Math.min(3,carapaceAvailable.length));targets.forEach(f=>{const before=f.weight;f.weight=carapaceCleanWeight;f.carapaceFinalImpact={before,after:carapaceCleanWeight};});item.used=true;item.finalTargets=targets.map(f=>f.id);item.finalWeight=carapaceCleanWeight;const row=state.history.find(h=>h.id===item.historyRowId);if(row)row.detail=`(Финальный чистый вес ${kg(carapaceCleanWeight)} установлен для рыб: ${targets.map(f=>capitalize(f.name)).join(', ')||'нет доступных рыб'})`;});
+    const ended=new Date();
+    const finalResult=calculateFinalSessionResult(ended.toISOString());
+    state.finalResult=finalResult;
+    state.finished=true;
+    sessionFinalizationRetryCount=0;
+    renderResultCard();
+    if (finalResult.earned.length) playSound('achievement');
+    addHistory('Игровая сессия завершена','event');
+    TelegramApp?.HapticFeedback?.notificationOccurred?.('success');
+    const payload={game:'dropfish',totalWeight:finalResult.total,achievements:finalResult.earned,finishedAt:finalResult.finishedAt,casts:state.castClicks};
+    try { if (TelegramApp?.initData && typeof TelegramApp.sendData==='function') TelegramApp.sendData(JSON.stringify(payload)); } catch(e){ console.warn('sendData недоступен для этого способа запуска',e); }
+    void window.PublicSession?.finish?.(payload);
+    saveDailyState();
+    return true;
+  }catch(error){
+    state.finished=false;
+    state.finalResult=null;
+    sessionFinalizationRetryCount++;
+    console.error('Финальный расчёт не завершён; сессия будет повторно проверена',error);
+    renderResultCard();
+    try{render();}catch(renderError){console.error('Не удалось обновить интерфейс после ошибки финального расчёта',renderError);}
+    toast('Финальный расчёт повторяется — сессия не потеряна.');
+    if(sessionFinalizationRetryCount<=3)scheduleSessionFinalization(120*sessionFinalizationRetryCount);
+    return false;
+  }finally{
+    sessionFinalizationInProgress=false;
+  }
 }
 
 function renderResultCard() {
@@ -6338,6 +6386,7 @@ function scrollResultCardAfterToggle(expanded,targetKind='summary'){
 }
 
 function render() {
+  if(state.finished&&!state.finalResult){state.finished=false;scheduleSessionFinalization();}
   ensureIslands();
   ensureAssemblyState();
   updateAssemblyReadiness(true);
@@ -7238,7 +7287,7 @@ function riftLightningMarkup(row) {
 
 function showChoice(title,text,options,onSelect) {
   $('choiceTitle').textContent=title; $('choiceText').textContent=text;$('choiceText').classList.remove('colossus-trade-warning','island-negative-choice');$('choiceText').classList.toggle('island-negative-choice',String(text).includes('Нестабильное присутствие')); const box=$('choiceButtons'); box.innerHTML='';
-  options.forEach(option=>{const data=typeof option==='object'?option:{label:option,value:option};const b=document.createElement('button');b.textContent=data.label;if(data.className)b.className=data.className;b.onclick=()=>{$('choiceDialog').close();onSelect(data.value);if(state.castsLeft<=0&&!state.finished)maybeFinalizeSession();commitState();setTimeout(resolveFadedRelicFragment,0);setTimeout(resumeGoldenGearApplication,0);};box.appendChild(b);});
+  options.forEach(option=>{const data=typeof option==='object'?option:{label:option,value:option};const b=document.createElement('button');b.textContent=data.label;if(data.className)b.className=data.className;b.onclick=()=>{$('choiceDialog').close();onSelect(data.value);if(state.finished&&state.finalResult)recalculateFinishedSessionResult();if(state.castsLeft<=0&&!state.finished)maybeFinalizeSession();commitState();setTimeout(resolveFadedRelicFragment,0);setTimeout(resumeGoldenGearApplication,0);};box.appendChild(b);});
   $('choiceDialog').showModal();
 }
 

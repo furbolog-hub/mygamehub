@@ -4,6 +4,8 @@
   "scripts": {
     "test": "npm run test:requested && npm run test:rift-ui && npm run test:loot-sources && npm run test:ethirion && npm run test:vexinon && npm run test:temporal && npm run test:activatable && npm run test:dungeon-visuals",
     "test:radioactive": "node scripts/test-radioactive.js",
+    "test:snapshot-84": "node scripts/test-post-finish-finalization-and-orientation.js",
+    "test:snapshot-85": "node scripts/test-snapshot-85-arcade-mobile.js",
     "test:requested": "node scripts/test-requested-regressions.js",
     "test:requested-visuals": "node scripts/test-requested-visuals.js",
     "test:rift-ui": "node scripts/test-rift-ui-regressions.js",

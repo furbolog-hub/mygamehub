@@ -462,10 +462,22 @@ html body[class] .mobile-scene-artboard .arcade-track {
 }
 
 .mobile-scene-artboard .arcade-fish {
+  display: block;
   width: 96px;
   min-width: 96px;
   height: 80px;
   min-height: 80px;
+  margin: 0;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: none !important;
+  box-shadow: none !important;
+  color: transparent;
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-scene-artboard .arcade-fish.arcade-orca {
@@ -498,13 +510,13 @@ html body[class] .mobile-scene-artboard .arcade-track {
 }
 
 @keyframes mobileSceneArcadeRight {
-  from { transform: translateX(-120px) scaleX(-1); }
-  to { transform: translateX(720px) scaleX(-1); }
+  from { transform: translate3d(-120px, -50%, 0) scaleX(-1); }
+  to { transform: translate3d(720px, -50%, 0) scaleX(-1); }
 }
 
 @keyframes mobileSceneArcadeLeft {
-  from { transform: translateX(720px) scaleX(1); }
-  to { transform: translateX(-120px) scaleX(1); }
+  from { transform: translate3d(720px, -50%, 0) scaleX(1); }
+  to { transform: translate3d(-120px, -50%, 0) scaleX(1); }
 }
 
 .mobile-game-shell__chronology {
@@ -2125,7 +2137,7 @@ body.test-build .menu-debug-action {
       calc(var(--mobile-shell-inline) + var(--mobile-safe-right))
       var(--mobile-shell-top)
       calc(var(--mobile-shell-inline) + var(--mobile-safe-left)) !important;
-    grid-template-rows: 48px 74px 48px minmax(72px, 1fr) var(--mobile-dock-size) !important;
+    grid-template-rows: 48px 74px 48px minmax(0, 1fr) var(--mobile-dock-size) !important;
   }
 
   html body[class] .mobile-scene-artboard > .topbar {
@@ -7452,4 +7464,25 @@ html body[class] .mobile-game-shell__chronology .chronology-row.type-catastrophe
 
 html body[class] .mobile-game-shell__chronology .chronology-row.type-catastrophe.has-integrated-artwork .chronology-row__art::after {
   background: linear-gradient(90deg, rgba(3, 22, 37, .97) 0%, rgba(3, 22, 37, .88) 34%, rgba(3, 22, 37, .54) 55%, rgba(3, 22, 37, .12) 78%, rgba(3, 22, 37, .06) 100%) !important;
+}
+
+/* Snapshot 84: keep one explicit vertical scroll owner after Safari changes
+   the visual viewport during orientation transitions. This final guard must
+   remain after feature-specific chronology rules. */
+html body[class] .app-shell.mobile-game-shell > .mobile-game-shell__chronology,
+html body[class] .mobile-game-shell__chronology > .history {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body[class] .mobile-game-shell__chronology .history-scroll {
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
 }
