@@ -256,7 +256,7 @@ html body[class] .mobile-scene-artboard > .inventory {
   min-height: 96px !important;
   max-height: 96px !important;
   padding: 9px 12px !important;
-  grid-template-columns: 86px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   overflow: hidden !important;
@@ -266,30 +266,6 @@ html body[class] .mobile-scene-artboard > .inventory {
   box-shadow: inset 0 1px rgba(174, 224, 243, .16);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-}
-
-.mobile-scene-artboard .active-effects-rail__heading {
-  display: grid;
-  margin: 0 !important;
-  place-items: center;
-  gap: 1px;
-  color: rgba(220, 241, 248, .78);
-}
-
-.mobile-scene-artboard .active-effects-rail__label {
-  font-size: 18px;
-  font-weight: 750;
-  line-height: 1;
-}
-
-.mobile-scene-artboard #effectCount {
-  min-width: 34px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-size: 16px;
-  line-height: 1.2;
-  text-align: center;
-  background: rgba(111, 218, 244, .14);
 }
 
 .mobile-scene-artboard .inventory .chips {
@@ -332,8 +308,18 @@ html body[class] .mobile-scene-artboard > .inventory {
   font-size: 13px !important;
 }
 
-.mobile-scene-artboard .inventory .chips > .muted {
-  font-size: 18px;
+.mobile-scene-artboard .inventory:not(.has-effects) .chips {
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mobile-scene-artboard .active-effects-empty {
+  color: #b9d8e4;
+  font-size: 20px;
+  font-weight: 750;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
 }
 
 html body[class] .mobile-scene-artboard .header-actions:not([hidden]) {
@@ -463,6 +449,7 @@ html body[class] .mobile-scene-artboard .arcade-track {
 
 .mobile-scene-artboard .arcade-fish {
   display: block;
+  top: calc(50% + 26px) !important;
   width: 96px;
   min-width: 96px;
   height: 80px;
@@ -490,7 +477,7 @@ html body[class] .mobile-scene-artboard .arcade-track {
 .mobile-scene-artboard .arcade-fish-body {
   left: 18px;
   top: 29px;
-  transform: scale(1.15);
+  transform: scale(1.15, 1);
   transform-origin: left center;
 }
 
@@ -1956,7 +1943,7 @@ body.test-build .menu-debug-action {
     min-height: 56px !important;
     max-height: 56px !important;
     padding: 4px 7px !important;
-    grid-template-columns: 54px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 5px;
     border: 1px solid rgba(158, 226, 246, .14);
     border-radius: 15px;
@@ -1964,8 +1951,7 @@ body.test-build .menu-debug-action {
     box-shadow: inset 0 1px rgba(224, 248, 255, .05);
   }
 
-  .mobile-scene-artboard .active-effects-rail__label { font-size: .67rem; line-height: 1.05; }
-  .mobile-scene-artboard #effectCount { min-width: 28px; padding: 2px 6px; font-size: .68rem; }
+  .mobile-scene-artboard .active-effects-empty { font-size: .78rem; }
   .mobile-scene-artboard .inventory .chips { height: 48px; gap: 6px !important; scrollbar-width: none; }
   .mobile-scene-artboard .inventory .chips::-webkit-scrollbar { display: none; }
   .mobile-scene-artboard .inventory .chips > .chip {
@@ -2169,7 +2155,7 @@ body.test-build .menu-debug-action {
     min-height: 48px !important;
     max-height: 48px !important;
     padding: 3px 6px !important;
-    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .mobile-scene-artboard .inventory .chips { height: 42px; }
@@ -7183,6 +7169,12 @@ html body[class] .mobile-scene-artboard .merged-weather-card .lake-stat .lake-st
 html body[class] .mobile-game-shell__chronology .section-heading {
   position: relative;
   align-items: center;
+  gap: 10px;
+}
+
+html body[class] .mobile-game-shell__chronology .section-heading h2 {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 html body[class] .mobile-game-shell__chronology .chronology-filter-toggle {
@@ -7190,7 +7182,7 @@ html body[class] .mobile-game-shell__chronology .chronology-filter-toggle {
   display: inline-flex;
   width: auto !important;
   min-width: 44px !important;
-  max-width: min(62%, 190px) !important;
+  max-width: min(68%, 240px) !important;
   height: 28px !important;
   min-height: 28px !important;
   max-height: 28px !important;
@@ -7241,6 +7233,27 @@ html body[class] .mobile-game-shell__chronology .chronology-filter-toggle:focus-
 
 .mobile-game-shell__chronology .chronology-filter-toggle__summary:not([hidden])::after {
   content: " ·";
+}
+
+.mobile-game-shell__chronology .chronology-filter-toggle__effects {
+  display: inline-flex;
+  min-width: max-content;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 3px;
+  color: #9fc7d5;
+  font-size: .62rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mobile-game-shell__chronology .chronology-filter-toggle__effects #effectCount {
+  min-width: 1ch;
+  color: #d5eff7;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
 }
 
 html body[class] .mobile-game-shell__chronology .chronology-filter-toggle #historyCount {
@@ -7304,27 +7317,57 @@ html body[class].reduce-motion .mobile-game-shell__chronology .chronology-filter
   transition: none !important;
 }
 
+/* Snapshot 86: notifications belong to the chronology plane, outside its
+   scroll owner, so they stay at the upper border while rows move below them. */
+html body[class] .mobile-game-shell__chronology .toast {
+  position: absolute;
+  z-index: 40;
+  top: 36px;
+  bottom: auto;
+  left: 50%;
+  width: min(calc(100% - 24px), 520px);
+  max-height: 58px;
+  padding: 8px 12px;
+  overflow: hidden;
+  border: 1px solid rgba(169, 219, 236, .72);
+  border-radius: 12px;
+  background: rgba(248, 251, 255, .92);
+  box-shadow: 0 8px 22px rgba(0, 14, 25, .34);
+  color: #112330;
+  font-size: .72rem;
+  line-height: 1.2;
+  transform: translate(-50%, 4px);
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+  transition: opacity 220ms ease;
+}
+
+html body[class] .mobile-game-shell__chronology .toast.show {
+  transform: translate(-50%, 4px);
+  opacity: 1;
+}
+
+html body[class] .mobile-game-shell__chronology .history.has-expanded-filters .toast {
+  top: 80px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body[class] .mobile-game-shell__chronology .toast {
+    transition: none !important;
+  }
+}
+
+html body[class].reduce-motion .mobile-game-shell__chronology .toast {
+  transition: none !important;
+}
+
 /* Snapshots 79-81: the effect caption is a section label, not another chip.
    Keep only the numerical counter on a backplate. The two-choice abyss action
    shares the 42px summary plane and gives its long title a natural two-line
    measure instead of creating a detached action floor. These guards remain
    after feature-specific rules so later rarity/artwork selectors cannot move
    the controls again. */
-html body[class] .mobile-scene-artboard .active-effects-rail__heading > .active-effects-rail__label {
-  display: block;
-  min-width: 0;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: #9fc7d5;
-  font-weight: 800;
-  letter-spacing: .045em;
-  text-transform: uppercase;
-}
-
 html body[class] .mobile-game-shell__chronology .chronology-row.has-abyss-decision.has-inline-history-action .history-row-head {
   min-height: 42px;
 }

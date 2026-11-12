@@ -22,7 +22,7 @@
     })();
   </script>
   <link rel="stylesheet" href="style.css?v=3.43-viaxalior" />
-  <link rel="stylesheet" href="mobile-ui.css?v=17.43-snapshot85-arcade" />
+  <link rel="stylesheet" href="mobile-ui.css?v=17.44-snapshot86-effects" />
   <script>
   /* Telegram SDK грузим ТОЛЬКО внутри Telegram. В обычном браузере он не нужен,
      а его синхронная загрузка блокировала отрисовку страницы на минуты, если
@@ -59,7 +59,9 @@
       </div>
       <div class="header-actions header-system-actions" aria-label="Системные настройки">
         <button id="sceneMenuBtn" class="icon-btn scene-menu-btn menu-exit-btn" type="button" aria-label="Открыть меню DropFish" title="Открыть меню DropFish" aria-controls="mobileMenuView" aria-expanded="false"><span class="ui-icon is-menu-icon"><img src="./assets/icons/ui/menu.webp" alt="" aria-hidden="true"></span><span class="visually-hidden">Меню DropFish</span></button>
+        <!-- PUBLIC_STRIP_DEBUG_START -->
         <button id="dropfishDebugBtn" class="icon-btn header-debug-action debug-toggle-btn" type="button" aria-label="Открыть тестовую панель" title="Открыть тестовую панель"><span class="ui-icon"><img src="./assets/icons/ui/debug-panel.webp" alt="" aria-hidden="true"></span></button>
+        <!-- PUBLIC_STRIP_DEBUG_END -->
         <button id="soundToggleBtn" class="icon-btn sound-toggle-btn" type="button" aria-label="Отключить звуки" title="Отключить звуки" aria-pressed="false"><span data-sound-icon><span class="ui-icon"><img src="./assets/icons/ui/sound-on.webp" alt="" aria-hidden="true"></span></span><span class="mobile-menu-action__copy"><small data-sound-label>Звуки включены</small></span></button>
         <button id="motionBtn" class="icon-btn motion-btn" type="button" aria-label="Уменьшить анимации" title="Уменьшить анимации"><span data-motion-icon><span class="ui-icon"><img src="./assets/icons/ui/animation-on.webp" alt="" aria-hidden="true"></span></span><span class="mobile-menu-action__copy"><small data-motion-label>Полные анимации</small></span></button>
         <button id="guideBtn" class="icon-btn" type="button" aria-label="Открыть справочник" title="Открыть справочник"><span class="ui-icon"><img src="./assets/icons/ui/guide.webp" alt="" aria-hidden="true"></span></button>
@@ -95,12 +97,8 @@
     </section>
 
     <section class="inventory active-effects-rail glass ui-surface ui-panel" aria-labelledby="activeEffectsTitle">
-      <div class="section-heading active-effects-rail__heading ui-panel-heading">
-        <h2 id="activeEffectsTitle" class="visually-hidden">Активные эффекты</h2>
-        <span class="active-effects-rail__label" aria-hidden="true">Эффекты</span>
-        <span id="effectCount">0</span>
-      </div>
-      <div id="effectsList" class="chips"><span class="muted">Пока нет</span></div>
+      <h2 id="activeEffectsTitle" class="visually-hidden">Активные эффекты</h2>
+      <div id="effectsList" class="chips"><span class="active-effects-empty">Эффекты: Пока нет</span></div>
     </section>
     </div>
     </section>
@@ -111,10 +109,12 @@
         <h2>Хронология улова</h2>
         <button id="historyFiltersToggle" class="chronology-filter-toggle" type="button" aria-expanded="false" aria-controls="historyFiltersPanel" aria-label="Показать фильтры хронологии">
           <span id="historyFilterSummary" class="chronology-filter-toggle__summary" hidden>Все</span>
+          <span id="historyEffectsSummary" class="chronology-filter-toggle__effects" aria-live="polite" aria-atomic="true">Эффекты: <span id="effectCount">0</span></span>
           <span id="historyCount">0</span>
           <span class="chronology-filter-toggle__chevron" aria-hidden="true">›</span>
         </button>
       </div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
       <div id="historyFiltersPanel" class="chronology-filter-disclosure" aria-hidden="true" inert>
         <div class="chronology-filter-disclosure__inner">
           <div class="chronology-toolbar">
@@ -231,6 +231,7 @@
   </dialog>
 
 
+  <!-- PUBLIC_STRIP_DEBUG_START -->
   <dialog id="dropfishDebugDialog" class="modal debug-modal">
     <div class="modal-card wide debug-card ui-dialog-panel">
       <button class="modal-close" data-close="dropfishDebugDialog" type="button">×</button>
@@ -239,6 +240,7 @@
       <div id="dropfishDebugGrid" class="dropfish-debug-grid"></div>
     </div>
   </dialog>
+  <!-- PUBLIC_STRIP_DEBUG_END -->
 
   <dialog id="choiceDialog" class="modal">
     <div class="modal-card ui-dialog-panel">
@@ -352,10 +354,8 @@
     <div id="effectSubtitle" class="effect-subtitle"></div>
   </div>
   <div id="weatherFx" class="weather-fx" aria-hidden="true"></div>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
   <script src="mobile-ui.js?v=8.1-snapshot84-orientation"></script>
   <script src="ui-enhancements.js?v=2.0-menu-sheet"></script>
-  <script src="script.js?v=31.39-snapshot84-finalization"></script>
+  <script src="script.js?v=31.40-snapshot86-effects"></script>
 </body>
 </html>
