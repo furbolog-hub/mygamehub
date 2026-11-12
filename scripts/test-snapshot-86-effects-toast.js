@@ -5,7 +5,7 @@ const {pathToFileURL}=require('url');
 const {chromium,webkit}=require('playwright');
 
 const root=path.resolve(__dirname,'..');
-const pageUrl=pathToFileURL(path.join(root,'dropfish/index.html')).href;
+const pageUrl=process.env.DROPFISH_TEST_URL||pathToFileURL(path.join(root,'dropfish/index.html')).href;
 const output=path.join(root,'test-results/snapshot-86-effects-toast');
 const viewports={
   phonePortrait:{width:390,height:844},
@@ -22,7 +22,8 @@ async function prepare(page){
   });
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
-  await page.goto(pageUrl,{waitUntil:'load'});
+  await page.goto(pageUrl,{waitUntil:process.env.DROPFISH_TEST_URL?'domcontentloaded':'load',timeout:60000});
+  await page.waitForFunction(()=>typeof initialState==='function'&&Boolean(document.getElementById('effectsList')),{timeout:60000});
   await page.evaluate(()=>{
     state=initialState();
     state.history=Array.from({length:36},(_,index)=>({
@@ -136,7 +137,7 @@ async function inspectToast(page){
     const browser=await browserType.launch({headless:true});
     try{
       for(const [viewportName,viewport] of Object.entries(viewports)){
-        const page=await browser.newPage({viewport});
+        const page=await browser.newPage({viewport,ignoreHTTPSErrors:Boolean(process.env.DROPFISH_TEST_URL)});
         const errors=await prepare(page);
         const label=`${engineName}/${viewportName}`;
         const empty=await inspectEmptyState(page);
@@ -171,11 +172,13 @@ async function inspectToast(page){
         assert(before.background.startsWith('rgba('),`${label}: toast lost its translucent white backing`);
         assert.equal(errors.length,0,`${label}: page errors: ${errors.join(' | ')}`);
 
-        await page.screenshot({
-          path:path.join(output,`${engineName}-${viewportName}.png`),
-          fullPage:true,
-          animations:'allow'
-        });
+        if(!process.env.DROPFISH_TEST_URL){
+          await page.screenshot({
+            path:path.join(output,`${engineName}-${viewportName}.png`),
+            fullPage:true,
+            animations:'allow'
+          });
+        }
         await page.close();
         renders++;
       }

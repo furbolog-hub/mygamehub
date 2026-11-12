@@ -84,6 +84,7 @@ async function verifyRuntimeTurn(page,engineName,viewportName){
     const atTurn=await sample();
     const reversed=await page.evaluate(()=>reverseArcadeCreature(activeArcadeFish));
     await page.locator('#arcadeLayer .arcade-fish').evaluate(node=>{node.getAnimations()[0].currentTime=1000;});
+    await page.waitForTimeout(120);
     const after=await page.locator('#arcadeLayer .arcade-fish').evaluate(node=>({left:node.getBoundingClientRect().left,reversed:node.classList.contains('is-course-reversed'),shapeTransform:getComputedStyle(node.querySelector('.arcade-creature-shape')).transform}));
     const initialDelta=atTurn.left-before.left;
     const reversedDelta=after.left-atTurn.left;

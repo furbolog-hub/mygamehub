@@ -4,7 +4,7 @@ const path=require('path');
 const {pathToFileURL}=require('url');
 const {chromium,webkit}=require('playwright');
 
-const pageUrl=pathToFileURL(path.resolve(__dirname,'../dropfish/index.html')).href;
+const pageUrl=process.env.DROPFISH_TEST_URL||pathToFileURL(path.resolve(__dirname,'../dropfish/index.html')).href;
 const output=path.resolve(__dirname,'../test-results/snapshot-85-arcade');
 const viewports={
   iphone16ProMaxPortrait:{width:440,height:956},
@@ -60,7 +60,7 @@ async function inspectArcadeCreature(page){
     const browser=await browserType.launch({headless:true});
     try{
       for(const [viewportName,viewport] of Object.entries(viewports)){
-        const page=await browser.newPage({viewport});
+        const page=await browser.newPage({viewport,ignoreHTTPSErrors:Boolean(process.env.DROPFISH_TEST_URL)});
         const errors=[];
         page.on('pageerror',error=>errors.push(error.message));
         await page.addInitScript(()=>localStorage.setItem('proFishingReduceMotion','0'));
